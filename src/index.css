@@ -1,0 +1,184 @@
+@import "tailwindcss";
+@import "highlight.js/styles/github-dark.css";
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* ========= App layout (driven by CSS custom properties) ========= */
+#root {
+  background-color: var(--app-bg, #18181b);
+  color: var(--text-color, #e4e4e7);
+}
+
+.sidebar {
+  background-color: var(--sidebar-bg, #18181b);
+  border-right: 1px solid var(--border-color, #3f3f46);
+}
+
+.sidebar-header {
+  border-bottom: 1px solid var(--border-color, #3f3f46);
+}
+
+.btn {
+  background-color: var(--button-bg, #3f3f46);
+  color: var(--button-text, #e4e4e7);
+  transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.8; }
+
+.tree-item {
+  color: var(--text-color, #e4e4e7);
+}
+.tree-item:hover {
+  background-color: var(--hover-bg, #3f3f4680);
+}
+.tree-item--muted {
+  color: var(--text-muted, #71717a);
+}
+.tree-item--muted:hover {
+  background-color: transparent;
+}
+.tree-item--selected {
+  background-color: var(--selected-bg, #1e3a5f);
+  color: var(--selected-text, #93c5fd);
+}
+
+.text-muted {
+  color: var(--text-muted, #71717a);
+}
+
+/* ========= Viewer toolbar ========= */
+.viewer-toolbar {
+  border-bottom: 1px solid var(--border-color, #3f3f46);
+}
+
+/* ========= Markdown body ========= */
+.markdown-body {
+  color: var(--text-color, #e4e4e7);
+  line-height: 1.7;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  color: var(--md-heading, #f4f4f5);
+}
+
+.markdown-body h1 {
+  font-size: 2em;
+  font-weight: 700;
+  margin: 1em 0 0.5em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--md-border, #3f3f46);
+}
+
+.markdown-body h2 {
+  font-size: 1.5em;
+  font-weight: 600;
+  margin: 1em 0 0.5em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--md-border, #3f3f46);
+}
+
+.markdown-body h3 { font-size: 1.25em; font-weight: 600; margin: 1em 0 0.5em; }
+.markdown-body h4, .markdown-body h5, .markdown-body h6 { font-size: 1em; font-weight: 600; margin: 1em 0 0.5em; }
+.markdown-body p { margin: 0.5em 0; }
+
+.markdown-body a {
+  color: var(--md-link, #60a5fa);
+  text-decoration: underline;
+}
+
+.markdown-body ul, .markdown-body ol { padding-left: 2em; margin: 0.5em 0; }
+.markdown-body li { margin: 0.25em 0; }
+
+.markdown-body blockquote {
+  border-left: 4px solid var(--md-border, #3f3f46);
+  padding: 0.25em 1em;
+  margin: 0.5em 0;
+  opacity: 0.8;
+}
+
+.markdown-body code {
+  background: var(--md-code-bg, #27272a);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.markdown-body pre {
+  background: var(--md-code-bg, #1e1e2e);
+  padding: 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 0.75em 0;
+}
+
+.markdown-body pre code { background: none; padding: 0; font-size: 0.85em; }
+
+.markdown-body table { border-collapse: collapse; width: 100%; margin: 0.75em 0; }
+.markdown-body th, .markdown-body td { border: 1px solid var(--md-border, #3f3f46); padding: 0.5em 0.75em; text-align: left; }
+.markdown-body th { background: var(--md-code-bg, #27272a); font-weight: 600; }
+.markdown-body hr { border: none; border-top: 1px solid var(--md-border, #3f3f46); margin: 1.5em 0; }
+.markdown-body img { max-width: 100%; }
+.markdown-body input[type="checkbox"] { margin-right: 0.5em; }
+
+/* ========= Sidebar divider (resizable) ========= */
+.sidebar-divider {
+  flex-shrink: 0;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  cursor: row-resize;
+  border-top: 1px solid var(--border-color, #3f3f46);
+  border-bottom: 1px solid var(--border-color, #3f3f46);
+  user-select: none;
+  padding: 0 8px;
+}
+.sidebar-divider:hover {
+  background-color: var(--hover-bg, #3f3f4680);
+}
+.sidebar-divider-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #71717a);
+}
+
+/* ========= Outline panel ========= */
+.outline-item {
+  color: var(--text-color, #e4e4e7);
+}
+.outline-item:hover {
+  background-color: var(--hover-bg, #3f3f4680);
+}
+
+/* ========= Settings panel ========= */
+.settings-panel {
+  background-color: var(--sidebar-bg, #18181b);
+  border-left: 1px solid var(--border-color, #3f3f46);
+  color: var(--text-color, #e4e4e7);
+}
+
+.settings-header {
+  background-color: var(--sidebar-bg, #18181b);
+  border-bottom: 1px solid var(--border-color, #3f3f46);
+}
+
+.settings-input {
+  background-color: var(--md-code-bg, #27272a);
+  border: 1px solid var(--border-color, #3f3f46);
+  color: var(--text-color, #e4e4e7);
+}
+
+.settings-section-title {
+  color: var(--text-muted, #71717a);
+  border-bottom: 1px solid var(--border-color, #3f3f46);
+}
