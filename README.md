@@ -1,43 +1,45 @@
 # Rendu
 
-Markdownファイルを快適に閲覧するためのデスクトップアプリケーション。
+A lightweight desktop Markdown viewer built with Tauri and React.
+
+**[日本語](./README.ja.md)**
 
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-blue)
 ![React](https://img.shields.io/badge/React-19-61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-## 特徴
+## Features
 
-- **ファイルツリー** — フォルダを開いて `.md` / `.markdown` ファイルをツリー形式でブラウズ
-- **Markdownレンダリング** — GFM（テーブル、タスクリスト、取り消し線等）に完全対応
-- **シンタックスハイライト** — コードブロックの自動ハイライト
-- **Mermaid図表** — フローチャート、シーケンス図、ER図などをインライン描画
-- **ドキュメントアウトライン** — 見出し一覧を左ペイン下部に表示、クリックでジャンプ
-- **PDF出力** — 表示中のMarkdownをA4サイズのPDFとしてエクスポート
-- **テーマカスタマイズ** — 背景色・文字色・コードブロック色などをリアルタイムに変更
-- **リサイザブルUI** — ファイルツリーとアウトラインの境界をドラッグで調整可能
+- **File tree** — Browse `.md` / `.markdown` files in a folder tree
+- **Markdown rendering** — Full GFM support (tables, task lists, strikethrough, etc.)
+- **Syntax highlighting** — Automatic code block highlighting
+- **Mermaid diagrams** — Inline rendering of flowcharts, sequence diagrams, ER diagrams, and more
+- **Document outline** — Heading list in the sidebar with click-to-jump navigation
+- **PDF export** — Export the current Markdown page as an A4 PDF
+- **Theme customization** — Change colors for background, text, code blocks, and more in real time
+- **Resizable UI** — Drag the divider between file tree and outline to adjust panel sizes
 
-## 技術スタック
+## Tech Stack
 
-| レイヤー | 技術 |
-|---------|------|
-| デスクトップFW | Tauri 2.0 (Rust) |
-| フロントエンド | React 19 + TypeScript + Vite |
-| MDレンダリング | react-markdown + remark-gfm + rehype-highlight |
-| 図表 | Mermaid |
-| PDF出力 | html2pdf.js |
-| スタイリング | Tailwind CSS 4 |
+| Layer | Technology |
+|-------|-----------|
+| Desktop framework | Tauri 2.0 (Rust) |
+| Frontend | React 19 + TypeScript + Vite |
+| Markdown | react-markdown + remark-gfm + rehype-highlight |
+| Diagrams | Mermaid |
+| PDF export | html2pdf.js |
+| Styling | Tailwind CSS 4 |
 
-## クイックスタート
+## Quick Start
 
-### 前提条件
+### Prerequisites
 
 - [Node.js](https://nodejs.org/) 18+
 - [Rust](https://rustup.rs/)
 - macOS: Xcode Command Line Tools (`xcode-select --install`)
 
-### インストール & 起動
+### Install & Run
 
 ```bash
 git clone https://github.com/kashioka/Rendu.git
@@ -46,45 +48,45 @@ npm install
 npm run dev
 ```
 
-### ビルド & インストール
+### Build & Install
 
 ```bash
 npm run build
 cp -r "src-tauri/target/release/bundle/macos/Markdown Viewer.app" /Applications/
 ```
 
-## 使い方
+## Usage
 
-1. アプリを起動
-2. **Open Folder** でMarkdownファイルがあるフォルダを選択
-3. 左のファイルツリーから `.md` ファイルをクリック
-4. 右パネルにレンダリング結果が表示される
-5. 左ペイン下部の **Outline** で見出し一覧を確認、クリックでジャンプ
-6. 上部の **PDF Export** ボタンでPDFに出力
-7. 歯車アイコンからテーマカスタマイズ
+1. Launch the app
+2. Click **Open Folder** to select a folder containing Markdown files
+3. Click a `.md` file in the file tree
+4. The rendered Markdown appears in the right panel
+5. Use the **Outline** section at the bottom of the sidebar to navigate headings
+6. Click **PDF Export** at the top to export as PDF
+7. Click the gear icon to customize the theme
 
-## プロジェクト構成
+## Project Structure
 
 ```
 Rendu/
 ├── src/
 │   ├── components/
-│   │   ├── FileTree.tsx        # ファイルツリーブラウザ
-│   │   ├── MarkdownViewer.tsx  # Markdownレンダリング + PDF出力
-│   │   ├── MermaidBlock.tsx    # Mermaid図表レンダリング
-│   │   ├── OutlinePanel.tsx    # ドキュメントアウトライン
-│   │   └── Settings.tsx        # テーマ設定パネル
-│   ├── App.tsx                 # メインレイアウト
-│   ├── main.tsx                # エントリポイント
-│   ├── useSettings.ts          # テーマ設定hooks
-│   └── index.css               # グローバルスタイル
+│   │   ├── FileTree.tsx        # File tree browser
+│   │   ├── MarkdownViewer.tsx  # Markdown rendering + PDF export
+│   │   ├── MermaidBlock.tsx    # Mermaid diagram rendering
+│   │   ├── OutlinePanel.tsx    # Document outline
+│   │   └── Settings.tsx        # Theme settings panel
+│   ├── App.tsx                 # Main layout
+│   ├── main.tsx                # Entry point
+│   ├── useSettings.ts          # Theme settings hook
+│   └── index.css               # Global styles
 ├── src-tauri/
-│   ├── src/                    # Rustバックエンド
-│   ├── capabilities/           # Tauri権限設定
-│   └── tauri.conf.json         # Tauri設定
+│   ├── src/                    # Rust backend
+│   ├── capabilities/           # Tauri permission config
+│   └── tauri.conf.json         # Tauri config
 └── package.json
 ```
 
-## ライセンス
+## License
 
 MIT
