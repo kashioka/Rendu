@@ -1,13 +1,15 @@
 {
-  "name": "md-viewer",
+  "name": "rendu",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "tauri dev",
+    "build": "tauri build --bundles app",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "vite:dev": "vite",
+    "vite:build": "tsc -b && vite build"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.10.1",

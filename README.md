@@ -29,39 +29,27 @@ Markdownファイルを快適に閲覧するためのデスクトップアプリ
 | PDF出力 | html2pdf.js |
 | スタイリング | Tailwind CSS 4 |
 
-## セットアップ
+## クイックスタート
 
 ### 前提条件
 
-- Node.js 18+
-- Rust（[rustup](https://rustup.rs/) でインストール）
-- macOS: Xcode Command Line Tools
+- [Node.js](https://nodejs.org/) 18+
+- [Rust](https://rustup.rs/)
+- macOS: Xcode Command Line Tools (`xcode-select --install`)
 
-### インストール
+### インストール & 起動
 
 ```bash
 git clone https://github.com/kashioka/Rendu.git
 cd Rendu
 npm install
+npm run dev
 ```
 
-### 開発モード
+### ビルド & インストール
 
 ```bash
-npx tauri dev
-```
-
-### ビルド
-
-```bash
-npx tauri build --bundles app
-```
-
-ビルド成果物: `src-tauri/target/release/bundle/macos/Markdown Viewer.app`
-
-### アプリケーションフォルダへのインストール
-
-```bash
+npm run build
 cp -r "src-tauri/target/release/bundle/macos/Markdown Viewer.app" /Applications/
 ```
 
