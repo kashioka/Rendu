@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { appConfigDir } from "@tauri-apps/api/path";
 import { readTextFile, writeTextFile, mkdir, exists } from "@tauri-apps/plugin-fs";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 export interface ThemeSettings {
   preset: "dark" | "light";
@@ -118,8 +119,9 @@ async function saveToFile(settings: ThemeSettings): Promise<void> {
   }
 }
 
-/** Apply all theme settings as CSS custom properties on <html> */
+/** Apply all theme settings as CSS custom properties on <html> + window theme */
 function applyThemeToDOM(s: ThemeSettings) {
+  getCurrentWindow().setTheme(s.preset === "dark" ? "dark" : "light").catch(() => {});
   const root = document.documentElement;
   root.style.setProperty("--app-bg", s.appBg);
   root.style.setProperty("--sidebar-bg", s.sidebarBg);

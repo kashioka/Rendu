@@ -10,6 +10,7 @@ function App() {
   const [rootDir, setRootDir] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
   const [headings, setHeadings] = useState<HeadingItem[]>([]);
   const [splitRatio, setSplitRatio] = useState(0.5);
   const { settings, setSettings, applyPreset } = useSettings();
@@ -48,13 +49,41 @@ function App() {
     }
   };
 
+  const handleOpenFile = async () => {
+    const file = await open({
+      filters: [{ name: "Markdown", extensions: ["md", "markdown"] }],
+    });
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
   return (
-    <div className="flex h-full">
+    <div className="flex flex-col h-full">
+      {/* Title bar */}
+      <div className="titlebar" data-tauri-drag-region>
+        <button
+          onClick={() => setSidebarVisible((v) => !v)}
+          className="titlebar-toggle"
+          title={sidebarVisible ? "Hide sidebar" : "Show sidebar"}
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h11A1.5 1.5 0 0 1 15 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12.5v-9zM2.5 3a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-11zM5 3.5v9H3v-9h2z"/>
+          </svg>
+        </button>
+        <span className="titlebar-text" data-tauri-drag-region>Rendu</span>
+      </div>
+
+      <div className="flex flex-1 min-h-0">
       {/* Sidebar */}
+      {sidebarVisible && (
       <div ref={sidebarRef} className="sidebar w-72 flex-shrink-0 flex flex-col">
-        <div className="sidebar-header p-3 flex gap-2">
-          <button onClick={handleOpenFolder} className="btn flex-1 px-3 py-1.5 rounded text-sm">
-            Open Folder
+        <div className="sidebar-header p-3 flex gap-1.5">
+          <button onClick={handleOpenFolder} className="btn flex-1 px-2 py-1.5 rounded text-xs" title="Open Folder">
+            Folder
+          </button>
+          <button onClick={handleOpenFile} className="btn flex-1 px-2 py-1.5 rounded text-xs" title="Open File">
+            File
           </button>
           <button
             onClick={() => setShowSettings(true)}
@@ -93,6 +122,7 @@ function App() {
           <OutlinePanel headings={headings} />
         </div>
       </div>
+      )}
 
       {/* Main content */}
       <div className="flex-1 min-h-0 flex flex-col">
@@ -113,6 +143,7 @@ function App() {
           onClose={() => setShowSettings(false)}
         />
       )}
+      </div>
     </div>
   );
 }

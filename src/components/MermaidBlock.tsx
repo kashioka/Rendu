@@ -71,6 +71,12 @@ export function MermaidBlock({
       .then(({ svg }) => {
         if (ref.current) {
           ref.current.innerHTML = svg;
+          // Ensure the SVG scales properly
+          const svgEl = ref.current.querySelector("svg");
+          if (svgEl) {
+            svgEl.style.maxWidth = "100%";
+            svgEl.style.height = "auto";
+          }
         }
       })
       .catch((e) => {
@@ -90,7 +96,7 @@ export function MermaidBlock({
   return (
     <div
       ref={ref}
-      className="my-3 flex justify-center rounded-lg p-4 overflow-x-auto"
+      className="mermaid-container my-3 flex justify-center rounded-lg p-4 overflow-x-auto"
       style={{ backgroundColor: settings.mermaidBg }}
     />
   );

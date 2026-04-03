@@ -7,6 +7,43 @@ html, body, #root {
   overflow: hidden;
 }
 
+/* ========= Title bar ========= */
+.titlebar {
+  height: 28px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--sidebar-bg, #18181b);
+  border-bottom: 1px solid var(--border-color, #3f3f46);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.titlebar-toggle {
+  position: absolute;
+  left: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 20px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted, #71717a);
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+.titlebar-toggle:hover {
+  background-color: var(--hover-bg, #3f3f4680);
+  color: var(--text-color, #e4e4e7);
+}
+.titlebar-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted, #71717a);
+}
+
 /* ========= App layout (driven by CSS custom properties) ========= */
 #root {
   background-color: var(--app-bg, #18181b);
@@ -20,6 +57,10 @@ html, body, #root {
 
 .sidebar-header {
   border-bottom: 1px solid var(--border-color, #3f3f46);
+}
+
+button, a, input, select, textarea {
+  -webkit-app-region: no-drag;
 }
 
 .btn {
@@ -122,12 +163,66 @@ html, body, #root {
 
 .markdown-body pre code { background: none; padding: 0; font-size: 0.85em; }
 
+/* Mermaid blocks inside <pre> should not inherit code-block styling */
+.markdown-body pre:has(.mermaid-container) {
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+
 .markdown-body table { border-collapse: collapse; width: 100%; margin: 0.75em 0; }
 .markdown-body th, .markdown-body td { border: 1px solid var(--md-border, #3f3f46); padding: 0.5em 0.75em; text-align: left; }
 .markdown-body th { background: var(--md-code-bg, #27272a); font-weight: 600; }
 .markdown-body hr { border: none; border-top: 1px solid var(--md-border, #3f3f46); margin: 1.5em 0; }
 .markdown-body img { max-width: 100%; }
 .markdown-body input[type="checkbox"] { margin-right: 0.5em; }
+
+/* ========= PDF export (print-friendly overrides) ========= */
+.markdown-body.pdf-export {
+  color: #1a1a1a !important;
+  background: #ffffff !important;
+}
+.markdown-body.pdf-export h1,
+.markdown-body.pdf-export h2,
+.markdown-body.pdf-export h3,
+.markdown-body.pdf-export h4,
+.markdown-body.pdf-export h5,
+.markdown-body.pdf-export h6 {
+  color: #111111 !important;
+}
+.markdown-body.pdf-export h1,
+.markdown-body.pdf-export h2 {
+  border-bottom-color: #d0d0d0 !important;
+}
+.markdown-body.pdf-export a {
+  color: #2563eb !important;
+}
+.markdown-body.pdf-export code {
+  background: #f3f4f6 !important;
+  color: #1a1a1a !important;
+}
+.markdown-body.pdf-export pre {
+  background: #f3f4f6 !important;
+}
+.markdown-body.pdf-export pre code {
+  color: #1a1a1a !important;
+}
+.markdown-body.pdf-export th,
+.markdown-body.pdf-export td {
+  border-color: #d0d0d0 !important;
+  color: #1a1a1a !important;
+}
+.markdown-body.pdf-export th {
+  background: #f3f4f6 !important;
+}
+.markdown-body.pdf-export blockquote {
+  border-left-color: #d0d0d0 !important;
+}
+.markdown-body.pdf-export hr {
+  border-top-color: #d0d0d0 !important;
+}
 
 /* ========= Sidebar divider (resizable) ========= */
 .sidebar-divider {

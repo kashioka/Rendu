@@ -65,6 +65,12 @@ cp -r "src-tauri/target/release/bundle/macos/Markdown Viewer.app" /Applications/
 6. Click **PDF Export** at the top to export as PDF
 7. Click the gear icon to customize the theme
 
+## Troubleshooting
+
+### Security software warning on first run
+
+Since the development build is unsigned, antivirus software (e.g. Bitdefender) may block file operations such as PDF export. When prompted, select **"Trust this application"** to allow it. This warning typically only appears once. It may reappear after a clean rebuild (`cargo clean`).
+
 ## Project Structure
 
 ```
