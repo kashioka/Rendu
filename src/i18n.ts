@@ -31,6 +31,13 @@ export interface Translations {
   "viewer.exportPdf.exporting": string;
   "viewer.exportPdf.overlay": string;
   "viewer.exportPdf.error": string;
+  "viewer.zoom.in": string;
+  "viewer.zoom.out": string;
+  "viewer.zoom.reset": string;
+  "viewer.image.download": string;
+  "viewer.mermaid.download": string;
+  "viewer.lightbox.close": string;
+  "viewer.lightbox.download": string;
 
   // Mermaid
   "mermaid.renderError": string;
@@ -97,6 +104,13 @@ const en: Translations = {
   "viewer.exportPdf.exporting": "Exporting...",
   "viewer.exportPdf.overlay": "Exporting PDF...",
   "viewer.exportPdf.error": "PDF export failed",
+  "viewer.zoom.in": "Zoom in",
+  "viewer.zoom.out": "Zoom out",
+  "viewer.zoom.reset": "Reset zoom",
+  "viewer.image.download": "Download image",
+  "viewer.mermaid.download": "Download as PNG",
+  "viewer.lightbox.close": "Close",
+  "viewer.lightbox.download": "Download",
 
   "mermaid.renderError": "Mermaid render error",
 
@@ -158,6 +172,13 @@ const ja: Translations = {
   "viewer.exportPdf.exporting": "出力中...",
   "viewer.exportPdf.overlay": "PDF出力中...",
   "viewer.exportPdf.error": "PDF出力に失敗しました",
+  "viewer.zoom.in": "拡大",
+  "viewer.zoom.out": "縮小",
+  "viewer.zoom.reset": "ズームリセット",
+  "viewer.image.download": "画像をダウンロード",
+  "viewer.mermaid.download": "PNGでダウンロード",
+  "viewer.lightbox.close": "閉じる",
+  "viewer.lightbox.download": "ダウンロード",
 
   "mermaid.renderError": "Mermaid描画エラー",
 

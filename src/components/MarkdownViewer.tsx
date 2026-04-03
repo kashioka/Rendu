@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { readTextFile, writeFile } from "@tauri-apps/plugin-fs";
 import { save } from "@tauri-apps/plugin-dialog";
 import html2pdf from "html2pdf.js";
@@ -7,9 +7,11 @@ import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import type { Components } from "react-markdown";
 import { MermaidBlock } from "./MermaidBlock";
+import { ImageWithOverlay } from "./ImageWithOverlay";
 import type { ThemeSettings } from "../useSettings";
 import type { HeadingItem } from "./OutlinePanel";
 import { useTranslation } from "../LocaleContext";
+import { svgToPng } from "../utils/svgToPng";
 
 interface MarkdownViewerProps {
   filePath: string;
@@ -38,10 +40,15 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
   const [showResults, setShowResults] = useState(false);
   const [gutterVisible, setGutterVisible] = useState(false);
   const [gutterData, setGutterData] = useState<GutterEntry[]>([]);
+  const [zoomLevel, setZoomLevel] = useState(100);
   const markdownBodyRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
+
+  const zoomIn = useCallback(() => setZoomLevel((z) => Math.min(200, z + 10)), []);
+  const zoomOut = useCallback(() => setZoomLevel((z) => Math.max(50, z - 10)), []);
+  const zoomReset = useCallback(() => setZoomLevel(100), []);
 
   useEffect(() => {
     setError(null);
@@ -219,17 +226,29 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
     return () => { cancelled = true; };
   }, [content, loading, gutterVisible]);
 
-  // Cmd+F to focus search
+  // Cmd+F to focus search, Cmd+=/- for zoom
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "f") {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
+      if ((e.metaKey || e.ctrlKey) && (e.key === "=" || e.key === "+")) {
+        e.preventDefault();
+        zoomIn();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "-") {
+        e.preventDefault();
+        zoomOut();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "0") {
+        e.preventDefault();
+        zoomReset();
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, []);
+  }, [zoomIn, zoomOut, zoomReset]);
 
   // Auto-clear export error
   useEffect(() => {
@@ -297,56 +316,7 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
       }
       return <code className={className} {...props}>{children}</code>;
     },
-  };
-
-  /** Convert a live SVG to a PNG data URL (reads only, no permanent DOM changes) */
-  const svgToPng = async (svg: SVGSVGElement): Promise<{ dataUrl: string; width: number; height: number }> => {
-    // Inline computed styles temporarily so they survive serialization
-    const elements = svg.querySelectorAll("*");
-    const savedStyles = new Map<Element, string>();
-    elements.forEach((el) => {
-      savedStyles.set(el, el.getAttribute("style") || "");
-      const computed = getComputedStyle(el);
-      let css = "";
-      for (let i = 0; i < computed.length; i++) {
-        const key = computed[i];
-        css += `${key}:${computed.getPropertyValue(key)};`;
-      }
-      el.setAttribute("style", css);
-    });
-
-    const svgData = new XMLSerializer().serializeToString(svg);
-
-    // Restore original styles immediately
-    elements.forEach((el) => {
-      const orig = savedStyles.get(el);
-      if (orig) el.setAttribute("style", orig);
-      else el.removeAttribute("style");
-    });
-
-    const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const image = new Image();
-    image.src = url;
-    await new Promise<void>((resolve, reject) => {
-      image.onload = () => resolve();
-      image.onerror = reject;
-    });
-
-    const canvas = document.createElement("canvas");
-    const scale = 2;
-    canvas.width = image.naturalWidth * scale;
-    canvas.height = image.naturalHeight * scale;
-    const ctx = canvas.getContext("2d")!;
-    ctx.scale(scale, scale);
-    ctx.drawImage(image, 0, 0);
-    URL.revokeObjectURL(url);
-
-    return {
-      dataUrl: canvas.toDataURL("image/png"),
-      width: svg.getBoundingClientRect().width,
-      height: svg.getBoundingClientRect().height,
-    };
+    img: ImageWithOverlay as Components["img"],
   };
 
   const handleExportPdf = async () => {
@@ -451,7 +421,7 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
       )}
       {/* Fixed toolbar */}
       <div className="viewer-toolbar flex-shrink-0 flex items-center px-4 py-2">
-        <div className="flex-1 flex items-center">
+        <div className="flex-1 flex items-center gap-2">
           <button
             onClick={() => setGutterVisible((v) => !v)}
             className="line-gutter-toggle"
@@ -467,6 +437,12 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
               <line x1="9" y1="13" x2="15" y2="13" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
             </svg>
           </button>
+          {/* Zoom controls */}
+          <div className="flex items-center">
+            <button className="zoom-btn" onClick={zoomOut} title={t("viewer.zoom.out")}>−</button>
+            <button className="zoom-label" onClick={zoomReset} title={t("viewer.zoom.reset")}>{zoomLevel}%</button>
+            <button className="zoom-btn" onClick={zoomIn} title={t("viewer.zoom.in")}>+</button>
+          </div>
         </div>
         {/* Search field */}
         <div className="relative flex-1 max-w-sm">
@@ -552,7 +528,14 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
           <div
             className="markdown-body"
             ref={markdownBodyRef}
-            style={gutterVisible ? { marginLeft: 48 } : undefined}
+            style={{
+              ...(gutterVisible ? { marginLeft: 48 } : {}),
+              ...(zoomLevel !== 100 ? {
+                transform: `scale(${zoomLevel / 100})`,
+                transformOrigin: "top left",
+                width: `${10000 / zoomLevel}%`,
+              } : {}),
+            }}
           >
             <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]} components={components}>
               {content}

@@ -183,6 +183,8 @@ button, a, input, select, textarea {
 .markdown-body.pdf-export {
   color: #1a1a1a !important;
   background: #ffffff !important;
+  transform: none !important;
+  width: 100% !important;
 }
 .markdown-body.pdf-export h1,
 .markdown-body.pdf-export h2,
@@ -222,6 +224,203 @@ button, a, input, select, textarea {
 }
 .markdown-body.pdf-export hr {
   border-top-color: #d0d0d0 !important;
+}
+
+/* ========= Zoom controls ========= */
+.zoom-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted, #71717a);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
+  transition: background-color 0.15s, color 0.15s;
+}
+.zoom-btn:hover {
+  background-color: var(--hover-bg, #3f3f4680);
+  color: var(--text-color, #e4e4e7);
+}
+.zoom-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted, #71717a);
+  cursor: pointer;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  transition: background-color 0.15s, color 0.15s;
+}
+.zoom-label:hover {
+  background-color: var(--hover-bg, #3f3f4680);
+  color: var(--text-color, #e4e4e7);
+}
+
+/* ========= Image hover overlay ========= */
+.image-wrapper {
+  position: relative;
+  display: inline-block;
+}
+.image-wrapper img {
+  display: block;
+  max-width: 100%;
+}
+.image-hover-overlay {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.image-wrapper:hover .image-hover-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+.overlay-download-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background-color 0.15s;
+}
+.overlay-download-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* ========= Mermaid hover overlay ========= */
+.mermaid-wrapper {
+  position: relative;
+  cursor: pointer;
+}
+.mermaid-hover-overlay {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.mermaid-wrapper:hover .mermaid-hover-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Mermaid blocks inside <pre> should not inherit code-block styling (wrapper version) */
+.markdown-body pre:has(.mermaid-wrapper) {
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+
+/* ========= Lightbox ========= */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+}
+.lightbox-toolbar {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  z-index: 61;
+}
+.lightbox-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background-color 0.15s;
+}
+.lightbox-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+.lightbox-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ========= Line number gutter ========= */
+.line-gutter {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  border-right: 1px solid var(--border-color, #3f3f46);
+  background-color: var(--sidebar-bg, #18181b);
+  user-select: none;
+  pointer-events: none;
+  overflow: visible;
+}
+.line-gutter-num {
+  width: 100%;
+  padding-right: 8px;
+  text-align: right;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--text-muted, #71717a);
+  white-space: nowrap;
+}
+.line-gutter-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted, #71717a);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+.line-gutter-toggle:hover {
+  background-color: var(--hover-bg, #3f3f4680);
+  color: var(--text-color, #e4e4e7);
+}
+
+/* Hide gutter in PDF export */
+.pdf-export .line-gutter {
+  display: none;
 }
 
 /* ========= Sidebar divider (resizable) ========= */

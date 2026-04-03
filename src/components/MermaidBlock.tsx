@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import mermaid from "mermaid";
 import type { ThemeSettings } from "../useSettings";
 import { useTranslation } from "../LocaleContext";
+import { svgToPng } from "../utils/svgToPng";
+import { Lightbox } from "./Lightbox";
 
 let idCounter = 0;
 
@@ -14,6 +16,7 @@ export function MermaidBlock({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -86,6 +89,44 @@ export function MermaidBlock({
       });
   }, [code, settings]);
 
+  const getSvg = (): SVGSVGElement | null => {
+    return ref.current?.querySelector("svg") ?? null;
+  };
+
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const svg = getSvg();
+    if (!svg) return;
+    try {
+      const png = await svgToPng(svg);
+      const a = document.createElement("a");
+      a.href = png.dataUrl;
+      a.download = "mermaid-diagram.png";
+      a.click();
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleClick = async () => {
+    const svg = getSvg();
+    if (!svg) return;
+    try {
+      const png = await svgToPng(svg);
+      setLightboxSrc(png.dataUrl);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleLightboxDownload = () => {
+    if (!lightboxSrc) return;
+    const a = document.createElement("a");
+    a.href = lightboxSrc;
+    a.download = "mermaid-diagram.png";
+    a.click();
+  };
+
   if (error) {
     return (
       <div className="my-3 p-4 rounded-lg bg-red-900/20 border border-red-800">
@@ -96,10 +137,35 @@ export function MermaidBlock({
   }
 
   return (
-    <div
-      ref={ref}
-      className="mermaid-container my-3 flex justify-center rounded-lg p-4 overflow-x-auto"
-      style={{ backgroundColor: settings.mermaidBg }}
-    />
+    <>
+      <div className="mermaid-wrapper" onClick={handleClick}>
+        <div
+          ref={ref}
+          className="mermaid-container my-3 flex justify-center rounded-lg p-4 overflow-x-auto"
+          style={{ backgroundColor: settings.mermaidBg }}
+        />
+        <span className="mermaid-hover-overlay">
+          <button
+            className="overlay-download-btn"
+            onClick={handleDownload}
+            title={t("viewer.mermaid.download")}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </button>
+        </span>
+      </div>
+      {lightboxSrc && (
+        <Lightbox
+          src={lightboxSrc}
+          alt="Mermaid diagram"
+          onClose={() => setLightboxSrc(null)}
+          onDownload={handleLightboxDownload}
+        />
+      )}
+    </>
   );
 }
