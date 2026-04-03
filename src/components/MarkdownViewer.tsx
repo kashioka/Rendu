@@ -420,7 +420,7 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
         </div>
       )}
       {/* Fixed toolbar */}
-      <div className="viewer-toolbar flex-shrink-0 flex items-center px-4 py-2">
+      <div className="viewer-toolbar flex-shrink-0 flex items-center px-4 py-2" data-tauri-drag-region>
         <div className="flex-1 flex items-center gap-2">
           <button
             onClick={() => setGutterVisible((v) => !v)}

@@ -94,6 +94,7 @@ button, a, input, select, textarea {
 /* ========= Viewer toolbar ========= */
 .viewer-toolbar {
   border-bottom: 1px solid var(--border-color, #3f3f46);
+  -webkit-app-region: drag;
 }
 
 /* ========= Markdown body ========= */
