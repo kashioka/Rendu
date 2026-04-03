@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { appConfigDir } from "@tauri-apps/api/path";
 import { readTextFile, writeTextFile, mkdir, exists } from "@tauri-apps/plugin-fs";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import type { Locale } from "./i18n";
 
 export interface ThemeSettings {
+  locale: Locale;
   preset: "dark" | "light";
   appBg: string;
   sidebarBg: string;
@@ -33,6 +35,7 @@ export interface ThemeSettings {
 }
 
 export const darkPreset: ThemeSettings = {
+  locale: "en",
   preset: "dark",
   appBg: "#18181b",
   sidebarBg: "#18181b",
@@ -62,6 +65,7 @@ export const darkPreset: ThemeSettings = {
 };
 
 export const lightPreset: ThemeSettings = {
+  locale: "en",
   preset: "light",
   appBg: "#ffffff",
   sidebarBg: "#f4f4f5",
@@ -167,7 +171,7 @@ export function useSettings() {
   );
 
   const applyPreset = useCallback((name: "dark" | "light") => {
-    setSettingsState(presets[name]);
+    setSettingsState((prev) => ({ ...presets[name], locale: prev.locale }));
   }, []);
 
   return { settings, setSettings, applyPreset, loaded };

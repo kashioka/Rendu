@@ -1,3 +1,5 @@
+import { useTranslation } from "../LocaleContext";
+
 export interface HeadingItem {
   id: string;
   text: string;
@@ -9,13 +11,15 @@ interface OutlinePanelProps {
 }
 
 export function OutlinePanel({ headings }: OutlinePanelProps) {
+  const { t } = useTranslation();
+
   const handleClick = (id: string) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   if (headings.length === 0) {
-    return <div className="p-4 text-sm text-muted">No headings</div>;
+    return <div className="p-4 text-sm text-muted">{t("outline.noHeadings")}</div>;
   }
 
   const minLevel = Math.min(...headings.map((h) => h.level));

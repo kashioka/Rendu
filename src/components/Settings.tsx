@@ -1,5 +1,7 @@
 import { useState } from "react";
 import type { ThemeSettings } from "../useSettings";
+import { useTranslation } from "../LocaleContext";
+import type { Locale } from "../i18n";
 
 interface SettingsProps {
   settings: ThemeSettings;
@@ -55,20 +57,39 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export function Settings({ settings, onChange, onApplyPreset, onClose }: SettingsProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="fixed inset-0 z-50 flex">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       <div className="settings-panel relative ml-auto w-96 h-full overflow-y-auto">
         <div className="settings-header sticky top-0 px-4 py-3 flex items-center justify-between z-10">
-          <h2 className="text-base font-semibold">Settings</h2>
+          <h2 className="text-base font-semibold">{t("settings.title")}</h2>
           <button onClick={onClose} className="text-muted text-lg leading-none px-1">✕</button>
         </div>
 
         <div className="p-4">
+          {/* Language selector */}
+          <div className="mb-5">
+            <h3 className="text-muted text-xs font-semibold uppercase tracking-wider mb-3">{t("settings.language")}</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {(["en", "ja"] as Locale[]).map((loc) => (
+                <button
+                  key={loc}
+                  onClick={() => onChange({ locale: loc })}
+                  className="rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+                  style={{ border: `2px solid ${settings.locale === loc ? "#6366f1" : "var(--border-color)"}` }}
+                >
+                  {loc === "en" ? "English" : "日本語"}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Preset theme selector */}
           <div className="mb-5">
-            <h3 className="text-muted text-xs font-semibold uppercase tracking-wider mb-3">Theme</h3>
+            <h3 className="text-muted text-xs font-semibold uppercase tracking-wider mb-3">{t("settings.theme")}</h3>
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => onApplyPreset("dark")}
@@ -118,36 +139,36 @@ export function Settings({ settings, onChange, onApplyPreset, onClose }: Setting
             </div>
           </div>
 
-          <Section title="App Colors">
-            <ColorRow label="Background" value={settings.appBg} settingKey="appBg" onChange={onChange} />
-            <ColorRow label="Sidebar" value={settings.sidebarBg} settingKey="sidebarBg" onChange={onChange} />
-            <ColorRow label="Text" value={settings.textColor} settingKey="textColor" onChange={onChange} />
-            <ColorRow label="Muted Text" value={settings.textMuted} settingKey="textMuted" onChange={onChange} />
-            <ColorRow label="Border" value={settings.borderColor} settingKey="borderColor" onChange={onChange} />
-            <ColorRow label="Button" value={settings.buttonBg} settingKey="buttonBg" onChange={onChange} />
+          <Section title={t("settings.appColors")}>
+            <ColorRow label={t("settings.color.background")} value={settings.appBg} settingKey="appBg" onChange={onChange} />
+            <ColorRow label={t("settings.color.sidebar")} value={settings.sidebarBg} settingKey="sidebarBg" onChange={onChange} />
+            <ColorRow label={t("settings.color.text")} value={settings.textColor} settingKey="textColor" onChange={onChange} />
+            <ColorRow label={t("settings.color.mutedText")} value={settings.textMuted} settingKey="textMuted" onChange={onChange} />
+            <ColorRow label={t("settings.color.border")} value={settings.borderColor} settingKey="borderColor" onChange={onChange} />
+            <ColorRow label={t("settings.color.button")} value={settings.buttonBg} settingKey="buttonBg" onChange={onChange} />
           </Section>
 
-          <Section title="Markdown Colors">
-            <ColorRow label="Heading" value={settings.mdHeadingColor} settingKey="mdHeadingColor" onChange={onChange} />
-            <ColorRow label="Link" value={settings.mdLinkColor} settingKey="mdLinkColor" onChange={onChange} />
-            <ColorRow label="Code Background" value={settings.mdCodeBg} settingKey="mdCodeBg" onChange={onChange} />
-            <ColorRow label="Border" value={settings.mdBorderColor} settingKey="mdBorderColor" onChange={onChange} />
+          <Section title={t("settings.markdownColors")}>
+            <ColorRow label={t("settings.color.heading")} value={settings.mdHeadingColor} settingKey="mdHeadingColor" onChange={onChange} />
+            <ColorRow label={t("settings.color.link")} value={settings.mdLinkColor} settingKey="mdLinkColor" onChange={onChange} />
+            <ColorRow label={t("settings.color.codeBg")} value={settings.mdCodeBg} settingKey="mdCodeBg" onChange={onChange} />
+            <ColorRow label={t("settings.color.mdBorder")} value={settings.mdBorderColor} settingKey="mdBorderColor" onChange={onChange} />
           </Section>
 
-          <Section title="Mermaid Diagram Colors">
-            <ColorRow label="Background" value={settings.mermaidBg} settingKey="mermaidBg" onChange={onChange} />
-            <ColorRow label="Primary (nodes)" value={settings.mermaidPrimaryColor} settingKey="mermaidPrimaryColor" onChange={onChange} />
-            <ColorRow label="Primary Text" value={settings.mermaidPrimaryTextColor} settingKey="mermaidPrimaryTextColor" onChange={onChange} />
-            <ColorRow label="Line / Arrow" value={settings.mermaidLineColor} settingKey="mermaidLineColor" onChange={onChange} />
-            <ColorRow label="Actor Box" value={settings.mermaidActorBg} settingKey="mermaidActorBg" onChange={onChange} />
-            <ColorRow label="Actor Text" value={settings.mermaidActorTextColor} settingKey="mermaidActorTextColor" onChange={onChange} />
-            <ColorRow label="Signal Text" value={settings.mermaidSignalTextColor} settingKey="mermaidSignalTextColor" onChange={onChange} />
-            <ColorRow label="Note Background" value={settings.mermaidNoteBg} settingKey="mermaidNoteBg" onChange={onChange} />
-            <ColorRow label="Note Text" value={settings.mermaidNoteTextColor} settingKey="mermaidNoteTextColor" onChange={onChange} />
+          <Section title={t("settings.mermaidColors")}>
+            <ColorRow label={t("settings.color.mermaidBg")} value={settings.mermaidBg} settingKey="mermaidBg" onChange={onChange} />
+            <ColorRow label={t("settings.color.primary")} value={settings.mermaidPrimaryColor} settingKey="mermaidPrimaryColor" onChange={onChange} />
+            <ColorRow label={t("settings.color.primaryText")} value={settings.mermaidPrimaryTextColor} settingKey="mermaidPrimaryTextColor" onChange={onChange} />
+            <ColorRow label={t("settings.color.lineArrow")} value={settings.mermaidLineColor} settingKey="mermaidLineColor" onChange={onChange} />
+            <ColorRow label={t("settings.color.actorBox")} value={settings.mermaidActorBg} settingKey="mermaidActorBg" onChange={onChange} />
+            <ColorRow label={t("settings.color.actorText")} value={settings.mermaidActorTextColor} settingKey="mermaidActorTextColor" onChange={onChange} />
+            <ColorRow label={t("settings.color.signalText")} value={settings.mermaidSignalTextColor} settingKey="mermaidSignalTextColor" onChange={onChange} />
+            <ColorRow label={t("settings.color.noteBg")} value={settings.mermaidNoteBg} settingKey="mermaidNoteBg" onChange={onChange} />
+            <ColorRow label={t("settings.color.noteText")} value={settings.mermaidNoteTextColor} settingKey="mermaidNoteTextColor" onChange={onChange} />
           </Section>
 
           <div className="text-muted mt-2 text-xs">
-            Settings are saved automatically.
+            {t("settings.autoSave")}
           </div>
         </div>
       </div>

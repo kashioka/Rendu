@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import mermaid from "mermaid";
 import type { ThemeSettings } from "../useSettings";
+import { useTranslation } from "../LocaleContext";
 
 let idCounter = 0;
 
@@ -13,6 +14,7 @@ export function MermaidBlock({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const id = `mermaid-${++idCounter}`;
@@ -87,7 +89,7 @@ export function MermaidBlock({
   if (error) {
     return (
       <div className="my-3 p-4 rounded-lg bg-red-900/20 border border-red-800">
-        <div className="text-red-400 text-xs mb-2">Mermaid render error</div>
+        <div className="text-red-400 text-xs mb-2">{t("mermaid.renderError")}</div>
         <pre className="text-sm text-zinc-400 whitespace-pre-wrap">{code}</pre>
       </div>
     );

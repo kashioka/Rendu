@@ -1,19 +1,44 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
+import { listen } from "@tauri-apps/api/event";
 import { FileTree } from "./components/FileTree";
 import { MarkdownViewer } from "./components/MarkdownViewer";
 import { OutlinePanel, type HeadingItem } from "./components/OutlinePanel";
 import { Settings } from "./components/Settings";
 import { useSettings } from "./useSettings";
+import { LocaleProvider } from "./LocaleContext";
+import { useTranslation } from "./LocaleContext";
 
 function App() {
+  const { settings, setSettings, applyPreset } = useSettings();
+
+  return (
+    <LocaleProvider locale={settings.locale}>
+      <AppInner
+        settings={settings}
+        setSettings={setSettings}
+        applyPreset={applyPreset}
+      />
+    </LocaleProvider>
+  );
+}
+
+function AppInner({
+  settings,
+  setSettings,
+  applyPreset,
+}: {
+  settings: ReturnType<typeof useSettings>["settings"];
+  setSettings: ReturnType<typeof useSettings>["setSettings"];
+  applyPreset: ReturnType<typeof useSettings>["applyPreset"];
+}) {
   const [rootDir, setRootDir] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [headings, setHeadings] = useState<HeadingItem[]>([]);
   const [splitRatio, setSplitRatio] = useState(0.5);
-  const { settings, setSettings, applyPreset } = useSettings();
+  const { t } = useTranslation();
 
   const sidebarRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
@@ -40,6 +65,19 @@ function App() {
     document.addEventListener("mouseup", onMouseUp);
   }, []);
 
+  // Listen for native menu events
+  const handleOpenFolderRef = useRef<() => void>();
+  const handleOpenFileRef = useRef<() => void>();
+
+  useEffect(() => {
+    const unlisteners = [
+      listen("menu-open-folder", () => handleOpenFolderRef.current?.()),
+      listen("menu-open-file", () => handleOpenFileRef.current?.()),
+      listen("menu-print", () => window.print()),
+    ];
+    return () => { unlisteners.forEach((p) => p.then((fn) => fn()).catch(() => {})); };
+  }, []);
+
   const handleOpenFolder = async () => {
     const dir = await open({ directory: true });
     if (dir) {
@@ -58,6 +96,9 @@ function App() {
     }
   };
 
+  handleOpenFolderRef.current = handleOpenFolder;
+  handleOpenFileRef.current = handleOpenFile;
+
   return (
     <div className="flex flex-col h-full">
       {/* Title bar */}
@@ -65,7 +106,7 @@ function App() {
         <button
           onClick={() => setSidebarVisible((v) => !v)}
           className="titlebar-toggle"
-          title={sidebarVisible ? "Hide sidebar" : "Show sidebar"}
+          title={sidebarVisible ? t("sidebar.toggle.hide") : t("sidebar.toggle.show")}
         >
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
             <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h11A1.5 1.5 0 0 1 15 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12.5v-9zM2.5 3a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-11zM5 3.5v9H3v-9h2z"/>
@@ -79,16 +120,16 @@ function App() {
       {sidebarVisible && (
       <div ref={sidebarRef} className="sidebar w-72 flex-shrink-0 flex flex-col">
         <div className="sidebar-header p-3 flex gap-1.5">
-          <button onClick={handleOpenFolder} className="btn flex-1 px-2 py-1.5 rounded text-xs" title="Open Folder">
-            Folder
+          <button onClick={handleOpenFolder} className="btn flex-1 px-2 py-1.5 rounded text-xs" title={t("sidebar.folder.title")}>
+            {t("sidebar.folder")}
           </button>
-          <button onClick={handleOpenFile} className="btn flex-1 px-2 py-1.5 rounded text-xs" title="Open File">
-            File
+          <button onClick={handleOpenFile} className="btn flex-1 px-2 py-1.5 rounded text-xs" title={t("sidebar.file.title")}>
+            {t("sidebar.file")}
           </button>
           <button
             onClick={() => setShowSettings(true)}
             className="btn px-2.5 py-1.5 rounded text-sm"
-            title="Settings"
+            title={t("sidebar.settings.title")}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492ZM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0Z"/>
@@ -107,14 +148,14 @@ function App() {
             />
           ) : (
             <div className="p-4 text-sm text-muted">
-              Select a folder to browse
+              {t("sidebar.emptyFolder")}
             </div>
           )}
         </div>
 
         {/* Resizable divider */}
         <div className="sidebar-divider" onMouseDown={handleMouseDown}>
-          <span className="sidebar-divider-label">Outline</span>
+          <span className="sidebar-divider-label">{t("sidebar.outline")}</span>
         </div>
 
         {/* Outline pane */}
@@ -130,7 +171,7 @@ function App() {
           <MarkdownViewer filePath={selectedFile} settings={settings} onHeadingsChange={setHeadings} />
         ) : (
           <div className="flex items-center justify-center h-full text-muted">
-            Select a Markdown file to view
+            {t("app.selectFile")}
           </div>
         )}
       </div>
