@@ -19,8 +19,8 @@ async function buildTree(dirPath: string): Promise<TreeNode[]> {
   const nodes: TreeNode[] = [];
 
   for (const entry of entries) {
-    if (entry.name.startsWith(".")) continue;
-    const fullPath = dirPath + "/" + entry.name;
+    if (entry.name.startsWith(".") || entry.name.includes("/") || entry.name.includes("\\")) continue;
+    const fullPath = `${dirPath.replace(/\/+$/, "")}/${entry.name}`;
     nodes.push({ name: entry.name, path: fullPath, isDir: entry.isDirectory });
   }
 

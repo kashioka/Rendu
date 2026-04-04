@@ -26,7 +26,7 @@ export function MermaidBlock({
     mermaid.initialize({
       startOnLoad: false,
       theme: settings.mermaidTheme,
-      securityLevel: "loose",
+      securityLevel: "strict",
       themeVariables: {
         background: settings.mermaidBg,
         primaryColor: settings.mermaidPrimaryColor,
@@ -75,12 +75,16 @@ export function MermaidBlock({
       .render(id, code)
       .then(({ svg }) => {
         if (ref.current) {
-          ref.current.innerHTML = svg;
-          // Ensure the SVG scales properly
-          const svgEl = ref.current.querySelector("svg");
+          // Use DOMParser instead of innerHTML to prevent XSS
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(svg, "image/svg+xml");
+          const svgEl = doc.querySelector("svg");
           if (svgEl) {
             svgEl.style.maxWidth = "100%";
             svgEl.style.height = "auto";
+            ref.current.replaceChildren(
+              ref.current.ownerDocument.importNode(svgEl, true)
+            );
           }
         }
       })

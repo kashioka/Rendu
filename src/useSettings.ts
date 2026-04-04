@@ -102,10 +102,16 @@ async function loadFromFile(): Promise<ThemeSettings | null> {
   try {
     const dir = await appConfigDir();
     if (!(await exists(dir))) return null;
-    const path = dir + "/" + CONFIG_FILE;
+    const path = `${dir.replace(/\/+$/, "")}/${CONFIG_FILE}`;
     if (!(await exists(path))) return null;
     const text = await readTextFile(path);
-    return { ...darkPreset, ...JSON.parse(text) };
+    const parsed: unknown = JSON.parse(text);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
+    const obj = parsed as Record<string, unknown>;
+    if (obj.preset !== undefined && obj.preset !== "dark" && obj.preset !== "light") {
+      obj.preset = "dark";
+    }
+    return { ...darkPreset, ...obj };
   } catch {
     return null;
   }
@@ -117,7 +123,7 @@ async function saveToFile(settings: ThemeSettings): Promise<void> {
     if (!(await exists(dir))) {
       await mkdir(dir, { recursive: true });
     }
-    await writeTextFile(dir + "/" + CONFIG_FILE, JSON.stringify(settings, null, 2));
+    await writeTextFile(`${dir.replace(/\/+$/, "")}/${CONFIG_FILE}`, JSON.stringify(settings, null, 2));
   } catch (e) {
     console.error("Failed to save settings:", e);
   }
