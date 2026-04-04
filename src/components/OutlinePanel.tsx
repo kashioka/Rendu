@@ -25,11 +25,14 @@ export function OutlinePanel({ headings }: OutlinePanelProps) {
   const minLevel = Math.min(...headings.map((h) => h.level));
 
   return (
-    <div className="py-1">
+    <nav className="py-1" aria-label={t("outline.title")}>
       {headings.map((h) => (
         <div
           key={h.id}
+          role="link"
+          tabIndex={0}
           onClick={() => handleClick(h.id)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(h.id); } }}
           className="outline-item flex items-center py-1 px-2 text-sm select-none cursor-pointer truncate"
           style={{ paddingLeft: `${(h.level - minLevel) * 12 + 8}px` }}
           title={h.text}
@@ -37,6 +40,6 @@ export function OutlinePanel({ headings }: OutlinePanelProps) {
           <span className="truncate">{h.text}</span>
         </div>
       ))}
-    </div>
+    </nav>
   );
 }

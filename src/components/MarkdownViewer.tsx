@@ -442,13 +442,13 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
           </button>
           {/* Zoom controls */}
           <div className="flex items-center" data-tauri-drag-region>
-            <button className="zoom-btn" onClick={zoomOut} title={t("viewer.zoom.out")}>−</button>
-            <button className="zoom-label" onClick={zoomReset} title={t("viewer.zoom.reset")}>{zoomLevel}%</button>
-            <button className="zoom-btn" onClick={zoomIn} title={t("viewer.zoom.in")}>+</button>
+            <button className="zoom-btn" onClick={zoomOut} title={t("viewer.zoom.out")} aria-label={t("viewer.zoom.out")}>−</button>
+            <button className="zoom-label" onClick={zoomReset} title={t("viewer.zoom.reset")} aria-label={`${t("viewer.zoom.reset")} ${zoomLevel}%`}>{zoomLevel}%</button>
+            <button className="zoom-btn" onClick={zoomIn} title={t("viewer.zoom.in")} aria-label={t("viewer.zoom.in")}>+</button>
           </div>
         </div>
         {/* Search field */}
-        <div className="relative flex-1 max-w-sm" data-tauri-drag-region>
+        <div className="relative flex-1 max-w-sm" role="search" data-tauri-drag-region>
           <input
             type="text"
             value={searchQuery}
@@ -462,12 +462,14 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
             <button
               onClick={() => { setSearchQuery(""); setSearchResults([]); setShowResults(false); }}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-xs opacity-50 hover:opacity-100"
+              aria-label="Clear search"
             >
               ✕
             </button>
           )}
           {showResults && searchQuery && (
             <div
+              role="listbox"
               className="absolute top-full left-0 right-0 mt-1 rounded shadow-lg overflow-y-auto z-40"
               style={{
                 backgroundColor: "var(--sidebar-bg, #18181b)",
@@ -485,7 +487,11 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
                   {searchResults.map((r, i) => (
                     <div
                       key={i}
+                      role="option"
+                      tabIndex={0}
+                      aria-selected={false}
                       onClick={() => handleSelectResult(r, i)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelectResult(r, i); } }}
                       className="px-3 py-1.5 text-sm cursor-pointer truncate hover:opacity-80"
                       style={{ borderBottom: "1px solid var(--border-color, #3f3f46)" }}
                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--hover-bg, #3f3f4680)")}

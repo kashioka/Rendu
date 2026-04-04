@@ -75,7 +75,15 @@ function TreeItem({
 
   return (
     <div>
-      <div onClick={handleClick} className={className} style={{ paddingLeft: `${depth * 16 + 8}px` }}>
+      <div
+        role="treeitem"
+        tabIndex={isClickable ? 0 : -1}
+        aria-expanded={node.isDir ? expanded : undefined}
+        onClick={handleClick}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }}
+        className={className}
+        style={{ paddingLeft: `${depth * 16 + 8}px` }}
+      >
         <span className="w-4 text-center flex-shrink-0 text-xs">
           {node.isDir ? (expanded ? "▾" : "▸") : ""}
         </span>
@@ -109,7 +117,7 @@ export function FileTree({ rootDir, selectedFile, onSelectFile }: FileTreeProps)
   if (error) return <div className="p-4 text-sm" style={{ color: "#f87171" }}>{error}</div>;
 
   return (
-    <div className="py-1">
+    <div className="py-1" role="tree">
       {nodes.map((node) => (
         <TreeItem key={node.path} node={node} selectedFile={selectedFile} onSelectFile={onSelectFile} depth={0} />
       ))}
