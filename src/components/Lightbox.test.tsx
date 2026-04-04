@@ -48,4 +48,31 @@ describe('Lightbox', () => {
     renderWithLocale(<Lightbox src="/test.png" onClose={vi.fn()} />);
     expect(document.body.style.overflow).toBe('hidden');
   });
+
+  it('has role=dialog and aria-modal', () => {
+    renderWithLocale(<Lightbox src="/test.png" onClose={vi.fn()} />);
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+  });
+
+  it('traps focus within dialog on Tab', () => {
+    const onDownload = vi.fn();
+    renderWithLocale(<Lightbox src="/test.png" onClose={vi.fn()} onDownload={onDownload} />);
+    const buttons = screen.getAllByRole('button');
+    // Focus last button, then Tab should wrap to first
+    buttons[buttons.length - 1].focus();
+    expect(document.activeElement).toBe(buttons[buttons.length - 1]);
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(document.activeElement).toBe(buttons[0]);
+  });
+
+  it('traps focus within dialog on Shift+Tab', () => {
+    const onDownload = vi.fn();
+    renderWithLocale(<Lightbox src="/test.png" onClose={vi.fn()} onDownload={onDownload} />);
+    const buttons = screen.getAllByRole('button');
+    // Focus first button, then Shift+Tab should wrap to last
+    buttons[0].focus();
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(buttons[buttons.length - 1]);
+  });
 });

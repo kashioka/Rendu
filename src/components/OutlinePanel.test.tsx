@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { renderWithLocale } from '../test/helpers';
 import { OutlinePanel, type HeadingItem } from './OutlinePanel';
 
@@ -38,5 +39,45 @@ describe('OutlinePanel', () => {
     const pad1 = parseInt(level1.style.paddingLeft);
     const pad2 = parseInt(level2.style.paddingLeft);
     expect(pad2).toBeGreaterThan(pad1);
+  });
+
+  it('has nav element with aria-label', () => {
+    const headings: HeadingItem[] = [
+      { id: 'intro', text: 'Introduction', level: 1 },
+    ];
+    renderWithLocale(<OutlinePanel headings={headings} />);
+    const nav = screen.getByRole('navigation');
+    expect(nav).toHaveAttribute('aria-label', 'Outline');
+  });
+
+  it('heading items are keyboard accessible with Enter', async () => {
+    const scrollIntoViewMock = vi.fn();
+    // Mock scrollIntoView since jsdom doesn't support it
+    Element.prototype.scrollIntoView = scrollIntoViewMock;
+
+    const headings: HeadingItem[] = [
+      { id: 'intro', text: 'Introduction', level: 1 },
+    ];
+    renderWithLocale(<OutlinePanel headings={headings} />);
+    // Create target element in DOM for scrollIntoView
+    const target = document.createElement('div');
+    target.id = 'intro';
+    document.body.appendChild(target);
+
+    const item = screen.getByText('Introduction').closest('[role="link"]') as HTMLElement;
+    item.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(scrollIntoViewMock).toHaveBeenCalled();
+
+    document.body.removeChild(target);
+  });
+
+  it('heading items have tabIndex=0', () => {
+    const headings: HeadingItem[] = [
+      { id: 'intro', text: 'Introduction', level: 1 },
+    ];
+    renderWithLocale(<OutlinePanel headings={headings} />);
+    const item = screen.getByText('Introduction').closest('[role="link"]') as HTMLElement;
+    expect(item).toHaveAttribute('tabindex', '0');
   });
 });

@@ -74,6 +74,35 @@ describe('FileTree', () => {
     });
   });
 
+  it('selects markdown file on Enter key', async () => {
+    const onSelectFile = vi.fn();
+    render(<FileTree rootDir="/root" selectedFile={null} onSelectFile={onSelectFile} />);
+    await waitFor(() => {
+      expect(screen.getByText('README.md')).toBeInTheDocument();
+    });
+    const item = screen.getByText('README.md').closest('[role="treeitem"]') as HTMLElement;
+    item.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(onSelectFile).toHaveBeenCalledWith('/root/README.md');
+  });
+
+  it('has role=tree on container', async () => {
+    render(<FileTree rootDir="/root" selectedFile={null} onSelectFile={vi.fn()} />);
+    await waitFor(() => {
+      expect(screen.getByText('README.md')).toBeInTheDocument();
+    });
+    expect(screen.getByRole('tree')).toBeInTheDocument();
+  });
+
+  it('sets aria-expanded on directory items', async () => {
+    render(<FileTree rootDir="/root" selectedFile={null} onSelectFile={vi.fn()} />);
+    await waitFor(() => {
+      expect(screen.getByText('docs')).toBeInTheDocument();
+    });
+    const dirItem = screen.getByText('docs').closest('[role="treeitem"]') as HTMLElement;
+    expect(dirItem).toHaveAttribute('aria-expanded', 'false');
+  });
+
   it('expands directory on click', async () => {
     (readDir as Mock)
       .mockResolvedValueOnce(mockEntries) // initial load

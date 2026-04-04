@@ -133,4 +133,72 @@ describe('MarkdownViewer', () => {
       expect(screen.getByPlaceholderText('Search...')).toBeInTheDocument();
     });
   });
+
+  it('zoom does not exceed 200%', async () => {
+    (readTextFile as Mock).mockResolvedValue('# Test');
+    renderWithLocale(
+      <MarkdownViewer filePath="/test.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(screen.getByText('100%')).toBeInTheDocument();
+    });
+    // Click zoom in 11 times (100 + 110 = 200 max)
+    for (let i = 0; i < 11; i++) {
+      await userEvent.click(screen.getByText('+'));
+    }
+    expect(screen.getByText('200%')).toBeInTheDocument();
+  });
+
+  it('zoom does not go below 50%', async () => {
+    (readTextFile as Mock).mockResolvedValue('# Test');
+    renderWithLocale(
+      <MarkdownViewer filePath="/test.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(screen.getByText('100%')).toBeInTheDocument();
+    });
+    // Click zoom out 6 times (100 - 60 = 50 min)
+    for (let i = 0; i < 6; i++) {
+      await userEvent.click(screen.getByText('−'));
+    }
+    expect(screen.getByText('50%')).toBeInTheDocument();
+  });
+
+  it('search clear button resets search', async () => {
+    (readTextFile as Mock).mockResolvedValue('# Hello World\n\nSome text here.');
+    renderWithLocale(
+      <MarkdownViewer filePath="/test.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search...')).toBeInTheDocument();
+    });
+    const input = screen.getByPlaceholderText('Search...');
+    await userEvent.type(input, 'Hello');
+    // Clear button should appear
+    const clearBtn = screen.getByLabelText('Clear search');
+    expect(clearBtn).toBeInTheDocument();
+    await userEvent.click(clearBtn);
+    expect(input).toHaveValue('');
+  });
+
+  it('search area has role=search', async () => {
+    (readTextFile as Mock).mockResolvedValue('# Test');
+    renderWithLocale(
+      <MarkdownViewer filePath="/test.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(screen.getByRole('search')).toBeInTheDocument();
+    });
+  });
+
+  it('zoom buttons have aria-labels', async () => {
+    (readTextFile as Mock).mockResolvedValue('# Test');
+    renderWithLocale(
+      <MarkdownViewer filePath="/test.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(screen.getByLabelText('Zoom in')).toBeInTheDocument();
+    });
+    expect(screen.getByLabelText('Zoom out')).toBeInTheDocument();
+  });
 });
