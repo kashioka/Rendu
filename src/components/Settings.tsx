@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { ThemeSettings } from "../useSettings";
 import { useTranslation } from "../LocaleContext";
 import type { Locale } from "../i18n";
@@ -58,12 +58,35 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export function Settings({ settings, onChange, onApplyPreset, onClose }: SettingsProps) {
   const { t } = useTranslation();
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Escape to close + focus trap
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    const focusable = () =>
+      Array.from(panel.querySelectorAll<HTMLElement>("button, input, [tabindex]:not([tabindex='-1'])"));
+    focusable()[0]?.focus();
+
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { onClose(); return; }
+      if (e.key === "Tab") {
+        const els = focusable();
+        if (els.length === 0) return;
+        const first = els[0], last = els[els.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex">
+    <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true" aria-label={t("settings.title")}>
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="settings-panel relative ml-auto w-96 h-full overflow-y-auto">
+      <div ref={panelRef} className="settings-panel relative ml-auto w-96 h-full overflow-y-auto">
         <div className="settings-header sticky top-0 px-4 py-3 flex items-center justify-between z-10">
           <h2 className="text-base font-semibold">{t("settings.title")}</h2>
           <button onClick={onClose} className="text-muted text-lg leading-none px-1">✕</button>

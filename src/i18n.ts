@@ -16,6 +16,7 @@ export interface Translations {
   "app.selectFile": string;
 
   // Outline
+  "outline.title": string;
   "outline.noHeadings": string;
 
   // Viewer
@@ -90,6 +91,7 @@ const en: Translations = {
 
   "app.selectFile": "Select a Markdown file to get started",
 
+  "outline.title": "Outline",
   "outline.noHeadings": "No headings",
 
   "viewer.loading": "Loading...",
@@ -158,6 +160,7 @@ const ja: Translations = {
 
   "app.selectFile": "Markdownファイルを選択してください",
 
+  "outline.title": "目次",
   "outline.noHeadings": "見出しなし",
 
   "viewer.loading": "読み込み中...",

@@ -14,12 +14,27 @@ export function Lightbox({ src, alt, onClose, onDownload }: LightboxProps) {
   const [dragging, setDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const translateStart = useRef({ x: 0, y: 0 });
+  const dialogRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
 
-  // Escape to close
+  // Escape to close + focus trap
   useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const focusable = () =>
+      Array.from(dialog.querySelectorAll<HTMLElement>("button, [tabindex]:not([tabindex='-1'])"));
+    // Auto-focus first button
+    focusable()[0]?.focus();
+
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") { onClose(); return; }
+      if (e.key === "Tab") {
+        const els = focusable();
+        if (els.length === 0) return;
+        const first = els[0], last = els[els.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
@@ -65,7 +80,7 @@ export function Lightbox({ src, alt, onClose, onDownload }: LightboxProps) {
   }, [onClose]);
 
   return (
-    <div className="lightbox-overlay" onClick={handleBackdropClick}>
+    <div ref={dialogRef} className="lightbox-overlay" role="dialog" aria-modal="true" aria-label={alt || "Image preview"} onClick={handleBackdropClick}>
       <div className="lightbox-toolbar">
         {onDownload && (
           <button className="lightbox-btn" onClick={onDownload} title={t("viewer.lightbox.download")}>
