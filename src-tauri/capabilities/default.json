@@ -14,14 +14,23 @@
     "fs:default",
     "fs:allow-read-text-file",
     "fs:allow-read-dir",
-    "fs:allow-write-text-file",
-    "fs:allow-write-file",
-    "fs:allow-mkdir",
     "fs:allow-exists",
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [{ "path": "$APPCONFIG/**" }]
+    },
+    {
+      "identifier": "fs:allow-write-file",
+      "allow": [{ "path": "$HOME/**" }]
+    },
+    {
+      "identifier": "fs:allow-mkdir",
+      "allow": [{ "path": "$APPCONFIG" }, { "path": "$APPCONFIG/**" }]
+    },
     {
       "identifier": "fs:scope",
       "allow": [
-        { "path": "**" },
+        { "path": "$HOME/**" },
         { "path": "$APPCONFIG/**" }
       ]
     }
