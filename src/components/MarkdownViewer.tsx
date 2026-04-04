@@ -421,7 +421,7 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
       )}
       {/* Fixed toolbar */}
       <div className="viewer-toolbar flex-shrink-0 flex items-center px-4 py-2" data-tauri-drag-region>
-        <div className="flex-1 flex items-center gap-2">
+        <div className="flex-1 flex items-center gap-2" data-tauri-drag-region>
           <button
             onClick={() => setGutterVisible((v) => !v)}
             className="line-gutter-toggle"
@@ -438,14 +438,14 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
             </svg>
           </button>
           {/* Zoom controls */}
-          <div className="flex items-center">
+          <div className="flex items-center" data-tauri-drag-region>
             <button className="zoom-btn" onClick={zoomOut} title={t("viewer.zoom.out")}>−</button>
             <button className="zoom-label" onClick={zoomReset} title={t("viewer.zoom.reset")}>{zoomLevel}%</button>
             <button className="zoom-btn" onClick={zoomIn} title={t("viewer.zoom.in")}>+</button>
           </div>
         </div>
         {/* Search field */}
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 max-w-sm" data-tauri-drag-region>
           <input
             type="text"
             value={searchQuery}
@@ -497,7 +497,7 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
             </div>
           )}
         </div>
-        <div className="flex-1 flex justify-end">
+        <div className="flex-1 flex justify-end" data-tauri-drag-region>
           <button
             onClick={handleExportPdf}
             disabled={exporting}

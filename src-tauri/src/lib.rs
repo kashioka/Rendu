@@ -13,7 +13,7 @@ pub fn run() {
       let about_meta = AboutMetadataBuilder::new()
         .name(Some("Rendu"))
         .version(Some("0.1.0"))
-        .copyright(Some("Copyright © 2026 alleyoop. All rights reserved."))
+        .copyright(Some("Copyright © 2026 Hideo Kashioka. All rights reserved."))
         .build();
       let app_menu = SubmenuBuilder::new(app, "Rendu")
         .about(Some(about_meta))
