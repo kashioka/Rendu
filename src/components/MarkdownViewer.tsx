@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { readTextFile, writeFile } from "@tauri-apps/plugin-fs";
 import { save } from "@tauri-apps/plugin-dialog";
 import html2pdf from "html2pdf.js";
@@ -257,21 +257,24 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
     return () => clearTimeout(t);
   }, [exportError]);
 
-  // Search in raw markdown content
+  // Search in raw markdown content (debounced)
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
       return;
     }
-    const query = searchQuery.toLowerCase();
-    const lines = content.split("\n");
-    const results: SearchResult[] = [];
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].toLowerCase().includes(query)) {
-        results.push({ lineNum: i + 1, text: lines[i] });
+    const timer = setTimeout(() => {
+      const query = searchQuery.toLowerCase();
+      const lines = content.split("\n");
+      const results: SearchResult[] = [];
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].toLowerCase().includes(query)) {
+          results.push({ lineNum: i + 1, text: lines[i] });
+        }
       }
-    }
-    setSearchResults(results);
+      setSearchResults(results);
+    }, 200);
+    return () => clearTimeout(timer);
   }, [searchQuery, content]);
 
   const handleSelectResult = (result: SearchResult, resultIndex: number) => {
@@ -306,7 +309,7 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
     }
   };
 
-  const components: Components = {
+  const components = useMemo<Components>(() => ({
     code({ className, children, ...props }) {
       const match = /language-(\w+)/.exec(className || "");
       const lang = match?.[1];
@@ -317,7 +320,7 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
       return <code className={className} {...props}>{children}</code>;
     },
     img: ImageWithOverlay as Components["img"],
-  };
+  }), [settings]);
 
   const handleExportPdf = async () => {
     if (!markdownBodyRef.current) return;

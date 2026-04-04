@@ -15,6 +15,7 @@ export function MermaidBlock({
   settings: ThemeSettings;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const prevSettingsKeyRef = useRef("");
   const [error, setError] = useState<string | null>(null);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const { t } = useTranslation();
@@ -23,7 +24,11 @@ export function MermaidBlock({
     const id = `mermaid-${++idCounter}`;
     setError(null);
 
-    mermaid.initialize({
+    // Skip redundant mermaid.initialize when only code changed
+    const settingsKey = `${settings.mermaidTheme}|${settings.mermaidBg}|${settings.mermaidPrimaryColor}|${settings.mermaidLineColor}`;
+    if (settingsKey !== prevSettingsKeyRef.current) {
+      prevSettingsKeyRef.current = settingsKey;
+      mermaid.initialize({
       startOnLoad: false,
       theme: settings.mermaidTheme,
       securityLevel: "strict",
@@ -70,6 +75,7 @@ export function MermaidBlock({
         nodeTextColor: settings.mermaidPrimaryTextColor,
       },
     });
+    }
 
     mermaid
       .render(id, code)
