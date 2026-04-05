@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithLocale } from '../test/helpers';
 import { Settings } from './Settings';
@@ -63,5 +63,18 @@ describe('Settings', () => {
   it('shows auto-save message', () => {
     renderWithLocale(<Settings {...defaultProps} />);
     expect(screen.getByText('Settings are saved automatically.')).toBeInTheDocument();
+  });
+
+  it('calls onClose on Escape key', () => {
+    const onClose = vi.fn();
+    renderWithLocale(<Settings {...defaultProps} onClose={onClose} />);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('has role=dialog and aria-modal', () => {
+    renderWithLocale(<Settings {...defaultProps} />);
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
   });
 });
