@@ -53,6 +53,10 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
   useEffect(() => {
     setError(null);
     setLoading(true);
+    setSearchQuery("");
+    setSearchResults([]);
+    setShowResults(false);
+    scrollContainerRef.current?.scrollTo({ top: 0 });
     readTextFile(filePath)
       .then((text) => {
         setContent(text);
@@ -392,7 +396,15 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
     }
   };
 
-  if (loading) return <div className="p-8 text-muted">{t("viewer.loading")}</div>;
+  if (loading) {
+    const fileName = filePath.split("/").pop() || filePath;
+    return (
+      <div className="p-8 text-muted">
+        <div>{t("viewer.loading")}</div>
+        <div className="text-xs mt-1 font-mono opacity-60">{fileName}</div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -417,9 +429,10 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
       )}
       {/* Export error toast */}
       {exportError && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 rounded-lg px-4 py-2 text-sm font-medium shadow-lg"
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 rounded-lg px-4 py-2 text-sm font-medium shadow-lg flex items-center gap-2"
              style={{ backgroundColor: "#991b1b", color: "#fecaca" }}>
           {exportError}
+          <button onClick={() => setExportError(null)} className="ml-1 opacity-70 hover:opacity-100" aria-label="Dismiss">✕</button>
         </div>
       )}
       {/* Fixed toolbar */}
@@ -443,7 +456,13 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
           {/* Zoom controls */}
           <div className="flex items-center" data-tauri-drag-region>
             <button className="zoom-btn" onClick={zoomOut} title={t("viewer.zoom.out")} aria-label={t("viewer.zoom.out")}>−</button>
-            <button className="zoom-label" onClick={zoomReset} title={t("viewer.zoom.reset")} aria-label={`${t("viewer.zoom.reset")} ${zoomLevel}%`}>{zoomLevel}%</button>
+            <button
+              className="zoom-label"
+              onClick={zoomReset}
+              title={t("viewer.zoom.reset")}
+              aria-label={`${t("viewer.zoom.reset")} ${zoomLevel}%`}
+              style={zoomLevel !== 100 ? { backgroundColor: "var(--selected-bg, #1e3a5f)", color: "var(--selected-text, #93c5fd)" } : undefined}
+            >{zoomLevel}%</button>
             <button className="zoom-btn" onClick={zoomIn} title={t("viewer.zoom.in")} aria-label={t("viewer.zoom.in")}>+</button>
           </div>
         </div>
@@ -459,13 +478,20 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
             className="settings-input w-full px-3 py-1 text-sm rounded"
           />
           {searchQuery && (
-            <button
-              onClick={() => { setSearchQuery(""); setSearchResults([]); setShowResults(false); }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-xs opacity-50 hover:opacity-100"
-              aria-label="Clear search"
-            >
-              ✕
-            </button>
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              {searchResults.length > 0 && !showResults && (
+                <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: "var(--selected-bg, #1e3a5f)", color: "var(--selected-text, #93c5fd)" }}>
+                  {searchResults.length}
+                </span>
+              )}
+              <button
+                onClick={() => { setSearchQuery(""); setSearchResults([]); setShowResults(false); }}
+                className="text-xs opacity-50 hover:opacity-100"
+                aria-label="Clear search"
+              >
+                ✕
+              </button>
+            </span>
           )}
           {showResults && searchQuery && (
             <div
