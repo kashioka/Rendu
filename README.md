@@ -18,15 +18,11 @@ A lightweight desktop Markdown viewer built with Tauri and React.
 ### Install
 
 1. Open the downloaded `.dmg` file
-2. Drag **Rendu** to the **Applications** folder
-3. **Important:** Before the first launch, open Terminal and run:
-   ```
-   xattr -cr /Applications/Rendu.app
-   ```
-   This removes the macOS quarantine flag (required for unsigned apps).
-4. Double-click Rendu in Applications to launch
+2. Double-click **`Install.command`** — the app will be installed and launched automatically
 
-> **Note:** Skipping step 3 will result in a *"Rendu is damaged and can't be opened"* error.
+That's it! The installer copies Rendu to Applications, removes the macOS quarantine flag, and opens the app.
+
+> **Note:** Do NOT drag the app to Applications manually — it will show a *"Rendu is damaged and can't be opened"* error because the quarantine flag is not removed. Always use the installer script.
 
 ## Features
 
