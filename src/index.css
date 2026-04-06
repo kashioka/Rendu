@@ -43,6 +43,14 @@ html, body, #root {
   font-weight: 500;
   color: var(--text-muted, #71717a);
 }
+.titlebar-path {
+  font-size: 11px;
+  color: var(--text-muted, #71717a);
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* ========= App layout (driven by CSS custom properties) ========= */
 #root {
@@ -316,9 +324,29 @@ button, a, input, select, textarea {
   position: absolute;
   top: 4px;
   right: 4px;
+  z-index: 1;
+  display: flex;
+  gap: 4px;
   opacity: 0;
   transition: opacity 0.15s;
   pointer-events: none;
+}
+.overlay-zoom-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background-color 0.15s;
+}
+.overlay-zoom-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
 }
 .mermaid-wrapper:hover .mermaid-hover-overlay {
   opacity: 1;
