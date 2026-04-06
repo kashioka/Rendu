@@ -11,17 +11,22 @@ A lightweight desktop Markdown viewer built with Tauri and React.
 
 ## Download
 
-Download the latest version from the [**Releases**](https://github.com/kashioka/Rendu/releases) page.
+[**Download Rendu_0.1.0_aarch64.dmg**](https://github.com/kashioka/Rendu/releases/download/v0.1.0/Rendu_0.1.0_aarch64.dmg) (macOS Apple Silicon)
 
-1. Download `Rendu-vX.X.X-macos.zip` from **Assets**
-2. Unzip the file
-3. Move `Rendu.app` to your **Applications** folder
-4. On first launch, macOS may show a security warning (the app is unsigned):
-   - Right-click the app and select **Open**, or
-   - Go to **System Settings > Privacy & Security** and click **Open Anyway**
-5. This warning only appears once
+> All versions are available on the [Releases](https://github.com/kashioka/Rendu/releases) page.
 
-> **Note:** Currently macOS (Apple Silicon) only.
+### Install
+
+1. Open the downloaded `.dmg` file
+2. Drag **Rendu** to the **Applications** folder
+3. **Important:** Before the first launch, open Terminal and run:
+   ```
+   xattr -cr /Applications/Rendu.app
+   ```
+   This removes the macOS quarantine flag (required for unsigned apps).
+4. Double-click Rendu in Applications to launch
+
+> **Note:** Skipping step 3 will result in a *"Rendu is damaged and can't be opened"* error.
 
 ## Features
 
@@ -95,6 +100,14 @@ src-tauri/target/release/bundle/macos/Rendu.app
 7. Click the gear icon to customize the theme
 
 ## Troubleshooting
+
+### "Rendu is damaged and can't be opened"
+
+This happens because the app is not code-signed. Run this command in Terminal before opening:
+
+```
+xattr -cr /Applications/Rendu.app
+```
 
 ### Security software warning on first run
 
