@@ -9,6 +9,20 @@ A lightweight desktop Markdown viewer built with Tauri and React.
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+## Download
+
+Download the latest version from the [**Releases**](https://github.com/kashioka/Rendu/releases) page.
+
+1. Download `Rendu-vX.X.X-macos.zip` from **Assets**
+2. Unzip the file
+3. Move `Rendu.app` to your **Applications** folder
+4. On first launch, macOS may show a security warning (the app is unsigned):
+   - Right-click the app and select **Open**, or
+   - Go to **System Settings > Privacy & Security** and click **Open Anyway**
+5. This warning only appears once
+
+> **Note:** Currently macOS (Apple Silicon) only.
+
 ## Features
 
 - **File tree** — Browse `.md` / `.markdown` files in a folder tree
@@ -62,13 +76,13 @@ src-tauri/target/release/bundle/dmg/Rendu_<version>_aarch64.dmg
 
 ## Install (macOS)
 
-1. Open `Rendu_<version>_aarch64.dmg`
-2. Drag **Rendu** to the **Applications** folder
-3. On first launch, macOS may show a security warning because the app is unsigned:
-   - Open **System Settings > Privacy & Security**
-   - Scroll down and click **Open Anyway** next to the Rendu message
-   - Or: right-click the app in Applications and select **Open**
-4. This warning only appears once
+See the [Download](#download) section above for the easiest way to install.
+
+If you build from source, the `.app` bundle will be at:
+
+```
+src-tauri/target/release/bundle/macos/Rendu.app
+```
 
 ## Usage
 
