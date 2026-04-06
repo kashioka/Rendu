@@ -281,7 +281,7 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
     return () => clearTimeout(timer);
   }, [searchQuery, content]);
 
-  const handleSelectResult = (result: SearchResult, resultIndex: number) => {
+  const handleSelectResult = (_result: SearchResult, resultIndex: number) => {
     setShowResults(false);
     if (!markdownBodyRef.current) return;
 
@@ -291,7 +291,7 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
       NodeFilter.SHOW_TEXT,
     );
     const query = searchQuery.toLowerCase();
-    const matches: Element[] = [];
+    const matches: HTMLElement[] = [];
     let node: Node | null;
     while ((node = walker.nextNode())) {
       if (node.textContent?.toLowerCase().includes(query) && node.parentElement) {

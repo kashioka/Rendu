@@ -48,12 +48,27 @@ npm install
 npm run dev
 ```
 
-### ビルド & インストール
+### ビルド
 
 ```bash
 npm run build
-cp -r "src-tauri/target/release/bundle/macos/Markdown Viewer.app" /Applications/
 ```
+
+`.dmg` インストーラーが以下に生成されます:
+
+```
+src-tauri/target/release/bundle/dmg/Rendu_<version>_aarch64.dmg
+```
+
+## インストール (macOS)
+
+1. `Rendu_<version>_aarch64.dmg` を開く
+2. **Rendu** を **Applications** フォルダにドラッグ
+3. 初回起動時、未署名のためセキュリティ警告が表示される場合があります:
+   - **システム設定 > プライバシーとセキュリティ** を開く
+   - Rendu に関するメッセージの横にある **このまま開く** をクリック
+   - または: Applications 内のアプリを右クリックして **開く** を選択
+4. この警告は初回のみ表示されます
 
 ## 使い方
 
