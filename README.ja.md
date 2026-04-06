@@ -11,17 +11,22 @@ Markdownファイルを快適に閲覧するためのデスクトップアプリ
 
 ## ダウンロード
 
-最新版は [**Releases**](https://github.com/kashioka/Rendu/releases) ページからダウンロードできます。
+[**Rendu_0.1.0_aarch64.dmg をダウンロード**](https://github.com/kashioka/Rendu/releases/download/v0.1.0/Rendu_0.1.0_aarch64.dmg)（macOS Apple Silicon）
 
-1. **Assets** から `Rendu-vX.X.X-macos.zip` をダウンロード
-2. zipファイルを解凍
-3. `Rendu.app` を **アプリケーション** フォルダに移動
-4. 初回起動時、未署名のためセキュリティ警告が表示される場合があります:
-   - アプリを右クリックして **開く** を選択、または
-   - **システム設定 > プライバシーとセキュリティ** で **このまま開く** をクリック
-5. この警告は初回のみ表示されます
+> すべてのバージョンは [Releases](https://github.com/kashioka/Rendu/releases) ページから入手できます。
 
-> **注意:** 現在 macOS (Apple Silicon) のみ対応。
+### インストール手順
+
+1. ダウンロードした `.dmg` ファイルを開く
+2. **Rendu** を **アプリケーション** フォルダにドラッグ&ドロップ
+3. **重要:** 初回起動前にターミナルで以下のコマンドを実行してください:
+   ```
+   xattr -cr /Applications/Rendu.app
+   ```
+   macOSの検疫フラグを解除します（未署名アプリのため必要）。
+4. アプリケーションフォルダから Rendu をダブルクリックで起動
+
+> **注意:** 手順3を行わないと「"Rendu"は壊れているため開けません」というエラーが表示されます。
 
 ## 特徴
 
@@ -95,6 +100,14 @@ src-tauri/target/release/bundle/macos/Rendu.app
 7. 歯車アイコンからテーマカスタマイズ
 
 ## トラブルシューティング
+
+### 「"Rendu"は壊れているため開けません」と表示される
+
+未署名アプリのため、macOSの検疫フラグが原因です。ターミナルで以下を実行してください:
+
+```
+xattr -cr /Applications/Rendu.app
+```
 
 ### 初回実行時のセキュリティ警告
 
