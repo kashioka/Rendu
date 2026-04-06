@@ -48,12 +48,27 @@ npm install
 npm run dev
 ```
 
-### Build & Install
+### Build
 
 ```bash
 npm run build
-cp -r "src-tauri/target/release/bundle/macos/Markdown Viewer.app" /Applications/
 ```
+
+The `.dmg` installer will be generated at:
+
+```
+src-tauri/target/release/bundle/dmg/Rendu_<version>_aarch64.dmg
+```
+
+## Install (macOS)
+
+1. Open `Rendu_<version>_aarch64.dmg`
+2. Drag **Rendu** to the **Applications** folder
+3. On first launch, macOS may show a security warning because the app is unsigned:
+   - Open **System Settings > Privacy & Security**
+   - Scroll down and click **Open Anyway** next to the Rendu message
+   - Or: right-click the app in Applications and select **Open**
+4. This warning only appears once
 
 ## Usage
 

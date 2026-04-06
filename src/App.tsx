@@ -66,8 +66,8 @@ function AppInner({
   }, []);
 
   // Listen for native menu events
-  const handleOpenFolderRef = useRef<() => void>();
-  const handleOpenFileRef = useRef<() => void>();
+  const handleOpenFolderRef = useRef<(() => void) | undefined>(undefined);
+  const handleOpenFileRef = useRef<(() => void) | undefined>(undefined);
 
   useEffect(() => {
     const unlisteners = [
