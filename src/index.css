@@ -43,15 +43,6 @@ html, body, #root {
   font-weight: 500;
   color: var(--text-muted, #71717a);
 }
-.titlebar-path {
-  font-size: 11px;
-  color: var(--text-muted, #71717a);
-  max-width: 50%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* ========= App layout (driven by CSS custom properties) ========= */
 #root {
   background-color: var(--app-bg, #18181b);

@@ -121,11 +121,6 @@ function AppInner({
           </svg>
         </button>
         <span className="titlebar-text" data-tauri-drag-region>Rendu</span>
-        {rootDir && (
-          <span className="titlebar-path" data-tauri-drag-region title={rootDir}>
-            {" — "}{rootDir}
-          </span>
-        )}
       </div>
 
       <div className="flex flex-1 min-h-0">
