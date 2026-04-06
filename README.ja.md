@@ -9,6 +9,20 @@ Markdownファイルを快適に閲覧するためのデスクトップアプリ
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+## ダウンロード
+
+最新版は [**Releases**](https://github.com/kashioka/Rendu/releases) ページからダウンロードできます。
+
+1. **Assets** から `Rendu-vX.X.X-macos.zip` をダウンロード
+2. zipファイルを解凍
+3. `Rendu.app` を **アプリケーション** フォルダに移動
+4. 初回起動時、未署名のためセキュリティ警告が表示される場合があります:
+   - アプリを右クリックして **開く** を選択、または
+   - **システム設定 > プライバシーとセキュリティ** で **このまま開く** をクリック
+5. この警告は初回のみ表示されます
+
+> **注意:** 現在 macOS (Apple Silicon) のみ対応。
+
 ## 特徴
 
 - **ファイルツリー** — フォルダを開いて `.md` / `.markdown` ファイルをツリー形式でブラウズ
@@ -62,13 +76,13 @@ src-tauri/target/release/bundle/dmg/Rendu_<version>_aarch64.dmg
 
 ## インストール (macOS)
 
-1. `Rendu_<version>_aarch64.dmg` を開く
-2. **Rendu** を **Applications** フォルダにドラッグ
-3. 初回起動時、未署名のためセキュリティ警告が表示される場合があります:
-   - **システム設定 > プライバシーとセキュリティ** を開く
-   - Rendu に関するメッセージの横にある **このまま開く** をクリック
-   - または: Applications 内のアプリを右クリックして **開く** を選択
-4. この警告は初回のみ表示されます
+上記の[ダウンロード](#ダウンロード)セクションが最も簡単な方法です。
+
+ソースからビルドした場合、`.app` バンドルは以下に生成されます:
+
+```
+src-tauri/target/release/bundle/macos/Rendu.app
+```
 
 ## 使い方
 
