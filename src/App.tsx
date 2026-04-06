@@ -41,7 +41,15 @@ function AppInner({
   const { t } = useTranslation();
 
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const pathRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
+
+  // Scroll folder path to the right end so the folder name is visible
+  useEffect(() => {
+    if (pathRef.current) {
+      pathRef.current.scrollLeft = pathRef.current.scrollWidth;
+    }
+  }, [rootDir]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -113,6 +121,11 @@ function AppInner({
           </svg>
         </button>
         <span className="titlebar-text" data-tauri-drag-region>Rendu</span>
+        {rootDir && (
+          <span className="titlebar-path" data-tauri-drag-region title={rootDir}>
+            {" — "}{rootDir}
+          </span>
+        )}
       </div>
 
       <div className="flex flex-1 min-h-0">
@@ -137,6 +150,18 @@ function AppInner({
             </svg>
           </button>
         </div>
+
+        {/* Folder path */}
+        {rootDir && (
+          <div
+            ref={pathRef}
+            className="px-3 pb-2 text-xs flex-shrink-0 whitespace-nowrap overflow-x-auto"
+            style={{ color: "var(--text-muted, #71717a)" }}
+            title={rootDir}
+          >
+            {rootDir}
+          </div>
+        )}
 
         {/* File tree pane */}
         <div className="overflow-y-auto" style={{ flex: `0 0 ${splitRatio * 100}%` }}>
