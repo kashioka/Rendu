@@ -514,6 +514,56 @@ button, a, input, select, textarea {
   display: none;
 }
 
+/* ========= Update banner ========= */
+.update-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background-color: var(--md-code-bg, #27272a);
+  border-bottom: 1px solid var(--border-color, #3f3f46);
+  font-size: 12px;
+  color: var(--text-color, #e4e4e7);
+  flex-shrink: 0;
+}
+.update-banner-text {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.update-banner a {
+  color: var(--md-link, #60a5fa);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.update-banner code {
+  background: var(--button-bg, #3f3f46);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  user-select: all;
+}
+.update-banner-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted, #71717a);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.update-banner-close:hover {
+  background-color: var(--hover-bg, #3f3f4680);
+  color: var(--text-color, #e4e4e7);
+}
+
 /* ========= Sidebar divider (resizable) ========= */
 .sidebar-divider {
   flex-shrink: 0;
