@@ -13,7 +13,10 @@ export interface Translations {
   "sidebar.outline": string;
 
   // Empty state
-  "app.selectFile": string;
+  "empty.heading": string;
+  "empty.subheading": string;
+  "empty.openFolder": string;
+  "empty.openFile": string;
 
   // Outline
   "outline.title": string;
@@ -90,7 +93,10 @@ const en: Translations = {
   "sidebar.emptyFolder": "Select a folder to get started",
   "sidebar.outline": "Outline",
 
-  "app.selectFile": "Select a Markdown file to get started",
+  "empty.heading": "Open a Markdown file to get started",
+  "empty.subheading": "Choose a folder to browse its Markdown files, or open a single file directly.",
+  "empty.openFolder": "Open Folder",
+  "empty.openFile": "Open File",
 
   "outline.title": "Outline",
   "outline.noHeadings": "No headings",
@@ -160,7 +166,10 @@ const ja: Translations = {
   "sidebar.emptyFolder": "フォルダを選択してください",
   "sidebar.outline": "Outline",
 
-  "app.selectFile": "Markdownファイルを選択してください",
+  "empty.heading": "Markdownファイルを開いてください",
+  "empty.subheading": "フォルダを開いて一覧から選ぶか、ファイルを直接指定できます。",
+  "empty.openFolder": "フォルダを開く",
+  "empty.openFile": "ファイルを開く",
 
   "outline.title": "目次",
   "outline.noHeadings": "見出しなし",
