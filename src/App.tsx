@@ -190,8 +190,40 @@ function AppInner({
         {selectedFile ? (
           <MarkdownViewer filePath={selectedFile} settings={settings} onHeadingsChange={setHeadings} />
         ) : (
-          <div className="flex items-center justify-center h-full text-muted">
-            {t("app.selectFile")}
+          <div className="empty-state">
+            <svg
+              className="empty-state-icon"
+              width="96"
+              height="96"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.25"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z" />
+              <path d="M14 3v5h5" />
+              <path d="M9 13h6" />
+              <path d="M9 17h6" />
+            </svg>
+            <h2 className="empty-state-heading">{t("empty.heading")}</h2>
+            <p className="empty-state-subheading">{t("empty.subheading")}</p>
+            <div className="empty-state-actions">
+              <button className="btn" onClick={handleOpenFolder}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M.54 3.87L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181L15.546 8H14.54l.265-2.91A1 1 0 0 0 13.81 4H2.19a1 1 0 0 0-.996 1.09l.637 7A1 1 0 0 0 2.826 13h9.174v1H2.826a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31z"/>
+                </svg>
+                {t("empty.openFolder")}
+              </button>
+              <button className="btn" onClick={handleOpenFile}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0H4zm0 1h5v3.5a.5.5 0 0 0 .5.5H13v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/>
+                </svg>
+                {t("empty.openFile")}
+              </button>
+            </div>
           </div>
         )}
       </div>

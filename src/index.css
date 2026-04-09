@@ -90,6 +90,49 @@ button, a, input, select, textarea {
   color: var(--text-muted, #71717a);
 }
 
+/* ========= Empty state (no file selected) ========= */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 32px;
+  gap: 20px;
+  text-align: center;
+}
+.empty-state-icon {
+  color: var(--text-muted, #71717a);
+  opacity: 0.55;
+}
+.empty-state-heading {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-color, #e4e4e7);
+  margin: 0;
+}
+.empty-state-subheading {
+  font-size: 14px;
+  color: var(--text-muted, #71717a);
+  max-width: 420px;
+  line-height: 1.6;
+  margin: 0;
+}
+.empty-state-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+.empty-state-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 /* ========= Viewer toolbar ========= */
 .viewer-toolbar {
   border-bottom: 1px solid var(--border-color, #3f3f46);
