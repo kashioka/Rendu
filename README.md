@@ -9,20 +9,31 @@ A lightweight desktop Markdown viewer built with Tauri and React.
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-## Download
+## Install (macOS Apple Silicon)
 
-[**Download Rendu_0.1.0_aarch64.dmg**](https://github.com/kashioka/Rendu/releases/download/v0.1.0/Rendu_0.1.0_aarch64.dmg) (macOS Apple Silicon)
+Open **Terminal** and paste the following command:
 
-> All versions are available on the [Releases](https://github.com/kashioka/Rendu/releases) page.
+```bash
+curl -fsSL https://github.com/kashioka/Rendu/releases/latest/download/install.sh | bash
+```
 
-### Install
+That's it. The installer downloads Rendu, copies it to `/Applications`, removes the macOS quarantine flag, and launches the app.
 
-1. Open the downloaded `.dmg` file
-2. Double-click **`Install.command`** — the app will be installed and launched automatically
+> **Why Terminal?** Rendu is not code-signed with an Apple Developer ID, so newer versions of macOS (Sequoia / Tahoe) block double-click installation of the `.app` and `.command` files with a *"damaged"* or *"cannot be verified"* error. Running the installer from Terminal bypasses this restriction safely.
 
-That's it! The installer copies Rendu to Applications, removes the macOS quarantine flag, and opens the app.
+### Manual installation (alternative)
 
-> **Note:** Do NOT drag the app to Applications manually — it will show a *"Rendu is damaged and can't be opened"* error because the quarantine flag is not removed. Always use the installer script.
+If you prefer to inspect each step:
+
+```bash
+curl -LO https://github.com/kashioka/Rendu/releases/latest/download/Rendu-macos-aarch64.tar.gz
+tar xzf Rendu-macos-aarch64.tar.gz
+xattr -cr Rendu.app
+mv Rendu.app /Applications/
+open /Applications/Rendu.app
+```
+
+> All versions and release notes are on the [Releases](https://github.com/kashioka/Rendu/releases) page.
 
 ## Features
 
@@ -67,22 +78,14 @@ npm run dev
 
 ```bash
 npm run build
+./scripts/build-tarball.sh
 ```
 
-The `.dmg` installer will be generated at:
-
-```
-src-tauri/target/release/bundle/dmg/Rendu_<version>_aarch64.dmg
-```
-
-## Install (macOS)
-
-See the [Download](#download) section above for the easiest way to install.
-
-If you build from source, the `.app` bundle will be at:
+Generated artifacts:
 
 ```
 src-tauri/target/release/bundle/macos/Rendu.app
+src-tauri/target/release/bundle/tarball/Rendu-macos-aarch64.tar.gz
 ```
 
 ## Usage
