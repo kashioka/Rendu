@@ -85,4 +85,11 @@ echo ""
 echo "→ Rendu を起動します / Launching Rendu..."
 open "$APP_DEST"
 
+echo ""
+echo "💡 次回からは Launchpad・Spotlight・アプリケーションフォルダから"
+echo "   通常のアプリと同じように起動できます。ターミナルは不要です。"
+echo ""
+echo "   From now on, launch Rendu from Launchpad, Spotlight, or"
+echo "   the Applications folder — just like any other app."
+
 exit 0
