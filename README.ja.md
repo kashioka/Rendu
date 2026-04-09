@@ -21,7 +21,9 @@ curl -fsSL https://github.com/kashioka/Rendu/releases/latest/download/install.sh
 
 これだけで完了です。インストーラが Rendu をダウンロードし、`/Applications` にコピーし、macOS の検疫フラグを解除して、アプリを起動します。
 
-> **なぜターミナルから？** Rendu は Apple Developer ID で署名されていないため、新しい macOS（Sequoia / Tahoe）では `.app` や `.command` をダブルクリックすると「壊れています」「検証できません」というエラーで開けません。ターミナルから実行することで、この制約を安全に回避できます。
+**2回目以降の起動は通常のアプリと同じです。** Launchpad、Spotlight、アプリケーションフォルダから開けます。ターミナルが必要なのは初回インストール時だけです。
+
+> **なぜ初回だけターミナル？** Rendu は Apple Developer ID で署名されていないため、新しい macOS（Sequoia / Tahoe）では `.app` をダブルクリックすると「壊れています」「検証できません」というエラーで開けません。ターミナルから実行することでこの制約を安全に回避できます。一度インストールすれば、以降は特別な操作は不要です。
 
 ## 特徴
 

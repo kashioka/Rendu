@@ -21,7 +21,9 @@ curl -fsSL https://github.com/kashioka/Rendu/releases/latest/download/install.sh
 
 That's it. The installer downloads Rendu, copies it to `/Applications`, clears the macOS quarantine flag, and launches the app.
 
-> **Why Terminal?** Rendu is not code-signed with an Apple Developer ID, so newer macOS versions (Sequoia / Tahoe) block double-click installation of `.app` and `.command` files with *"damaged"* or *"cannot be verified"* errors. Running the installer from Terminal bypasses this restriction safely.
+**From the second launch onward, Rendu works like any other app.** Open it from Launchpad, Spotlight, or the Applications folder — Terminal is only needed for the initial install.
+
+> **Why Terminal for the first install?** Rendu is not code-signed with an Apple Developer ID, so newer macOS versions (Sequoia / Tahoe) block double-click installation with *"damaged"* or *"cannot be verified"* errors. Running the installer from Terminal bypasses this restriction safely. Once installed, no special steps are needed.
 
 ## Features
 
