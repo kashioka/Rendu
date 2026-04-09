@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tauri dev",
-    "build": "tauri build --bundles app",
+    "build": "tauri build --bundles app,dmg",
     "lint": "eslint .",
     "preview": "vite preview",
     "vite:dev": "vite",
