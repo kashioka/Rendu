@@ -1,17 +1,26 @@
 # Rendu
 
-A lightweight desktop Markdown viewer built with Tauri and React.
+**Rendu** — French for *rendered*. A lightweight desktop Markdown viewer built with Tauri and React.
 
 **[日本語](./README.ja.md)**
 
+![CI](https://github.com/kashioka/Rendu/actions/workflows/ci.yml/badge.svg)
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-blue)
 ![React](https://img.shields.io/badge/React-19-61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+![Rendu](docs/screenshot.png)
+
 ## Quick Start
 
-**macOS Apple Silicon only.**
+### 1. Homebrew (macOS, recommended)
+
+```bash
+brew install --cask kashioka/tap/rendu
+```
+
+### 2. One-liner installer (macOS Apple Silicon)
 
 Open **Terminal** and run:
 
@@ -24,6 +33,10 @@ That's it. The installer downloads Rendu, copies it to `/Applications`, clears t
 **From the second launch onward, Rendu works like any other app.** Open it from Launchpad, Spotlight, or the Applications folder — Terminal is only needed for the initial install.
 
 > **Why Terminal for the first install?** Rendu is not code-signed with an Apple Developer ID, so newer macOS versions (Sequoia / Tahoe) block double-click installation with *"damaged"* or *"cannot be verified"* errors. Running the installer from Terminal bypasses this restriction safely. Once installed, no special steps are needed.
+
+### 3. Windows
+
+Download the `.exe` installer from the [latest release](https://github.com/kashioka/Rendu/releases/latest) and run it.
 
 ## Features
 
