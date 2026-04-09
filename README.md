@@ -14,27 +14,20 @@
 
 ## Quick Start
 
-### 1. Homebrew (macOS, recommended)
+### macOS
 
-```bash
-brew install --cask kashioka/tap/rendu
-```
+Download **Rendu.dmg** from the [latest release](https://github.com/kashioka/Rendu/releases/latest), open it, and drag Rendu to Applications.
 
-### 2. One-liner installer (macOS Apple Silicon)
+> **"Rendu can't be opened" dialog?** Rendu is not code-signed with an Apple Developer ID. Right-click the app and select **Open**, then click **Open** in the dialog. This is only needed once.
 
-Open **Terminal** and run:
+Other install methods:
 
-```bash
-curl -fsSL https://github.com/kashioka/Rendu/releases/latest/download/install.sh | bash
-```
+| Method | Command |
+|--------|---------|
+| Homebrew | `brew install --cask kashioka/tap/rendu` |
+| One-liner | `curl -fsSL https://github.com/kashioka/Rendu/releases/latest/download/install.sh \| bash` |
 
-That's it. The installer downloads Rendu, copies it to `/Applications`, clears the macOS quarantine flag, and launches the app.
-
-**From the second launch onward, Rendu works like any other app.** Open it from Launchpad, Spotlight, or the Applications folder — Terminal is only needed for the initial install.
-
-> **Why Terminal for the first install?** Rendu is not code-signed with an Apple Developer ID, so newer macOS versions (Sequoia / Tahoe) block double-click installation with *"damaged"* or *"cannot be verified"* errors. Running the installer from Terminal bypasses this restriction safely. Once installed, no special steps are needed.
-
-### 3. Windows
+### Windows
 
 Download the `.exe` installer from the [latest release](https://github.com/kashioka/Rendu/releases/latest) and run it.
 

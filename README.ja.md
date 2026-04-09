@@ -14,27 +14,20 @@
 
 ## クイックスタート
 
-### 1. Homebrew（macOS、推奨）
+### macOS
 
-```bash
-brew install --cask kashioka/tap/rendu
-```
+[最新リリース](https://github.com/kashioka/Rendu/releases/latest) から **Rendu.dmg** をダウンロードして開き、Rendu を Applications にドラッグしてください。
 
-### 2. ワンライナーインストーラ（macOS Apple Silicon）
+> **「Rendu は開けません」と表示される場合** — Rendu は Apple Developer ID で署名されていません。アプリを右クリックして **開く** を選択し、ダイアログで **開く** をクリックしてください。この操作は初回のみ必要です。
 
-**ターミナル** を開いて、以下のコマンドを実行してください:
+その他のインストール方法:
 
-```bash
-curl -fsSL https://github.com/kashioka/Rendu/releases/latest/download/install.sh | bash
-```
+| 方法 | コマンド |
+|------|---------|
+| Homebrew | `brew install --cask kashioka/tap/rendu` |
+| ワンライナー | `curl -fsSL https://github.com/kashioka/Rendu/releases/latest/download/install.sh \| bash` |
 
-これだけで完了です。インストーラが Rendu をダウンロードし、`/Applications` にコピーし、macOS の検疫フラグを解除して、アプリを起動します。
-
-**2回目以降の起動は通常のアプリと同じです。** Launchpad、Spotlight、アプリケーションフォルダから開けます。ターミナルが必要なのは初回インストール時だけです。
-
-> **なぜ初回だけターミナル？** Rendu は Apple Developer ID で署名されていないため、新しい macOS（Sequoia / Tahoe）では `.app` をダブルクリックすると「壊れています」「検証できません」というエラーで開けません。ターミナルから実行することでこの制約を安全に回避できます。一度インストールすれば、以降は特別な操作は不要です。
-
-### 3. Windows
+### Windows
 
 [最新リリース](https://github.com/kashioka/Rendu/releases/latest) から `.exe` インストーラをダウンロードして実行してください。
 
