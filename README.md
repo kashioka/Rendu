@@ -9,31 +9,19 @@ A lightweight desktop Markdown viewer built with Tauri and React.
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-## Install (macOS Apple Silicon)
+## Quick Start
 
-Open **Terminal** and paste the following command:
+**macOS Apple Silicon only.**
+
+Open **Terminal** and run:
 
 ```bash
 curl -fsSL https://github.com/kashioka/Rendu/releases/latest/download/install.sh | bash
 ```
 
-That's it. The installer downloads Rendu, copies it to `/Applications`, removes the macOS quarantine flag, and launches the app.
+That's it. The installer downloads Rendu, copies it to `/Applications`, clears the macOS quarantine flag, and launches the app.
 
-> **Why Terminal?** Rendu is not code-signed with an Apple Developer ID, so newer versions of macOS (Sequoia / Tahoe) block double-click installation of the `.app` and `.command` files with a *"damaged"* or *"cannot be verified"* error. Running the installer from Terminal bypasses this restriction safely.
-
-### Manual installation (alternative)
-
-If you prefer to inspect each step:
-
-```bash
-curl -LO https://github.com/kashioka/Rendu/releases/latest/download/Rendu-macos-aarch64.tar.gz
-tar xzf Rendu-macos-aarch64.tar.gz
-xattr -cr Rendu.app
-mv Rendu.app /Applications/
-open /Applications/Rendu.app
-```
-
-> All versions and release notes are on the [Releases](https://github.com/kashioka/Rendu/releases) page.
+> **Why Terminal?** Rendu is not code-signed with an Apple Developer ID, so newer macOS versions (Sequoia / Tahoe) block double-click installation of `.app` and `.command` files with *"damaged"* or *"cannot be verified"* errors. Running the installer from Terminal bypasses this restriction safely.
 
 ## Features
 
@@ -57,24 +45,70 @@ open /Applications/Rendu.app
 | PDF export | html2pdf.js |
 | Styling | Tailwind CSS 4 |
 
-## Quick Start
+## Usage
 
-### Prerequisites
+1. Launch the app
+2. Click **Open Folder** to select a folder containing Markdown files, or **Open File** to open a single file
+3. The rendered Markdown appears in the right panel
+4. Use the **Outline** section at the bottom of the sidebar to navigate headings
+5. Click **PDF Export** at the top to export as PDF
+6. Click the gear icon to customize the theme
+
+## Troubleshooting
+
+### The installer failed, or I want to inspect each step
+
+Download and install manually:
+
+```bash
+curl -LO https://github.com/kashioka/Rendu/releases/latest/download/Rendu-macos-aarch64.tar.gz
+tar xzf Rendu-macos-aarch64.tar.gz
+xattr -cr Rendu.app
+mv Rendu.app /Applications/
+open /Applications/Rendu.app
+```
+
+All versions and release notes are on the [Releases](https://github.com/kashioka/Rendu/releases) page.
+
+### "Rendu is damaged and can't be opened"
+
+The quarantine flag wasn't cleared. Run:
+
+```bash
+xattr -cr /Applications/Rendu.app
+```
+
+Then launch Rendu again.
+
+### Security software warning on first run
+
+Since the build is unsigned, antivirus software (e.g. Bitdefender) may block file operations such as PDF export. When prompted, select **"Trust this application"** to allow it. This warning typically only appears once. It may reappear after a clean rebuild (`cargo clean`).
+
+## Development
+
+For contributors or anyone who wants to build Rendu from source.
+
+**Prerequisites**
 
 - [Node.js](https://nodejs.org/) 18+
 - [Rust](https://rustup.rs/)
-- macOS: Xcode Command Line Tools (`xcode-select --install`)
+- Xcode Command Line Tools (`xcode-select --install`)
 
-### Install & Run
+**Clone and install dependencies**
 
 ```bash
 git clone https://github.com/kashioka/Rendu.git
 cd Rendu
 npm install
+```
+
+**Run in development mode**
+
+```bash
 npm run dev
 ```
 
-### Build
+**Build a release**
 
 ```bash
 npm run build
@@ -87,30 +121,6 @@ Generated artifacts:
 src-tauri/target/release/bundle/macos/Rendu.app
 src-tauri/target/release/bundle/tarball/Rendu-macos-aarch64.tar.gz
 ```
-
-## Usage
-
-1. Launch the app
-2. Click **Open Folder** to select a folder containing Markdown files
-3. Click a `.md` file in the file tree
-4. The rendered Markdown appears in the right panel
-5. Use the **Outline** section at the bottom of the sidebar to navigate headings
-6. Click **PDF Export** at the top to export as PDF
-7. Click the gear icon to customize the theme
-
-## Troubleshooting
-
-### "Rendu is damaged and can't be opened"
-
-This happens because the app is not code-signed. Run this command in Terminal before opening:
-
-```
-xattr -cr /Applications/Rendu.app
-```
-
-### Security software warning on first run
-
-Since the development build is unsigned, antivirus software (e.g. Bitdefender) may block file operations such as PDF export. When prompted, select **"Trust this application"** to allow it. This warning typically only appears once. It may reappear after a clean rebuild (`cargo clean`).
 
 ## Project Structure
 
