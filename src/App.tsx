@@ -40,6 +40,53 @@ function AppInner({
   const [splitRatio, setSplitRatio] = useState(0.5);
   const { t } = useTranslation();
 
+  // Navigation history
+  type HistoryEntry = { rootDir: string | null; selectedFile: string | null };
+  const historyRef = useRef<HistoryEntry[]>([{ rootDir: null, selectedFile: null }]);
+  const historyIndexRef = useRef(0);
+  const [canGoBack, setCanGoBack] = useState(false);
+  const [canGoForward, setCanGoForward] = useState(false);
+  const navigatingRef = useRef(false);
+
+  const pushHistory = useCallback((entry: HistoryEntry) => {
+    if (navigatingRef.current) return;
+    const h = historyRef.current;
+    const i = historyIndexRef.current;
+    // Don't push duplicate entries
+    const current = h[i];
+    if (current && current.rootDir === entry.rootDir && current.selectedFile === entry.selectedFile) return;
+    historyRef.current = [...h.slice(0, i + 1), entry];
+    historyIndexRef.current = historyRef.current.length - 1;
+    setCanGoBack(historyIndexRef.current > 0);
+    setCanGoForward(false);
+  }, []);
+
+  const goBack = useCallback(() => {
+    if (historyIndexRef.current <= 0) return;
+    navigatingRef.current = true;
+    historyIndexRef.current -= 1;
+    const entry = historyRef.current[historyIndexRef.current];
+    setRootDir(entry.rootDir);
+    setSelectedFile(entry.selectedFile);
+    if (!entry.selectedFile) setHeadings([]);
+    setCanGoBack(historyIndexRef.current > 0);
+    setCanGoForward(true);
+    navigatingRef.current = false;
+  }, []);
+
+  const goForward = useCallback(() => {
+    if (historyIndexRef.current >= historyRef.current.length - 1) return;
+    navigatingRef.current = true;
+    historyIndexRef.current += 1;
+    const entry = historyRef.current[historyIndexRef.current];
+    setRootDir(entry.rootDir);
+    setSelectedFile(entry.selectedFile);
+    if (!entry.selectedFile) setHeadings([]);
+    setCanGoBack(true);
+    setCanGoForward(historyIndexRef.current < historyRef.current.length - 1);
+    navigatingRef.current = false;
+  }, []);
+
   const sidebarRef = useRef<HTMLDivElement>(null);
   const pathRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
@@ -92,6 +139,7 @@ function AppInner({
       setRootDir(dir);
       setSelectedFile(null);
       setHeadings([]);
+      pushHistory({ rootDir: dir, selectedFile: null });
     }
   };
 
@@ -101,8 +149,14 @@ function AppInner({
     });
     if (file) {
       setSelectedFile(file);
+      pushHistory({ rootDir, selectedFile: file });
     }
   };
+
+  const handleSelectFile = useCallback((file: string) => {
+    setSelectedFile(file);
+    pushHistory({ rootDir, selectedFile: file });
+  }, [rootDir, pushHistory]);
 
   handleOpenFolderRef.current = handleOpenFolder;
   handleOpenFileRef.current = handleOpenFile;
@@ -118,6 +172,26 @@ function AppInner({
         >
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
             <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h11A1.5 1.5 0 0 1 15 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12.5v-9zM2.5 3a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-11zM5 3.5v9H3v-9h2z"/>
+          </svg>
+        </button>
+        <button
+          onClick={goBack}
+          disabled={!canGoBack}
+          className="titlebar-nav"
+          title={t("nav.back")}
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+            <path fillRule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
+          </svg>
+        </button>
+        <button
+          onClick={goForward}
+          disabled={!canGoForward}
+          className="titlebar-nav"
+          title={t("nav.forward")}
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+            <path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
           </svg>
         </button>
         <span className="titlebar-text" data-tauri-drag-region>Rendu</span>
@@ -164,7 +238,7 @@ function AppInner({
             <FileTree
               rootDir={rootDir}
               selectedFile={selectedFile}
-              onSelectFile={setSelectedFile}
+              onSelectFile={handleSelectFile}
             />
           ) : (
             <div className="p-4 text-sm text-muted">
@@ -189,6 +263,28 @@ function AppInner({
       <div className="flex-1 min-h-0 flex flex-col">
         {selectedFile ? (
           <MarkdownViewer filePath={selectedFile} settings={settings} onHeadingsChange={setHeadings} />
+        ) : rootDir ? (
+          <div className="empty-state">
+            <svg
+              className="empty-state-icon"
+              width="96"
+              height="96"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.25"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z" />
+              <path d="M14 3v5h5" />
+              <path d="M9 13h6" />
+              <path d="M9 17h6" />
+            </svg>
+            <h2 className="empty-state-heading">{t("empty.selectFile")}</h2>
+            <p className="empty-state-subheading">{t("empty.selectFile.sub")}</p>
+          </div>
         ) : (
           <div className="empty-state">
             <svg
@@ -216,12 +312,6 @@ function AppInner({
                   <path d="M.54 3.87L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181L15.546 8H14.54l.265-2.91A1 1 0 0 0 13.81 4H2.19a1 1 0 0 0-.996 1.09l.637 7A1 1 0 0 0 2.826 13h9.174v1H2.826a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31z"/>
                 </svg>
                 {t("empty.openFolder")}
-              </button>
-              <button className="btn" onClick={handleOpenFile}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                  <path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0H4zm0 1h5v3.5a.5.5 0 0 0 .5.5H13v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/>
-                </svg>
-                {t("empty.openFile")}
               </button>
             </div>
           </div>
