@@ -38,6 +38,34 @@ html, body, #root {
   background-color: var(--hover-bg, #3f3f4680);
   color: var(--text-color, #e4e4e7);
 }
+.titlebar-nav {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 20px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted, #71717a);
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+.titlebar-nav:nth-of-type(2) {
+  left: 108px;
+}
+.titlebar-nav:nth-of-type(3) {
+  left: 132px;
+}
+.titlebar-nav:hover:not(:disabled) {
+  background-color: var(--hover-bg, #3f3f4680);
+  color: var(--text-color, #e4e4e7);
+}
+.titlebar-nav:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
 .titlebar-text {
   font-size: 12px;
   font-weight: 500;

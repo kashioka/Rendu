@@ -40,6 +40,53 @@ function AppInner({
   const [splitRatio, setSplitRatio] = useState(0.5);
   const { t } = useTranslation();
 
+  // Navigation history
+  type HistoryEntry = { rootDir: string | null; selectedFile: string | null };
+  const historyRef = useRef<HistoryEntry[]>([{ rootDir: null, selectedFile: null }]);
+  const historyIndexRef = useRef(0);
+  const [canGoBack, setCanGoBack] = useState(false);
+  const [canGoForward, setCanGoForward] = useState(false);
+  const navigatingRef = useRef(false);
+
+  const pushHistory = useCallback((entry: HistoryEntry) => {
+    if (navigatingRef.current) return;
+    const h = historyRef.current;
+    const i = historyIndexRef.current;
+    // Don't push duplicate entries
+    const current = h[i];
+    if (current && current.rootDir === entry.rootDir && current.selectedFile === entry.selectedFile) return;
+    historyRef.current = [...h.slice(0, i + 1), entry];
+    historyIndexRef.current = historyRef.current.length - 1;
+    setCanGoBack(historyIndexRef.current > 0);
+    setCanGoForward(false);
+  }, []);
+
+  const goBack = useCallback(() => {
+    if (historyIndexRef.current <= 0) return;
+    navigatingRef.current = true;
+    historyIndexRef.current -= 1;
+    const entry = historyRef.current[historyIndexRef.current];
+    setRootDir(entry.rootDir);
+    setSelectedFile(entry.selectedFile);
+    if (!entry.selectedFile) setHeadings([]);
+    setCanGoBack(historyIndexRef.current > 0);
+    setCanGoForward(true);
+    navigatingRef.current = false;
+  }, []);
+
+  const goForward = useCallback(() => {
+    if (historyIndexRef.current >= historyRef.current.length - 1) return;
+    navigatingRef.current = true;
+    historyIndexRef.current += 1;
+    const entry = historyRef.current[historyIndexRef.current];
+    setRootDir(entry.rootDir);
+    setSelectedFile(entry.selectedFile);
+    if (!entry.selectedFile) setHeadings([]);
+    setCanGoBack(true);
+    setCanGoForward(historyIndexRef.current < historyRef.current.length - 1);
+    navigatingRef.current = false;
+  }, []);
+
   const sidebarRef = useRef<HTMLDivElement>(null);
   const pathRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
@@ -92,6 +139,7 @@ function AppInner({
       setRootDir(dir);
       setSelectedFile(null);
       setHeadings([]);
+      pushHistory({ rootDir: dir, selectedFile: null });
     }
   };
 
@@ -101,8 +149,14 @@ function AppInner({
     });
     if (file) {
       setSelectedFile(file);
+      pushHistory({ rootDir, selectedFile: file });
     }
   };
+
+  const handleSelectFile = useCallback((file: string) => {
+    setSelectedFile(file);
+    pushHistory({ rootDir, selectedFile: file });
+  }, [rootDir, pushHistory]);
 
   handleOpenFolderRef.current = handleOpenFolder;
   handleOpenFileRef.current = handleOpenFile;
@@ -118,6 +172,26 @@ function AppInner({
         >
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
             <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h11A1.5 1.5 0 0 1 15 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12.5v-9zM2.5 3a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-11zM5 3.5v9H3v-9h2z"/>
+          </svg>
+        </button>
+        <button
+          onClick={goBack}
+          disabled={!canGoBack}
+          className="titlebar-nav"
+          title={t("nav.back")}
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+            <path fillRule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
+          </svg>
+        </button>
+        <button
+          onClick={goForward}
+          disabled={!canGoForward}
+          className="titlebar-nav"
+          title={t("nav.forward")}
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+            <path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
           </svg>
         </button>
         <span className="titlebar-text" data-tauri-drag-region>Rendu</span>
@@ -164,7 +238,7 @@ function AppInner({
             <FileTree
               rootDir={rootDir}
               selectedFile={selectedFile}
-              onSelectFile={setSelectedFile}
+              onSelectFile={handleSelectFile}
             />
           ) : (
             <div className="p-4 text-sm text-muted">

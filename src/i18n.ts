@@ -12,6 +12,10 @@ export interface Translations {
   "sidebar.emptyFolder": string;
   "sidebar.outline": string;
 
+  // Navigation
+  "nav.back": string;
+  "nav.forward": string;
+
   // Empty state
   "empty.heading": string;
   "empty.subheading": string;
@@ -95,6 +99,9 @@ const en: Translations = {
   "sidebar.emptyFolder": "Select a folder to get started",
   "sidebar.outline": "Outline",
 
+  "nav.back": "Back",
+  "nav.forward": "Forward",
+
   "empty.heading": "Open a Markdown file to get started",
   "empty.subheading": "Choose a folder to browse its Markdown files, or open a single file directly.",
   "empty.openFolder": "Open Folder",
@@ -169,6 +176,9 @@ const ja: Translations = {
   "sidebar.settings.title": "設定",
   "sidebar.emptyFolder": "フォルダを選択してください",
   "sidebar.outline": "Outline",
+
+  "nav.back": "戻る",
+  "nav.forward": "進む",
 
   "empty.heading": "Markdownファイルを開いてください",
   "empty.subheading": "フォルダを開いて一覧から選ぶか、ファイルを直接指定できます。",
