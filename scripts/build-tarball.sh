@@ -27,6 +27,11 @@ echo "→ Creating tarball..."
 # -C to archive with Rendu.app at the root (no leading directory).
 tar -czf "$TARBALL_PATH" -C "$(dirname "$APP_PATH")" "$(basename "$APP_PATH")"
 
+CHECKSUMS_PATH="$OUT_DIR/checksums.txt"
+echo "→ Generating checksums..."
+(cd "$OUT_DIR" && shasum -a 256 "$TARBALL_NAME" > checksums.txt)
+
 echo ""
 echo "✅ Tarball created: $TARBALL_PATH"
 echo "   Size: $(du -h "$TARBALL_PATH" | cut -f1)"
+echo "✅ Checksums: $CHECKSUMS_PATH"

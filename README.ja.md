@@ -1,17 +1,26 @@
 # Rendu
 
-Markdownファイルを快適に閲覧するためのデスクトップアプリケーション。
+**Rendu** — フランス語で「レンダリングされた」の意味。Markdownファイルを快適に閲覧するためのデスクトップアプリケーション。
 
 **[English](./README.md)**
 
+![CI](https://github.com/kashioka/Rendu/actions/workflows/ci.yml/badge.svg)
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-blue)
 ![React](https://img.shields.io/badge/React-19-61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+![Rendu](docs/screenshot.png)
+
 ## クイックスタート
 
-**macOS Apple Silicon 専用です。**
+### 1. Homebrew（macOS、推奨）
+
+```bash
+brew install --cask kashioka/tap/rendu
+```
+
+### 2. ワンライナーインストーラ（macOS Apple Silicon）
 
 **ターミナル** を開いて、以下のコマンドを実行してください:
 
@@ -24,6 +33,10 @@ curl -fsSL https://github.com/kashioka/Rendu/releases/latest/download/install.sh
 **2回目以降の起動は通常のアプリと同じです。** Launchpad、Spotlight、アプリケーションフォルダから開けます。ターミナルが必要なのは初回インストール時だけです。
 
 > **なぜ初回だけターミナル？** Rendu は Apple Developer ID で署名されていないため、新しい macOS（Sequoia / Tahoe）では `.app` をダブルクリックすると「壊れています」「検証できません」というエラーで開けません。ターミナルから実行することでこの制約を安全に回避できます。一度インストールすれば、以降は特別な操作は不要です。
+
+### 3. Windows
+
+[最新リリース](https://github.com/kashioka/Rendu/releases/latest) から `.exe` インストーラをダウンロードして実行してください。
 
 ## 特徴
 
