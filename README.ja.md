@@ -9,9 +9,11 @@ Markdownファイルを快適に閲覧するためのデスクトップアプリ
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-## インストール（macOS Apple Silicon）
+## クイックスタート
 
-**ターミナル** を開いて、以下のコマンドを貼り付けて実行してください:
+**macOS Apple Silicon 専用です。**
+
+**ターミナル** を開いて、以下のコマンドを実行してください:
 
 ```bash
 curl -fsSL https://github.com/kashioka/Rendu/releases/latest/download/install.sh | bash
@@ -20,20 +22,6 @@ curl -fsSL https://github.com/kashioka/Rendu/releases/latest/download/install.sh
 これだけで完了です。インストーラが Rendu をダウンロードし、`/Applications` にコピーし、macOS の検疫フラグを解除して、アプリを起動します。
 
 > **なぜターミナルから？** Rendu は Apple Developer ID で署名されていないため、新しい macOS（Sequoia / Tahoe）では `.app` や `.command` をダブルクリックすると「壊れています」「検証できません」というエラーで開けません。ターミナルから実行することで、この制約を安全に回避できます。
-
-### 手動インストール（代替）
-
-各ステップを自分で確認したい場合:
-
-```bash
-curl -LO https://github.com/kashioka/Rendu/releases/latest/download/Rendu-macos-aarch64.tar.gz
-tar xzf Rendu-macos-aarch64.tar.gz
-xattr -cr Rendu.app
-mv Rendu.app /Applications/
-open /Applications/Rendu.app
-```
-
-> すべてのバージョンとリリースノートは [Releases](https://github.com/kashioka/Rendu/releases) ページから確認できます。
 
 ## 特徴
 
@@ -57,24 +45,68 @@ open /Applications/Rendu.app
 | PDF出力 | html2pdf.js |
 | スタイリング | Tailwind CSS 4 |
 
-## クイックスタート
+## 使い方
 
-### 前提条件
+1. アプリを起動
+2. **フォルダを開く** からMarkdownファイルがあるフォルダを選択、または **ファイルを開く** から単一ファイルを開く
+3. 右パネルにレンダリング結果が表示される
+4. 左ペイン下部の **Outline** で見出し一覧を確認、クリックでジャンプ
+5. 上部の **PDF Export** ボタンでPDFに出力
+6. 歯車アイコンからテーマカスタマイズ
+
+## うまくいかないときは
+
+### インストーラが失敗する / 各ステップを自分で確認したい
+
+手動でダウンロード・インストールする手順:
+
+```bash
+curl -LO https://github.com/kashioka/Rendu/releases/latest/download/Rendu-macos-aarch64.tar.gz
+tar xzf Rendu-macos-aarch64.tar.gz
+xattr -cr Rendu.app
+mv Rendu.app /Applications/
+open /Applications/Rendu.app
+```
+
+すべてのバージョンとリリースノートは [Releases](https://github.com/kashioka/Rendu/releases) ページから確認できます。
+
+### 「"Rendu"は壊れているため開けません」と表示される
+
+検疫フラグが残っているのが原因です。以下を実行してから再度起動してください:
+
+```bash
+xattr -cr /Applications/Rendu.app
+```
+
+### 初回実行時のセキュリティ警告
+
+未署名ビルドのため、ウイルス対策ソフト（Bitdefender等）がPDF保存などのファイル操作をブロックする場合があります。表示されたら **「アプリケーションを信頼する」** を選択してください。通常この警告は1度のみ表示されます。`cargo clean` 後の再ビルドで再度表示される場合があります。
+
+## 開発者向け
+
+Rendu をローカルで開発・ビルドしたい開発者・コントリビューター向けの手順です。
+
+**前提条件**
 
 - [Node.js](https://nodejs.org/) 18+
 - [Rust](https://rustup.rs/)
-- macOS: Xcode Command Line Tools (`xcode-select --install`)
+- Xcode Command Line Tools (`xcode-select --install`)
 
-### インストール & 起動
+**リポジトリを取得して依存関係をインストール**
 
 ```bash
 git clone https://github.com/kashioka/Rendu.git
 cd Rendu
 npm install
+```
+
+**開発モードで起動**
+
+```bash
 npm run dev
 ```
 
-### ビルド
+**リリースビルド**
 
 ```bash
 npm run build
@@ -87,30 +119,6 @@ npm run build
 src-tauri/target/release/bundle/macos/Rendu.app
 src-tauri/target/release/bundle/tarball/Rendu-macos-aarch64.tar.gz
 ```
-
-## 使い方
-
-1. アプリを起動
-2. **Open Folder** でMarkdownファイルがあるフォルダを選択
-3. 左のファイルツリーから `.md` ファイルをクリック
-4. 右パネルにレンダリング結果が表示される
-5. 左ペイン下部の **Outline** で見出し一覧を確認、クリックでジャンプ
-6. 上部の **PDF Export** ボタンでPDFに出力
-7. 歯車アイコンからテーマカスタマイズ
-
-## トラブルシューティング
-
-### 「"Rendu"は壊れているため開けません」と表示される
-
-未署名アプリのため、macOSの検疫フラグが原因です。ターミナルで以下を実行してください:
-
-```
-xattr -cr /Applications/Rendu.app
-```
-
-### 初回実行時のセキュリティ警告
-
-開発ビルドは未署名のため、ウイルス対策ソフト（Bitdefender等）がPDF保存などのファイル操作をブロックする場合があります。表示されたら **「アプリケーションを信頼する」** を選択してください。通常この警告は1度のみ表示されます。`cargo clean` 後の再ビルドで再度表示される場合があります。
 
 ## プロジェクト構成
 
@@ -137,4 +145,3 @@ Rendu/
 ## ライセンス
 
 MIT
-
