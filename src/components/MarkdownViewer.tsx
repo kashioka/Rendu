@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { readTextFile, writeFile } from "@tauri-apps/plugin-fs";
+import { readTextFile, writeFile, stat } from "@tauri-apps/plugin-fs";
 import { save } from "@tauri-apps/plugin-dialog";
 import html2pdf from "html2pdf.js";
 import ReactMarkdown from "react-markdown";
@@ -44,25 +44,103 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
   const markdownBodyRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const lastMtimeRef = useRef<number | null>(null);
   const { t } = useTranslation();
 
   const zoomIn = useCallback(() => setZoomLevel((z) => Math.min(200, z + 10)), []);
   const zoomOut = useCallback(() => setZoomLevel((z) => Math.max(50, z - 10)), []);
   const zoomReset = useCallback(() => setZoomLevel(100), []);
 
+  // Extract mtime (as a millisecond timestamp) from a stat result.
+  // Defensive because the value can come across IPC as Date, string, or number.
+  const extractMtime = (info: { mtime: unknown }): number | null => {
+    const m = info.mtime;
+    if (m == null) return null;
+    if (m instanceof Date) return m.getTime();
+    if (typeof m === "string" || typeof m === "number") {
+      const ts = new Date(m).getTime();
+      return Number.isNaN(ts) ? null : ts;
+    }
+    return null;
+  };
+
+  // Initial load (shows loading state, resets scroll).
   useEffect(() => {
+    let cancelled = false;
     setError(null);
     setLoading(true);
     setSearchQuery("");
     setSearchResults([]);
     setShowResults(false);
     scrollContainerRef.current?.scrollTo({ top: 0 });
-    readTextFile(filePath)
-      .then((text) => {
+    lastMtimeRef.current = null;
+
+    (async () => {
+      try {
+        const text = await readTextFile(filePath);
+        if (cancelled) return;
         setContent(text);
         setLoading(false);
-      })
-      .catch((e) => { setError(String(e)); setLoading(false); });
+        try {
+          const info = await stat(filePath);
+          if (!cancelled) lastMtimeRef.current = extractMtime(info);
+        } catch {
+          // Stat may not be permitted for some paths; skip baseline.
+        }
+      } catch (e) {
+        if (cancelled) return;
+        setError(String(e));
+        setLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [filePath]);
+
+  // Poll for external file changes (auto-reload, preserves scroll).
+  useEffect(() => {
+    if (loading || error) return;
+    let cancelled = false;
+    const intervalId = window.setInterval(async () => {
+      try {
+        const info = await stat(filePath);
+        if (cancelled) return;
+        const currentMtime = extractMtime(info);
+        if (
+          currentMtime !== null &&
+          lastMtimeRef.current !== null &&
+          currentMtime > lastMtimeRef.current
+        ) {
+          lastMtimeRef.current = currentMtime;
+          const text = await readTextFile(filePath);
+          if (!cancelled) setContent(text);
+        }
+      } catch {
+        // Ignore transient stat errors (file temporarily missing during save, etc.)
+      }
+    }, 1500);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [filePath, loading, error]);
+
+  // Manual refresh — re-read the file without flashing the loading state
+  // and without resetting scroll position.
+  const handleRefresh = useCallback(async () => {
+    try {
+      const text = await readTextFile(filePath);
+      setContent(text);
+      setError(null);
+      try {
+        const info = await stat(filePath);
+        lastMtimeRef.current = extractMtime(info);
+      } catch {
+        // ignore
+      }
+    } catch (e) {
+      setError(String(e));
+    }
   }, [filePath]);
 
   // After markdown renders, scan the DOM for headings and assign IDs
@@ -451,6 +529,17 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
               <line x1="9" y1="3" x2="15" y2="3" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
               <line x1="9" y1="8" x2="14" y2="8" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
               <line x1="9" y1="13" x2="15" y2="13" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+            </svg>
+          </button>
+          <button
+            onClick={handleRefresh}
+            className="line-gutter-toggle"
+            title={t("viewer.refresh")}
+            aria-label={t("viewer.refresh")}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+              <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
             </svg>
           </button>
           {/* Zoom controls */}
