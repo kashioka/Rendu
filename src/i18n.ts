@@ -32,6 +32,7 @@ export interface Translations {
   "viewer.exportPdf.exporting": string;
   "viewer.exportPdf.overlay": string;
   "viewer.exportPdf.error": string;
+  "viewer.refresh": string;
   "viewer.zoom.in": string;
   "viewer.zoom.out": string;
   "viewer.zoom.reset": string;
@@ -106,6 +107,7 @@ const en: Translations = {
   "viewer.exportPdf.exporting": "Exporting...",
   "viewer.exportPdf.overlay": "Exporting PDF...",
   "viewer.exportPdf.error": "PDF export failed",
+  "viewer.refresh": "Reload file",
   "viewer.zoom.in": "Zoom in",
   "viewer.zoom.out": "Zoom out",
   "viewer.zoom.reset": "Reset zoom",
@@ -175,6 +177,7 @@ const ja: Translations = {
   "viewer.exportPdf.exporting": "出力中...",
   "viewer.exportPdf.overlay": "PDF出力中...",
   "viewer.exportPdf.error": "PDF出力に失敗しました",
+  "viewer.refresh": "ファイルを再読み込み",
   "viewer.zoom.in": "拡大",
   "viewer.zoom.out": "縮小",
   "viewer.zoom.reset": "ズームリセット",
