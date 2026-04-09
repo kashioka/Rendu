@@ -9,20 +9,31 @@ Markdownファイルを快適に閲覧するためのデスクトップアプリ
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-## ダウンロード
+## インストール（macOS Apple Silicon）
 
-[**Rendu_0.1.0_aarch64.dmg をダウンロード**](https://github.com/kashioka/Rendu/releases/download/v0.1.0/Rendu_0.1.0_aarch64.dmg)（macOS Apple Silicon）
+**ターミナル** を開いて、以下のコマンドを貼り付けて実行してください:
 
-> すべてのバージョンは [Releases](https://github.com/kashioka/Rendu/releases) ページから入手できます。
+```bash
+curl -fsSL https://github.com/kashioka/Rendu/releases/latest/download/install.sh | bash
+```
 
-### インストール手順
+これだけで完了です。インストーラが Rendu をダウンロードし、`/Applications` にコピーし、macOS の検疫フラグを解除して、アプリを起動します。
 
-1. ダウンロードした `.dmg` ファイルを開く
-2. **「インストール.command」をダブルクリック** — 自動でインストールされ、アプリが起動します
+> **なぜターミナルから？** Rendu は Apple Developer ID で署名されていないため、新しい macOS（Sequoia / Tahoe）では `.app` や `.command` をダブルクリックすると「壊れています」「検証できません」というエラーで開けません。ターミナルから実行することで、この制約を安全に回避できます。
 
-これだけで完了です。インストーラがアプリケーションフォルダへのコピー、検疫フラグの解除、起動をすべて行います。
+### 手動インストール（代替）
 
-> **注意:** アプリを手動でApplicationsにドラッグしないでください。検疫フラグが解除されず「"Rendu"は壊れているため開けません」というエラーが表示されます。必ずインストーラスクリプトを使用してください。
+各ステップを自分で確認したい場合:
+
+```bash
+curl -LO https://github.com/kashioka/Rendu/releases/latest/download/Rendu-macos-aarch64.tar.gz
+tar xzf Rendu-macos-aarch64.tar.gz
+xattr -cr Rendu.app
+mv Rendu.app /Applications/
+open /Applications/Rendu.app
+```
+
+> すべてのバージョンとリリースノートは [Releases](https://github.com/kashioka/Rendu/releases) ページから確認できます。
 
 ## 特徴
 
@@ -67,22 +78,14 @@ npm run dev
 
 ```bash
 npm run build
+./scripts/build-tarball.sh
 ```
 
-`.dmg` インストーラーが以下に生成されます:
-
-```
-src-tauri/target/release/bundle/dmg/Rendu_<version>_aarch64.dmg
-```
-
-## インストール (macOS)
-
-上記の[ダウンロード](#ダウンロード)セクションが最も簡単な方法です。
-
-ソースからビルドした場合、`.app` バンドルは以下に生成されます:
+生成される成果物:
 
 ```
 src-tauri/target/release/bundle/macos/Rendu.app
+src-tauri/target/release/bundle/tarball/Rendu-macos-aarch64.tar.gz
 ```
 
 ## 使い方
