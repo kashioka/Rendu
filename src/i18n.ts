@@ -76,6 +76,11 @@ export interface Translations {
   "settings.color.codeBg": string;
   "settings.color.mdBorder": string;
 
+  // Update banner
+  "update.available": string;
+  "update.download": string;
+  "update.homebrew": string;
+
   // Settings - Mermaid Colors
   "settings.color.mermaidBg": string;
   "settings.color.primary": string;
@@ -134,6 +139,10 @@ const en: Translations = {
   "viewer.lightbox.download": "Download",
 
   "mermaid.renderError": "Mermaid render error",
+
+  "update.available": "v{version} is available",
+  "update.download": "Download",
+  "update.homebrew": "or: brew upgrade --cask kashioka/tap/rendu",
 
   "settings.title": "Settings",
   "settings.language": "Language",
@@ -212,6 +221,10 @@ const ja: Translations = {
   "viewer.lightbox.download": "ダウンロード",
 
   "mermaid.renderError": "Mermaid描画エラー",
+
+  "update.available": "v{version} が利用可能です",
+  "update.download": "ダウンロード",
+  "update.homebrew": "または: brew upgrade --cask kashioka/tap/rendu",
 
   "settings.title": "設定",
   "settings.language": "言語",

@@ -1,18 +1,79 @@
 use tauri::menu::{AboutMetadataBuilder, MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::Emitter;
+use serde::Serialize;
+
+#[derive(Serialize)]
+pub struct UpdateInfo {
+  has_update: bool,
+  latest_version: String,
+  current_version: String,
+  release_url: String,
+}
+
+#[tauri::command]
+async fn check_for_updates() -> UpdateInfo {
+  let current = env!("CARGO_PKG_VERSION");
+  let no_update = UpdateInfo {
+    has_update: false,
+    latest_version: current.to_string(),
+    current_version: current.to_string(),
+    release_url: String::new(),
+  };
+
+  let client = match reqwest::Client::builder()
+    .user_agent("Rendu-Update-Checker")
+    .build()
+  {
+    Ok(c) => c,
+    Err(_) => return no_update,
+  };
+
+  let resp = match client
+    .get("https://api.github.com/repos/kashioka/Rendu/releases/latest")
+    .send()
+    .await
+  {
+    Ok(r) => r,
+    Err(_) => return no_update,
+  };
+
+  let json: serde_json::Value = match resp.json().await {
+    Ok(j) => j,
+    Err(_) => return no_update,
+  };
+
+  let tag = match json["tag_name"].as_str() {
+    Some(t) => t,
+    None => return no_update,
+  };
+
+  let latest = tag.trim_start_matches('v');
+  let release_url = json["html_url"]
+    .as_str()
+    .unwrap_or("https://github.com/kashioka/Rendu/releases/latest")
+    .to_string();
+
+  UpdateInfo {
+    has_update: latest != current,
+    latest_version: latest.to_string(),
+    current_version: current.to_string(),
+    release_url,
+  }
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_dialog::init())
+    .invoke_handler(tauri::generate_handler![check_for_updates])
     .setup(|app| {
       // --- Build native menu bar ---
 
       // Rendu (app) menu
       let about_meta = AboutMetadataBuilder::new()
         .name(Some("Rendu"))
-        .version(Some("0.1.0"))
+        .version(Some(env!("CARGO_PKG_VERSION")))
         .copyright(Some("Copyright © 2026 Hideo Kashioka. All rights reserved."))
         .build();
       let app_menu = SubmenuBuilder::new(app, "Rendu")
@@ -39,16 +100,9 @@ pub fn run() {
         .item(&print)
         .build()?;
 
-      // Edit menu (standard OS items: Undo / Redo / Cut / Copy / Paste / Select All)
+      // Edit menu (viewer-only: Copy)
       let edit_menu = SubmenuBuilder::new(app, "Edit")
-        .undo()
-        .redo()
-        .separator()
-        .cut()
         .copy()
-        .paste()
-        .separator()
-        .select_all()
         .build()?;
 
       // Window menu
