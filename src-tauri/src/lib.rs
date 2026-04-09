@@ -39,6 +39,18 @@ pub fn run() {
         .item(&print)
         .build()?;
 
+      // Edit menu (standard OS items: Undo / Redo / Cut / Copy / Paste / Select All)
+      let edit_menu = SubmenuBuilder::new(app, "Edit")
+        .undo()
+        .redo()
+        .separator()
+        .cut()
+        .copy()
+        .paste()
+        .separator()
+        .select_all()
+        .build()?;
+
       // Window menu
       let window_menu = SubmenuBuilder::new(app, "Window")
         .minimize()
@@ -56,6 +68,7 @@ pub fn run() {
       let menu = MenuBuilder::new(app)
         .item(&app_menu)
         .item(&file_menu)
+        .item(&edit_menu)
         .item(&window_menu)
         .item(&help_menu)
         .build()?;
