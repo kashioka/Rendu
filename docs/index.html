@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rendu — Lightweight Markdown Viewer</title>
+  <meta name="description" content="A fast, no-fuss desktop Markdown viewer. Open a folder, start reading. Mermaid, GFM, PDF export built in.">
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --border: #2a2a2a;
+      --text: #e4e4e7;
+      --muted: #a1a1aa;
+      --accent: #60a5fa;
+      --accent-hover: #93bbfc;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); }
+
+    /* Hero */
+    .hero {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 80px 24px 48px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .hero .tagline {
+      font-size: 20px;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+    .hero .pitch {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 15px;
+      color: var(--muted);
+      margin-bottom: 40px;
+    }
+    .download-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+    }
+    .btn-primary:hover { background: var(--accent-hover); color: #000; }
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: #222; color: var(--text); }
+    .alt-install {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 0;
+    }
+    .alt-install code {
+      background: var(--surface);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    /* Screenshots */
+    .screenshots {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+    }
+    .screenshots img {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .screenshot-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .screenshot-grid img {
+      margin-bottom: 0;
+    }
+
+    /* Features */
+    .features {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+    .features h2 {
+      font-size: 28px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .feature {
+      padding: 20px;
+      background: var(--surface);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .feature h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .feature p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* Footer */
+    footer {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 32px 24px 48px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--text); }
+
+    /* Supported OS */
+    .os-list {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 16px;
+      margin-bottom: 48px;
+    }
+
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 32px; }
+      .hero .tagline { font-size: 17px; }
+      .feature-grid { grid-template-columns: 1fr; }
+      .screenshot-grid { grid-template-columns: 1fr; }
+      .download-buttons { flex-direction: column; align-items: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <section class="hero">
+    <h1>Rendu</h1>
+    <p class="tagline">Markdown to read, not to edit.</p>
+    <div class="pitch">
+      <span>Open a folder, start reading &mdash; no setup, no config</span>
+      <span>Mermaid / GFM / syntax highlighting built in</span>
+      <span>PDF export with one click</span>
+    </div>
+    <div class="download-buttons">
+      <a class="btn btn-primary" href="https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.4.0_aarch64.dmg">Download for macOS</a>
+      <a class="btn btn-secondary" href="https://github.com/kashioka/Rendu/releases/latest">Windows / Other</a>
+    </div>
+    <p class="alt-install">or: <code>brew install --cask kashioka/tap/rendu</code></p>
+    <div class="os-list">
+      <span>macOS (Apple Silicon)</span>
+      <span>Windows (x64)</span>
+    </div>
+  </section>
+
+  <section class="screenshots">
+    <img src="screenshot.png" alt="Rendu — Dark theme with Markdown rendering">
+    <div class="screenshot-grid">
+      <img src="screenshot-light.png" alt="Rendu — Light theme">
+      <img src="screenshot-viewer.png" alt="Rendu — File tree and search">
+    </div>
+  </section>
+
+  <section class="features">
+    <h2>Features</h2>
+    <div class="feature-grid">
+      <div class="feature">
+        <h3>File tree</h3>
+        <p>Browse .md files in a folder tree. Click to preview instantly.</p>
+      </div>
+      <div class="feature">
+        <h3>Mermaid diagrams</h3>
+        <p>Flowcharts, sequence diagrams, ER diagrams rendered inline.</p>
+      </div>
+      <div class="feature">
+        <h3>PDF export</h3>
+        <p>Export the current page as a clean A4 PDF with one click.</p>
+      </div>
+      <div class="feature">
+        <h3>Theme customization</h3>
+        <p>Dark and light themes. Customize colors for background, text, code blocks.</p>
+      </div>
+      <div class="feature">
+        <h3>Document outline</h3>
+        <p>Heading list in the sidebar with click-to-jump navigation.</p>
+      </div>
+      <div class="feature">
+        <h3>Full GFM support</h3>
+        <p>Tables, task lists, strikethrough, syntax highlighting — all built in.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      MIT License &middot;
+      <a href="https://github.com/kashioka/Rendu">GitHub</a> &middot;
+      <a href="https://github.com/kashioka/Rendu/issues">Feedback</a>
+    </p>
+  </footer>
+
+</body>
+</html>
