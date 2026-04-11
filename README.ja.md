@@ -2,6 +2,12 @@
 
 **Rendu** — フランス語で「レンダリングされた」の意味。Markdownファイルを快適に閲覧するためのデスクトップアプリケーション。
 
+フォルダを開くだけで `.md` ファイルをすぐ読める、軽量なMarkdownビューア。開発者、ライター、チームの誰でも。
+
+- **フォルダを開くだけですぐ見られる** — 設定不要
+- **Mermaid / GFM / シンタックスハイライト** 対応
+- **ワンクリックでPDF出力**
+
 **[English](./README.md)**
 
 ![CI](https://github.com/kashioka/Rendu/actions/workflows/ci.yml/badge.svg)
@@ -10,15 +16,17 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-![Rendu](docs/screenshot.png)
+![Rendu — ダークテーマ](docs/screenshot.png)
 
-## クイックスタート
+![Rendu — ライトテーマ](docs/screenshot-light.png) ![Rendu — 設定](docs/screenshot-settings.png) ![Rendu — ビューア＋検索](docs/screenshot-viewer.png)
+
+## ダウンロード
 
 ### macOS
 
-[最新リリース](https://github.com/kashioka/Rendu/releases/latest) から **Rendu.dmg** をダウンロードして開き、Rendu を Applications にドラッグしてください。
+**[Rendu.dmg をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.4.0_aarch64.dmg)** — 開いて Applications にドラッグしてください。
 
-> **「Rendu は開けません」と表示される場合** — Rendu は Apple Developer ID で署名されていません。アプリを右クリックして **開く** を選択し、ダイアログで **開く** をクリックしてください。この操作は初回のみ必要です。
+> **注意:** Rendu は Apple Developer ID で署名されていません。初回起動時はアプリを右クリック → **開く** → ダイアログで **開く** をクリックしてください。この操作は初回のみ必要です。
 
 その他のインストール方法:
 
@@ -29,7 +37,7 @@
 
 ### Windows
 
-[最新リリース](https://github.com/kashioka/Rendu/releases/latest) から `.exe` インストーラをダウンロードして実行してください。
+**[Rendu インストーラ (.exe) をダウンロード](https://github.com/kashioka/Rendu/releases/latest)** — インストーラを実行してください。
 
 ## 特徴
 
@@ -149,6 +157,10 @@ Rendu/
 │   └── tauri.conf.json         # Tauri設定
 └── package.json
 ```
+
+## フィードバック
+
+不具合報告や機能要望は [Issues](https://github.com/kashioka/Rendu/issues) からお願いします。
 
 ## ライセンス
 

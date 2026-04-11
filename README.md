@@ -2,6 +2,12 @@
 
 **Rendu** — French for *rendered*. A lightweight desktop Markdown viewer built with Tauri and React.
 
+A fast, no-fuss Markdown reader for anyone who just wants to open a folder and read `.md` files — developers, writers, and teams.
+
+- **Open a folder, start reading** — no setup, no config
+- **Mermaid / GFM / syntax highlighting** built in
+- **PDF export** with one click
+
 **[日本語](./README.ja.md)**
 
 ![CI](https://github.com/kashioka/Rendu/actions/workflows/ci.yml/badge.svg)
@@ -10,15 +16,17 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-![Rendu](docs/screenshot.png)
+![Rendu — Dark theme](docs/screenshot.png)
 
-## Quick Start
+![Rendu — Light theme](docs/screenshot-light.png) ![Rendu — Settings](docs/screenshot-settings.png) ![Rendu — Viewer with search](docs/screenshot-viewer.png)
+
+## Download
 
 ### macOS
 
-Download **Rendu.dmg** from the [latest release](https://github.com/kashioka/Rendu/releases/latest), open it, and drag Rendu to Applications.
+**[Download Rendu.dmg](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.4.0_aarch64.dmg)** — open and drag to Applications.
 
-> **"Rendu can't be opened" dialog?** Rendu is not code-signed with an Apple Developer ID. Right-click the app and select **Open**, then click **Open** in the dialog. This is only needed once.
+> **Note:** Rendu is not code-signed with an Apple Developer ID. On first launch, right-click the app → **Open** → click **Open** in the dialog. This is only needed once.
 
 Other install methods:
 
@@ -29,7 +37,7 @@ Other install methods:
 
 ### Windows
 
-Download the `.exe` installer from the [latest release](https://github.com/kashioka/Rendu/releases/latest) and run it.
+**[Download Rendu installer (.exe)](https://github.com/kashioka/Rendu/releases/latest)** — run the installer.
 
 ## Features
 
@@ -151,6 +159,10 @@ Rendu/
 │   └── tauri.conf.json         # Tauri config
 └── package.json
 ```
+
+## Feedback
+
+Bug reports and feature requests are welcome — please open an [Issue](https://github.com/kashioka/Rendu/issues).
 
 ## License
 
