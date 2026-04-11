@@ -16,7 +16,9 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-![Rendu](docs/screenshot.png)
+![Rendu — ダークテーマ](docs/screenshot.png)
+
+![Rendu — ライトテーマ](docs/screenshot-light.png) ![Rendu — 設定](docs/screenshot-settings.png) ![Rendu — ビューア＋検索](docs/screenshot-viewer.png)
 
 ## ダウンロード
 

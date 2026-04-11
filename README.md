@@ -16,7 +16,9 @@ A fast, no-fuss Markdown reader for anyone who just wants to open a folder and r
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-![Rendu](docs/screenshot.png)
+![Rendu — Dark theme](docs/screenshot.png)
+
+![Rendu — Light theme](docs/screenshot-light.png) ![Rendu — Settings](docs/screenshot-settings.png) ![Rendu — Viewer with search](docs/screenshot-viewer.png)
 
 ## Download
 
