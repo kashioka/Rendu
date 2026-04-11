@@ -26,7 +26,7 @@
 
 **[Rendu.dmg をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.4.0_aarch64.dmg)** — 開いて Applications にドラッグしてください。
 
-> **注意:** Rendu は Apple Developer ID で署名されていません。初回起動時はアプリを右クリック → **開く** → ダイアログで **開く** をクリックしてください。この操作は初回のみ必要です。
+> Rendu はAppleによるコード署名・公証済みです。DMGを開いてApplicationsにドラッグするだけで、すぐに使えます。
 
 その他のインストール方法:
 
@@ -79,24 +79,11 @@
 ```bash
 curl -LO https://github.com/kashioka/Rendu/releases/latest/download/Rendu-macos-aarch64.tar.gz
 tar xzf Rendu-macos-aarch64.tar.gz
-xattr -cr Rendu.app
 mv Rendu.app /Applications/
 open /Applications/Rendu.app
 ```
 
 すべてのバージョンとリリースノートは [Releases](https://github.com/kashioka/Rendu/releases) ページから確認できます。
-
-### 「"Rendu"は壊れているため開けません」と表示される
-
-検疫フラグが残っているのが原因です。以下を実行してから再度起動してください:
-
-```bash
-xattr -cr /Applications/Rendu.app
-```
-
-### 初回実行時のセキュリティ警告
-
-未署名ビルドのため、ウイルス対策ソフト（Bitdefender等）がPDF保存などのファイル操作をブロックする場合があります。表示されたら **「アプリケーションを信頼する」** を選択してください。通常この警告は1度のみ表示されます。`cargo clean` 後の再ビルドで再度表示される場合があります。
 
 ## 開発者向け
 
