@@ -113,9 +113,12 @@ pub fn run() {
         .build()?;
 
       // Help menu
+      let website = MenuItemBuilder::with_id("website", "Rendu Website")
+        .build(app)?;
       let report_issue = MenuItemBuilder::with_id("report_issue", "Report Issue on GitHub...")
         .build(app)?;
       let help_menu = SubmenuBuilder::new(app, "Help")
+        .item(&website)
         .item(&report_issue)
         .build()?;
 
@@ -136,6 +139,7 @@ pub fn run() {
           "open_folder"  => { let _ = app_handle.emit("menu-open-folder", ()); }
           "open_file"    => { let _ = app_handle.emit("menu-open-file", ()); }
           "print"        => { let _ = app_handle.emit("menu-print", ()); }
+          "website"      => { let _ = open::that("https://kashioka.github.io/Rendu/"); }
           "report_issue" => { let _ = open::that("https://github.com/kashioka/Rendu/issues"); }
           _ => {}
         }
