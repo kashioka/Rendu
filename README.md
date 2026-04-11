@@ -26,7 +26,7 @@ A fast, no-fuss Markdown reader for anyone who just wants to open a folder and r
 
 **[Download Rendu.dmg](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.4.0_aarch64.dmg)** — open and drag to Applications.
 
-> **Note:** Rendu is not code-signed with an Apple Developer ID. On first launch, right-click the app → **Open** → click **Open** in the dialog. This is only needed once.
+> Rendu is code-signed and notarized by Apple. Just open the DMG, drag to Applications, and launch — no extra steps needed.
 
 Other install methods:
 
@@ -79,26 +79,11 @@ Download and install manually:
 ```bash
 curl -LO https://github.com/kashioka/Rendu/releases/latest/download/Rendu-macos-aarch64.tar.gz
 tar xzf Rendu-macos-aarch64.tar.gz
-xattr -cr Rendu.app
 mv Rendu.app /Applications/
 open /Applications/Rendu.app
 ```
 
 All versions and release notes are on the [Releases](https://github.com/kashioka/Rendu/releases) page.
-
-### "Rendu is damaged and can't be opened"
-
-The quarantine flag wasn't cleared. Run:
-
-```bash
-xattr -cr /Applications/Rendu.app
-```
-
-Then launch Rendu again.
-
-### Security software warning on first run
-
-Since the build is unsigned, antivirus software (e.g. Bitdefender) may block file operations such as PDF export. When prompted, select **"Trust this application"** to allow it. This warning typically only appears once. It may reappear after a clean rebuild (`cargo clean`).
 
 ## Development
 
