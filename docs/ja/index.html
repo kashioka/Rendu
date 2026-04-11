@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rendu — Lightweight Markdown Viewer</title>
-  <meta name="description" content="A fast, no-fuss desktop Markdown viewer. Open a folder, start reading. Mermaid, GFM, PDF export built in.">
+  <title>Rendu — 軽量 Markdown ビューア</title>
+  <meta name="description" content="フォルダを開くだけですぐ読める、軽量なMarkdownビューア。Mermaid、GFM、PDF出力対応。">
   <style>
     :root {
       --bg: #0f0f0f;
@@ -17,7 +17,7 @@
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
@@ -25,8 +25,17 @@
     a { color: var(--accent); text-decoration: none; }
     a:hover { color: var(--accent-hover); }
 
+    /* Lang switch */
+    .lang-switch {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      font-size: 13px;
+    }
+
     /* Hero */
     .hero {
+      position: relative;
       max-width: 720px;
       margin: 0 auto;
       padding: 80px 24px 48px;
@@ -181,20 +190,20 @@
 </head>
 <body>
 
-  <section class="hero" style="position:relative">
-    <a href="ja/" style="position:absolute;top:24px;right:24px;font-size:13px">日本語</a>
+  <section class="hero">
+    <a class="lang-switch" href="../">English</a>
     <h1>Rendu</h1>
-    <p class="tagline">Markdown to read, not to edit.</p>
+    <p class="tagline">Markdown を読むためのアプリ。編集ではなく。</p>
     <div class="pitch">
-      <span>Open a folder, start reading &mdash; no setup, no config</span>
-      <span>Mermaid / GFM / syntax highlighting built in</span>
-      <span>PDF export with one click</span>
+      <span>フォルダを開くだけですぐ読める &mdash; 設定不要</span>
+      <span>Mermaid / GFM / シンタックスハイライト対応</span>
+      <span>ワンクリックでPDF出力</span>
     </div>
     <div class="download-buttons">
-      <a class="btn btn-primary" href="https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.4.0_aarch64.dmg">Download for macOS</a>
-      <a class="btn btn-secondary" href="https://github.com/kashioka/Rendu/releases/latest">Windows / Other</a>
+      <a class="btn btn-primary" href="https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.4.0_aarch64.dmg">macOS 版をダウンロード</a>
+      <a class="btn btn-secondary" href="https://github.com/kashioka/Rendu/releases/latest">Windows / その他</a>
     </div>
-    <p class="alt-install">or: <code>brew install --cask kashioka/tap/rendu</code></p>
+    <p class="alt-install">または: <code>brew install --cask kashioka/tap/rendu</code></p>
     <div class="os-list">
       <span>macOS (Apple Silicon)</span>
       <span>Windows (x64)</span>
@@ -202,39 +211,39 @@
   </section>
 
   <section class="screenshots">
-    <img src="screenshot.png" alt="Rendu — Dark theme with Markdown rendering">
+    <img src="../screenshot.png" alt="Rendu — ダークテーマ">
     <div class="screenshot-grid">
-      <img src="screenshot-light.png" alt="Rendu — Light theme">
-      <img src="screenshot-viewer.png" alt="Rendu — File tree and search">
+      <img src="../screenshot-light.png" alt="Rendu — ライトテーマ">
+      <img src="../screenshot-viewer.png" alt="Rendu — ファイルツリーと検索">
     </div>
   </section>
 
   <section class="features">
-    <h2>Features</h2>
+    <h2>機能</h2>
     <div class="feature-grid">
       <div class="feature">
-        <h3>File tree</h3>
-        <p>Browse .md files in a folder tree. Click to preview instantly.</p>
+        <h3>ファイルツリー</h3>
+        <p>フォルダ内の .md ファイルをツリー表示。クリックですぐプレビュー。</p>
       </div>
       <div class="feature">
-        <h3>Mermaid diagrams</h3>
-        <p>Flowcharts, sequence diagrams, ER diagrams rendered inline.</p>
+        <h3>Mermaid 図表</h3>
+        <p>フローチャート、シーケンス図、ER図などをインライン描画。</p>
       </div>
       <div class="feature">
-        <h3>PDF export</h3>
-        <p>Export the current page as a clean A4 PDF with one click.</p>
+        <h3>PDF 出力</h3>
+        <p>表示中のページをワンクリックでA4 PDFにエクスポート。</p>
       </div>
       <div class="feature">
-        <h3>Theme customization</h3>
-        <p>Dark and light themes. Customize colors for background, text, code blocks.</p>
+        <h3>テーマカスタマイズ</h3>
+        <p>ダーク・ライトテーマ。背景色、文字色、コードブロック色を自由に変更。</p>
       </div>
       <div class="feature">
-        <h3>Document outline</h3>
-        <p>Heading list in the sidebar with click-to-jump navigation.</p>
+        <h3>ドキュメントアウトライン</h3>
+        <p>見出し一覧をサイドバーに表示。クリックでジャンプ。</p>
       </div>
       <div class="feature">
-        <h3>Full GFM support</h3>
-        <p>Tables, task lists, strikethrough, syntax highlighting — all built in.</p>
+        <h3>GFM 完全対応</h3>
+        <p>テーブル、タスクリスト、取り消し線、シンタックスハイライト対応。</p>
       </div>
     </div>
   </section>
@@ -243,7 +252,7 @@
     <p>
       MIT License &middot;
       <a href="https://github.com/kashioka/Rendu">GitHub</a> &middot;
-      <a href="https://github.com/kashioka/Rendu/issues">Feedback</a>
+      <a href="https://github.com/kashioka/Rendu/issues">フィードバック</a>
     </p>
   </footer>
 
