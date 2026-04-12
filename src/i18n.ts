@@ -107,12 +107,12 @@ const en: Translations = {
   "nav.back": "Back",
   "nav.forward": "Forward",
 
-  "empty.heading": "Open a Markdown file to get started",
-  "empty.subheading": "Choose a folder to browse its Markdown files, or open a single file directly.",
+  "empty.heading": "Open a Markdown (.md) file to get started",
+  "empty.subheading": "Markdown files are plain-text documents with simple formatting. Choose a folder to browse, or open a file directly.",
   "empty.openFolder": "Open Folder",
   "empty.openFile": "Open File",
-  "empty.selectFile": "Select a file",
-  "empty.selectFile.sub": "Choose a Markdown file from the sidebar to view it.",
+  "empty.selectFile": "Select a file to view",
+  "empty.selectFile.sub": "Choose a Markdown (.md) file from the sidebar to start reading.",
 
   "outline.title": "Outline",
   "outline.noHeadings": "No headings",
@@ -189,12 +189,12 @@ const ja: Translations = {
   "nav.back": "戻る",
   "nav.forward": "進む",
 
-  "empty.heading": "Markdownファイルを開いてください",
-  "empty.subheading": "フォルダを開いて一覧から選ぶか、ファイルを直接指定できます。",
+  "empty.heading": "Markdownファイル（.md）を開いてください",
+  "empty.subheading": "Markdownファイルは書式付きのテキストファイルです。フォルダを開いて一覧から選ぶか、ファイルを直接指定できます。",
   "empty.openFolder": "フォルダを開く",
   "empty.openFile": "ファイルを開く",
-  "empty.selectFile": "ファイルを選択してください",
-  "empty.selectFile.sub": "サイドバーからMarkdownファイルを選んで表示できます。",
+  "empty.selectFile": "ファイルを選択して表示",
+  "empty.selectFile.sub": "サイドバーからMarkdownファイル（.md）を選んで閲覧できます。",
 
   "outline.title": "目次",
   "outline.noHeadings": "見出しなし",
