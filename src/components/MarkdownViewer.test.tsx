@@ -201,4 +201,62 @@ describe('MarkdownViewer', () => {
     });
     expect(screen.getByLabelText('Zoom out')).toBeInTheDocument();
   });
+
+  it('renders <br> as a line break', async () => {
+    (readTextFile as Mock).mockResolvedValue('Line one<br>Line two');
+    const { container } = renderWithLocale(
+      <MarkdownViewer filePath="/test.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(container.querySelector('.markdown-body br')).toBeInTheDocument();
+    });
+  });
+
+  it('renders <details><summary> as collapsible', async () => {
+    (readTextFile as Mock).mockResolvedValue(
+      '<details><summary>Click me</summary>\n\nHidden content\n\n</details>'
+    );
+    renderWithLocale(
+      <MarkdownViewer filePath="/test.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Click me')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Hidden content')).toBeInTheDocument();
+  });
+
+  it('renders <kbd> element', async () => {
+    (readTextFile as Mock).mockResolvedValue('Press <kbd>Ctrl</kbd>+<kbd>C</kbd>');
+    const { container } = renderWithLocale(
+      <MarkdownViewer filePath="/test.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(container.querySelectorAll('.markdown-body kbd')).toHaveLength(2);
+    });
+  });
+
+  it('sanitizes <script> tags (XSS prevention)', async () => {
+    (readTextFile as Mock).mockResolvedValue(
+      'Hello <script>alert("xss")</script> World'
+    );
+    const { container } = renderWithLocale(
+      <MarkdownViewer filePath="/test.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(screen.getByText(/Hello/)).toBeInTheDocument();
+    });
+    expect(container.querySelector('script')).toBeNull();
+  });
+
+  it('preserves Mermaid code block detection with rehype-raw', async () => {
+    (readTextFile as Mock).mockResolvedValue(
+      '```mermaid\ngraph TD;\n  A-->B;\n```'
+    );
+    const { container } = renderWithLocale(
+      <MarkdownViewer filePath="/test.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(container.querySelector('.mermaid-container')).toBeInTheDocument();
+    });
+  });
 });

@@ -5,6 +5,8 @@ import html2pdf from "html2pdf.js";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import type { Components } from "react-markdown";
 import { MermaidBlock } from "./MermaidBlock";
 import { ImageWithOverlay } from "./ImageWithOverlay";
@@ -391,6 +393,14 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
     }
   };
 
+  const sanitizeSchema = useMemo(() => ({
+    ...defaultSchema,
+    attributes: {
+      ...defaultSchema.attributes,
+      code: [...(defaultSchema.attributes?.code || []), ["className", /^language-/]],
+    },
+  }), []);
+
   const components = useMemo<Components>(() => ({
     code({ className, children, ...props }) {
       const match = /language-(\w+)/.exec(className || "");
@@ -661,7 +671,7 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
               } : {}),
             }}
           >
-            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]} components={components}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeHighlight]} components={components}>
               {content}
             </ReactMarkdown>
           </div>

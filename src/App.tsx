@@ -9,6 +9,7 @@ import { useSettings } from "./useSettings";
 import { LocaleProvider } from "./LocaleContext";
 import { useTranslation } from "./LocaleContext";
 import { useUpdateCheck } from "./useUpdateCheck";
+import { SyntaxReference } from "./components/SyntaxReference";
 
 function App() {
   const { settings, setSettings, applyPreset } = useSettings();
@@ -338,6 +339,7 @@ function AppInner({
                 {t("empty.openFile")}
               </button>
             </div>
+            <SyntaxReference />
           </div>
         )}
       </div>
