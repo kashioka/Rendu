@@ -357,6 +357,62 @@ button, a, input, select, textarea {
   text-align: center;
 }
 
+/* ========= Syntax Help Modal ========= */
+.syntax-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+.syntax-modal {
+  background: var(--bg-color, #09090b);
+  border: 1px solid var(--border-color, #3f3f46);
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+.syntax-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.syntax-modal-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+.syntax-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted, #71717a);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.syntax-modal-close:hover {
+  background: var(--hover-bg, #3f3f4680);
+  color: var(--text-color, #e4e4e7);
+}
+.syntax-modal-description {
+  font-size: 13px;
+  color: var(--text-muted, #71717a);
+  margin: 0 0 16px;
+}
+.syntax-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
 /* ========= PDF export (print-friendly overrides) ========= */
 .markdown-body.pdf-export {
   color: #1a1a1a !important;

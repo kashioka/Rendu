@@ -94,6 +94,7 @@ export interface Translations {
 
   // Help / Syntax Reference
   "help.syntaxTitle": string;
+  "help.description": string;
   "help.basicFormatting": string;
   "help.bold": string;
   "help.italic": string;
@@ -198,6 +199,7 @@ const en: Translations = {
   "settings.color.noteText": "Note Text",
 
   "help.syntaxTitle": "Supported Syntax",
+  "help.description": "Rendu supports GitHub Flavored Markdown (GFM) with HTML extensions.",
   "help.basicFormatting": "Formatting",
   "help.bold": "Bold",
   "help.italic": "Italic",
@@ -302,6 +304,7 @@ const ja: Translations = {
   "settings.color.noteText": "ノートテキスト",
 
   "help.syntaxTitle": "対応している記法",
+  "help.description": "Rendu は GitHub Flavored Markdown（GFM）+ HTML に対応しています。",
   "help.basicFormatting": "書式",
   "help.bold": "太字",
   "help.italic": "斜体",

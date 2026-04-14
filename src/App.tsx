@@ -37,6 +37,7 @@ function AppInner({
   const [rootDir, setRootDir] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showSyntaxHelp, setShowSyntaxHelp] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [headings, setHeadings] = useState<HeadingItem[]>([]);
   const [splitRatio, setSplitRatio] = useState(0.5);
@@ -132,6 +133,7 @@ function AppInner({
       listen("menu-open-folder", () => handleOpenFolderRef.current?.()),
       listen("menu-open-file", () => handleOpenFileRef.current?.()),
       listen("menu-print", () => window.print()),
+      listen("menu-supported-syntax", () => setShowSyntaxHelp(true)),
     ];
     return () => { unlisteners.forEach((p) => p.then((fn) => fn()).catch(() => {})); };
   }, []);
@@ -339,7 +341,6 @@ function AppInner({
                 {t("empty.openFile")}
               </button>
             </div>
-            <SyntaxReference />
           </div>
         )}
       </div>
@@ -351,6 +352,22 @@ function AppInner({
           onApplyPreset={applyPreset}
           onClose={() => setShowSettings(false)}
         />
+      )}
+
+      {showSyntaxHelp && (
+        <div className="syntax-modal-overlay" onClick={() => setShowSyntaxHelp(false)}>
+          <div className="syntax-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="syntax-modal-header">
+              <h2>{t("help.syntaxTitle")}</h2>
+              <button className="syntax-modal-close" onClick={() => setShowSyntaxHelp(false)} aria-label={t("viewer.lightbox.close")}>✕</button>
+            </div>
+            <p className="syntax-modal-description">{t("help.description")}</p>
+            <SyntaxReference />
+            <div className="syntax-modal-footer">
+              <button className="btn" onClick={() => setShowSyntaxHelp(false)}>{t("viewer.lightbox.close")}</button>
+            </div>
+          </div>
+        </div>
       )}
       </div>
     </div>
