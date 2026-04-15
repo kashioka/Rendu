@@ -1,0 +1,169 @@
+name: AI PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches: [main]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  ai-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR diff
+        id: diff
+        run: |
+          git fetch origin main
+          DIFF=$(git diff origin/main...HEAD -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.rs' | head -c 12000)
+          echo "diff<<EOF" >> $GITHUB_OUTPUT
+          echo "$DIFF" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Review by Codex (PR author = kashioka)
+        if: github.event.pull_request.user.login == 'kashioka'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PR_DIFF: ${{ steps.diff.outputs.diff }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          REVIEW=$(python3 - <<'PYEOF'
+          import os, json, urllib.request
+
+          diff = os.environ.get("PR_DIFF", "")
+          title = os.environ.get("PR_TITLE", "")
+          body = os.environ.get("PR_BODY", "")
+
+          prompt = f"""以下のPRをコードレビューしてください。
+
+PR タイトル: {title}
+PR 説明: {body}
+
+## 変更差分
+{diff}
+
+## レビュー観点
+- バグ・ロジックエラーの可能性
+- 型安全性（TypeScript）
+- パフォーマンス上の懸念
+- 設計・構造の問題
+- 改善提案
+
+## 出力フォーマット
+🔴 **問題点** があれば箇条書き
+🟡 **改善提案** があれば箇条書き
+✅ **良い点** があれば箇条書き
+📝 **総評** を2〜3行で
+
+問題がなければ「✅ 特に問題なし」と記載してください。
+レビュアー: Codex (OpenAI)"""
+
+          payload = {
+            "model": "o4-mini",
+            "messages": [{"role": "user", "content": prompt}],
+            "max_completion_tokens": 1500
+          }
+
+          req = urllib.request.Request(
+            "https://api.openai.com/v1/chat/completions",
+            data=json.dumps(payload).encode(),
+            headers={
+              "Content-Type": "application/json",
+              "Authorization": f"Bearer {os.environ['OPENAI_API_KEY']}"
+            }
+          )
+          with urllib.request.urlopen(req) as res:
+            result = json.loads(res.read())
+            print(result["choices"][0]["message"]["content"])
+          PYEOF
+          )
+          echo "REVIEW<<EOF" >> $GITHUB_ENV
+          echo "$REVIEW" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          echo "REVIEWER=🤖 Codex (OpenAI)" >> $GITHUB_ENV
+
+      - name: Review by Claude (other authors)
+        if: github.event.pull_request.user.login != 'kashioka'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PR_DIFF: ${{ steps.diff.outputs.diff }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          REVIEW=$(python3 - <<'PYEOF'
+          import os, json, urllib.request
+
+          diff = os.environ.get("PR_DIFF", "")
+          title = os.environ.get("PR_TITLE", "")
+          body = os.environ.get("PR_BODY", "")
+
+          prompt = f"""以下のPRをコードレビューしてください。
+
+PR タイトル: {title}
+PR 説明: {body}
+
+## 変更差分
+{diff}
+
+## レビュー観点
+- バグ・ロジックエラーの可能性
+- 型安全性（TypeScript）
+- パフォーマンス上の懸念
+- 設計・構造の問題
+- 改善提案
+
+## 出力フォーマット
+🔴 **問題点** があれば箇条書き
+🟡 **改善提案** があれば箇条書き
+✅ **良い点** があれば箇条書き
+📝 **総評** を2〜3行で
+
+問題がなければ「✅ 特に問題なし」と記載してください。
+レビュアー: Claude (Anthropic)"""
+
+          payload = {
+            "model": "claude-sonnet-4-6",
+            "max_tokens": 1500,
+            "messages": [{"role": "user", "content": prompt}]
+          }
+
+          req = urllib.request.Request(
+            "https://api.anthropic.com/v1/messages",
+            data=json.dumps(payload).encode(),
+            headers={
+              "Content-Type": "application/json",
+              "x-api-key": os.environ["ANTHROPIC_API_KEY"],
+              "anthropic-version": "2023-06-01"
+            }
+          )
+          with urllib.request.urlopen(req) as res:
+            result = json.loads(res.read())
+            print(result["content"][0]["text"])
+          PYEOF
+          )
+          echo "REVIEW<<EOF" >> $GITHUB_ENV
+          echo "$REVIEW" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          echo "REVIEWER=🤖 Claude (Anthropic)" >> $GITHUB_ENV
+
+      - name: Post review comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COMMENT="## ${REVIEWER} によるAIコードレビュー
+
+${REVIEW}
+
+---
+*このコメントはAIによって自動生成されました。*"
+
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "$COMMENT"
