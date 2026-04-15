@@ -1,5 +1,22 @@
 # Contributing to Rendu
 
+コントリビューションを歓迎します。PRやIssueを送る前に、このガイドを一読してください。
+
+## 前提条件
+
+- Node.js 20 以上
+- Rust（最新 stable）— Tauri のビルドに必要: https://www.rust-lang.org/tools/install
+
+## 開発環境
+
+```bash
+npm ci
+npm run dev          # Vite dev server（フロントのみ）
+npm run tauri dev    # Tauri ネイティブ機能を含む起動
+npm run test:run     # Vitest
+npx tsc --noEmit     # 型チェック
+```
+
 ## ブランチ命名規則
 
 `main` に直接プッシュしないでください。以下の命名でブランチを切ってください。
@@ -12,29 +29,42 @@
 | ドキュメント | `docs/xxx` | `docs/contributing` |
 | CI・ビルド | `chore/xxx` | `chore/update-deps` |
 
+フォークからPRを送る場合も同様です。`main` ブランチからではなく、上記の命名でブランチを作ってください。
+
+```
+例: feat/drag-and-drop → kashioka/Rendu:main
+```
+
+## コミットメッセージ
+
+Conventional Commits 形式で書いてください。
+
+```
+feat: 新機能
+fix: バグ修正
+docs: ドキュメントのみの変更
+refactor: リファクタリング
+chore: ビルド・依存関係の変更
+```
+
 ## Pull Request
 
-1. フォークからPRを送る場合も、`main` ではなく上記の命名でブランチを作る
-2. PRの説明には **何をしたか** と **確認方法** を書く
+1. PRの説明には **何をしたか** と **確認方法** を書く
+2. 新機能・バグ修正には **対応するテストを追加** する
 3. CI（型チェック + テスト）が通っていることを確認してからレビュー依頼する
-
-## テスト
-
-- 新機能・バグ修正には **対応するテストを追加** する
-- PRを出す前にローカルで確認:
+4. PRを出す前にローカルで確認:
 
 ```bash
 npm run test:run   # Vitest
 npx tsc --noEmit   # 型チェック
 ```
 
-## 開発環境
+## マージポリシー
 
-```bash
-npm ci
-npm run dev        # Vite dev server
-npm run test:run   # テスト実行
-npx tsc --noEmit   # 型チェック
-```
+- **Squash merge** を使用します
+- **1人以上の Approve** が必要です
+- マージ後はブランチを削除してください
 
-Tauri のネイティブ機能を使うときは `npm run tauri dev` で起動してください。
+## AIツールの使用について
+
+AI生成コードをPRに含める場合、コードの内容を理解し、テストが通ることを確認してからサブミットしてください。
