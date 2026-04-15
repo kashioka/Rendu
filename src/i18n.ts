@@ -92,6 +92,30 @@ export interface Translations {
   "settings.color.signalText": string;
   "settings.color.noteBg": string;
   "settings.color.noteText": string;
+
+  // Help / Syntax Reference
+  "help.syntaxTitle": string;
+  "help.description": string;
+  "help.basicFormatting": string;
+  "help.bold": string;
+  "help.italic": string;
+  "help.strikethrough": string;
+  "help.headings": string;
+  "help.headingLevel": string;
+  "help.lists": string;
+  "help.unorderedList": string;
+  "help.orderedList": string;
+  "help.taskList": string;
+  "help.blocks": string;
+  "help.codeBlock": string;
+  "help.blockquote": string;
+  "help.horizontalRule": string;
+  "help.table": string;
+  "help.lineBreak": string;
+  "help.collapsible": string;
+  "help.superSub": string;
+  "help.mermaid": string;
+  "help.footer": string;
 }
 
 const en: Translations = {
@@ -175,6 +199,29 @@ const en: Translations = {
   "settings.color.signalText": "Signal Text",
   "settings.color.noteBg": "Note Background",
   "settings.color.noteText": "Note Text",
+
+  "help.syntaxTitle": "Supported Syntax",
+  "help.description": "Rendu supports GitHub Flavored Markdown (GFM) with HTML extensions.",
+  "help.basicFormatting": "Formatting",
+  "help.bold": "Bold",
+  "help.italic": "Italic",
+  "help.strikethrough": "Strikethrough",
+  "help.headings": "Headings",
+  "help.headingLevel": "Heading {n}",
+  "help.lists": "Lists",
+  "help.unorderedList": "Bullet list",
+  "help.orderedList": "Numbered list",
+  "help.taskList": "Task list",
+  "help.blocks": "Blocks",
+  "help.codeBlock": "Code block",
+  "help.blockquote": "Blockquote",
+  "help.horizontalRule": "Horizontal rule",
+  "help.table": "Table",
+  "help.lineBreak": "Line break",
+  "help.collapsible": "Collapsible section",
+  "help.superSub": "Superscript / Subscript",
+  "help.mermaid": "Diagram (flowchart, sequence, etc.)",
+  "help.footer": "GitHub Flavored Markdown (GFM) + HTML",
 };
 
 const ja: Translations = {
@@ -258,6 +305,29 @@ const ja: Translations = {
   "settings.color.signalText": "シグナルテキスト",
   "settings.color.noteBg": "ノート背景",
   "settings.color.noteText": "ノートテキスト",
+
+  "help.syntaxTitle": "対応している記法",
+  "help.description": "Rendu は GitHub Flavored Markdown（GFM）+ HTML に対応しています。",
+  "help.basicFormatting": "書式",
+  "help.bold": "太字",
+  "help.italic": "斜体",
+  "help.strikethrough": "取り消し線",
+  "help.headings": "見出し",
+  "help.headingLevel": "見出し{n}",
+  "help.lists": "リスト",
+  "help.unorderedList": "箇条書き",
+  "help.orderedList": "番号付きリスト",
+  "help.taskList": "タスクリスト",
+  "help.blocks": "ブロック",
+  "help.codeBlock": "コードブロック",
+  "help.blockquote": "引用",
+  "help.horizontalRule": "水平線",
+  "help.table": "テーブル",
+  "help.lineBreak": "改行",
+  "help.collapsible": "折りたたみセクション",
+  "help.superSub": "上付き / 下付き文字",
+  "help.mermaid": "図（フローチャート、シーケンス図など）",
+  "help.footer": "GitHub Flavored Markdown (GFM) + HTML",
 };
 
 const dictionaries: Record<Locale, Translations> = { en, ja };

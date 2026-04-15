@@ -272,6 +272,169 @@ button, a, input, select, textarea {
 .markdown-body img { max-width: 100%; }
 .markdown-body input[type="checkbox"] { margin-right: 0.5em; }
 
+/* ========= Inline HTML elements ========= */
+.markdown-body details {
+  margin: 0.5em 0;
+  padding: 0.5em 1em;
+  border: 1px solid var(--md-border, #3f3f46);
+  border-radius: 6px;
+}
+.markdown-body details[open] > summary {
+  margin-bottom: 0.5em;
+}
+.markdown-body summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.markdown-body summary:hover {
+  color: var(--md-link, #60a5fa);
+}
+.markdown-body kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 0.85em;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  line-height: 1.4;
+  color: var(--text-color, #e4e4e7);
+  background: var(--md-code-bg, #27272a);
+  border: 1px solid var(--md-border, #3f3f46);
+  border-radius: 4px;
+  box-shadow: inset 0 -1px 0 var(--md-border, #3f3f46);
+}
+.markdown-body sup { vertical-align: super; font-size: 0.75em; }
+.markdown-body sub { vertical-align: sub; font-size: 0.75em; }
+.markdown-body mark {
+  background-color: rgba(250, 204, 21, 0.3);
+  color: inherit;
+  padding: 0.1em 0.2em;
+  border-radius: 2px;
+}
+
+/* ========= Syntax Reference ========= */
+.syntax-reference {
+  margin-top: 24px;
+  width: 100%;
+  max-width: 640px;
+  text-align: left;
+}
+.syntax-reference-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #71717a);
+  margin: 0 0 12px;
+}
+.syntax-reference-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.syntax-section h4 {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0 0 4px;
+  color: var(--text-color, #e4e4e7);
+}
+.syntax-section table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.syntax-section td {
+  padding: 2px 6px;
+  font-size: 12px;
+  color: var(--text-muted, #71717a);
+  vertical-align: middle;
+}
+.syntax-section td.syntax-code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--text-color, #e4e4e7);
+  white-space: nowrap;
+  width: 1%;
+}
+.syntax-section code {
+  font-size: 11px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--md-code-bg, #27272a);
+}
+.syntax-section kbd {
+  display: inline-block;
+  padding: 1px 4px;
+  font-size: 10px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  background: var(--md-code-bg, #27272a);
+  border: 1px solid var(--md-border, #3f3f46);
+  border-radius: 3px;
+}
+.syntax-link {
+  color: var(--md-link, #60a5fa);
+  text-decoration: underline;
+}
+.syntax-reference-footer {
+  margin: 12px 0 0;
+  font-size: 11px;
+  color: var(--text-muted, #71717a);
+  text-align: center;
+}
+
+/* ========= Syntax Help Modal ========= */
+.syntax-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+.syntax-modal {
+  background: var(--bg-color, #09090b);
+  border: 1px solid var(--border-color, #3f3f46);
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+.syntax-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.syntax-modal-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+.syntax-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted, #71717a);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.syntax-modal-close:hover {
+  background: var(--hover-bg, #3f3f4680);
+  color: var(--text-color, #e4e4e7);
+}
+.syntax-modal-description {
+  font-size: 13px;
+  color: var(--text-muted, #71717a);
+  margin: 0 0 16px;
+}
+.syntax-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
 /* ========= PDF export (print-friendly overrides) ========= */
 .markdown-body.pdf-export {
   color: #1a1a1a !important;
@@ -317,6 +480,19 @@ button, a, input, select, textarea {
 }
 .markdown-body.pdf-export hr {
   border-top-color: #d0d0d0 !important;
+}
+.markdown-body.pdf-export details {
+  border-color: #d0d0d0 !important;
+}
+.markdown-body.pdf-export kbd {
+  background: #f3f4f6 !important;
+  border-color: #d0d0d0 !important;
+  box-shadow: inset 0 -1px 0 #d0d0d0 !important;
+  color: #1a1a1a !important;
+}
+.markdown-body.pdf-export mark {
+  background-color: rgba(250, 204, 21, 0.4) !important;
+  color: #1a1a1a !important;
 }
 
 /* ========= Zoom controls ========= */
