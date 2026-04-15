@@ -1,113 +1,83 @@
 name: AI PR Review
 
 on:
-  pull_request:
-    types: [opened, synchronize]
-    branches: [main]
+  issue_comment:
+    types: [created]
 
 permissions:
   pull-requests: write
   contents: read
+  issues: read
 
 jobs:
   ai-review:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    # PRのコメントで /review と書いたときだけ発動、外部PR（fork）のみ対象
+    if: |
+      github.event.issue.pull_request != null &&
+      contains(github.event.comment.body, '/review') &&
+      github.event.comment.user.login == 'kashioka' &&
+      github.event.issue.user.login != 'kashioka'
 
-      - name: Get PR diff
-        id: diff
+    steps:
+      - name: Get PR info
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git fetch origin main
-          DIFF=$(git diff origin/main...HEAD -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.rs' | head -c 12000)
+          PR_DATA=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.issue.number }})
+          HEAD_SHA=$(echo "$PR_DATA" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d['head']['sha'])")
+          BASE_SHA=$(echo "$PR_DATA" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d['base']['sha'])")
+          PR_TITLE=$(echo "$PR_DATA" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d['title'])")
+          PR_AUTHOR=$(echo "$PR_DATA" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d['user']['login'])")
+          echo "head_sha=$HEAD_SHA" >> $GITHUB_OUTPUT
+          echo "base_sha=$BASE_SHA" >> $GITHUB_OUTPUT
+          echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
+          echo "pr_author=$PR_AUTHOR" >> $GITHUB_OUTPUT
+
+      - name: Get PR diff via API
+        id: diff
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DIFF=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}/files \
+            | python3 -c "
+          import sys, json
+          files = json.load(sys.stdin)
+          result = []
+          total = 0
+          for f in files:
+              ext = f['filename'].split('.')[-1]
+              if ext in ['ts','tsx','js','jsx','rs','py','go']:
+                  patch = f.get('patch','')
+                  result.append(f'### {f[\"filename\"]}\n{patch}')
+                  total += len(patch)
+                  if total > 12000:
+                      break
+          print('\n'.join(result))
+          ")
           echo "diff<<EOF" >> $GITHUB_OUTPUT
           echo "$DIFF" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Review by Codex (PR author = kashioka)
-        if: github.event.pull_request.user.login == 'kashioka'
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          PR_DIFF: ${{ steps.diff.outputs.diff }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_BODY: ${{ github.event.pull_request.body }}
-        run: |
-          REVIEW=$(python3 - <<'PYEOF'
-          import os, json, urllib.request
-
-          diff = os.environ.get("PR_DIFF", "")
-          title = os.environ.get("PR_TITLE", "")
-          body = os.environ.get("PR_BODY", "")
-
-          prompt = f"""以下のPRをコードレビューしてください。
-
-PR タイトル: {title}
-PR 説明: {body}
-
-## 変更差分
-{diff}
-
-## レビュー観点
-- バグ・ロジックエラーの可能性
-- 型安全性（TypeScript）
-- パフォーマンス上の懸念
-- 設計・構造の問題
-- 改善提案
-
-## 出力フォーマット
-🔴 **問題点** があれば箇条書き
-🟡 **改善提案** があれば箇条書き
-✅ **良い点** があれば箇条書き
-📝 **総評** を2〜3行で
-
-問題がなければ「✅ 特に問題なし」と記載してください。
-レビュアー: Codex (OpenAI)"""
-
-          payload = {
-            "model": "o4-mini",
-            "messages": [{"role": "user", "content": prompt}],
-            "max_completion_tokens": 1500
-          }
-
-          req = urllib.request.Request(
-            "https://api.openai.com/v1/chat/completions",
-            data=json.dumps(payload).encode(),
-            headers={
-              "Content-Type": "application/json",
-              "Authorization": f"Bearer {os.environ['OPENAI_API_KEY']}"
-            }
-          )
-          with urllib.request.urlopen(req) as res:
-            result = json.loads(res.read())
-            print(result["choices"][0]["message"]["content"])
-          PYEOF
-          )
-          echo "REVIEW<<EOF" >> $GITHUB_ENV
-          echo "$REVIEW" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-          echo "REVIEWER=🤖 Codex (OpenAI)" >> $GITHUB_ENV
-
-      - name: Review by Claude (other authors)
-        if: github.event.pull_request.user.login != 'kashioka'
+      - name: Review by Claude
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           PR_DIFF: ${{ steps.diff.outputs.diff }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_TITLE: ${{ steps.pr.outputs.pr_title }}
+          PR_AUTHOR: ${{ steps.pr.outputs.pr_author }}
         run: |
           REVIEW=$(python3 - <<'PYEOF'
           import os, json, urllib.request
 
           diff = os.environ.get("PR_DIFF", "")
           title = os.environ.get("PR_TITLE", "")
-          body = os.environ.get("PR_BODY", "")
+          author = os.environ.get("PR_AUTHOR", "")
 
-          prompt = f"""以下のPRをコードレビューしてください。
+          prompt = f"""以下の外部コントリビュータのPRをコードレビューしてください。
 
 PR タイトル: {title}
-PR 説明: {body}
+PR 作成者: {author}
 
 ## 変更差分
 {diff}
@@ -117,16 +87,16 @@ PR 説明: {body}
 - 型安全性（TypeScript）
 - パフォーマンス上の懸念
 - 設計・構造の問題
-- 改善提案
+- マージしてよいかの総合判断
 
 ## 出力フォーマット
-🔴 **問題点** があれば箇条書き
-🟡 **改善提案** があれば箇条書き
+🔴 **問題点** があれば箇条書き（マージブロッカーになるもの）
+🟡 **改善提案** があれば箇条書き（あると良いもの）
 ✅ **良い点** があれば箇条書き
 📝 **総評** を2〜3行で
+🔀 **マージ推奨度**: ✅ 推奨 / 🟡 修正後推奨 / 🔴 非推奨
 
-問題がなければ「✅ 特に問題なし」と記載してください。
-レビュアー: Claude (Anthropic)"""
+問題がなければ「✅ 特に問題なし」と記載してください。"""
 
           payload = {
             "model": "claude-sonnet-4-6",
@@ -151,19 +121,18 @@ PR 説明: {body}
           echo "REVIEW<<EOF" >> $GITHUB_ENV
           echo "$REVIEW" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
-          echo "REVIEWER=🤖 Claude (Anthropic)" >> $GITHUB_ENV
 
       - name: Post review comment
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          COMMENT="## ${REVIEWER} によるAIコードレビュー
+          COMMENT="## 🤖 Claude (Anthropic) によるAIコードレビュー
 
 ${REVIEW}
 
 ---
-*このコメントはAIによって自動生成されました。*"
+*このコメントは \`/review\` コマンドによって自動生成されました。*"
 
-          gh pr comment ${{ github.event.pull_request.number }} \
+          gh pr comment ${{ github.event.issue.number }} \
             --repo ${{ github.repository }} \
             --body "$COMMENT"
