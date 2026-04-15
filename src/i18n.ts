@@ -23,6 +23,7 @@ export interface Translations {
   "empty.openFile": string;
   "empty.selectFile": string;
   "empty.selectFile.sub": string;
+  "drop.openMarkdown": string;
 
   // Outline
   "outline.title": string;
@@ -113,6 +114,7 @@ const en: Translations = {
   "empty.openFile": "Open File",
   "empty.selectFile": "Select a file to view",
   "empty.selectFile.sub": "Choose a Markdown (.md) file from the sidebar to start reading.",
+  "drop.openMarkdown": "Drop a Markdown file to open",
 
   "outline.title": "Outline",
   "outline.noHeadings": "No headings",
@@ -195,6 +197,7 @@ const ja: Translations = {
   "empty.openFile": "ファイルを開く",
   "empty.selectFile": "ファイルを選択して表示",
   "empty.selectFile.sub": "サイドバーからMarkdownファイル（.md）を選んで閲覧できます。",
+  "drop.openMarkdown": "Markdownファイルをドロップして開く",
 
   "outline.title": "目次",
   "outline.noHeadings": "見出しなし",

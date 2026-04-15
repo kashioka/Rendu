@@ -161,6 +161,28 @@ button, a, input, select, textarea {
   font-weight: 500;
 }
 
+/* ========= Native DnD overlay ========= */
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--app-bg, #18181b) 75%, transparent);
+  border: 2px dashed var(--md-link, #60a5fa);
+  pointer-events: none;
+}
+.drop-overlay-label {
+  padding: 10px 14px;
+  border: 1px solid var(--border-color, #3f3f46);
+  border-radius: 8px;
+  background: var(--sidebar-bg, #18181b);
+  color: var(--text-color, #e4e4e7);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 /* ========= Viewer toolbar ========= */
 .viewer-toolbar {
   border-bottom: 1px solid var(--border-color, #3f3f46);
