@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
-import { listen } from "@tauri-apps/api/event";
+import { listen, TauriEvent } from "@tauri-apps/api/event";
 import { FileTree } from "./components/FileTree";
 import { MarkdownViewer } from "./components/MarkdownViewer";
 import { OutlinePanel, type HeadingItem } from "./components/OutlinePanel";
@@ -9,6 +9,37 @@ import { useSettings } from "./useSettings";
 import { LocaleProvider } from "./LocaleContext";
 import { useTranslation } from "./LocaleContext";
 import { useUpdateCheck } from "./useUpdateCheck";
+
+const MARKDOWN_FILE_REGEX = /\.(md|markdown)$/i;
+
+function isMarkdownFile(path: string): boolean {
+  return MARKDOWN_FILE_REGEX.test(path);
+}
+
+function getParentDir(path: string): string | null {
+  const normalized = path.replace(/\\/g, "/").replace(/\/+$/, "");
+  if (!normalized) return null;
+  if (normalized === "/") return "/";
+
+  const idx = normalized.lastIndexOf("/");
+  if (idx < 0) return null;
+  if (idx === 0) return "/";
+
+  const parent = normalized.slice(0, idx);
+  // Keep Windows drive roots normalized as "C:/" instead of "C:"
+  if (/^[A-Za-z]:$/.test(parent)) return `${parent}/`;
+  return parent;
+}
+
+function findDroppedMarkdownPath(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const paths = (payload as { paths?: unknown }).paths;
+  if (!Array.isArray(paths)) return null;
+  for (const path of paths) {
+    if (typeof path === "string" && isMarkdownFile(path)) return path;
+  }
+  return null;
+}
 
 function App() {
   const { settings, setSettings, applyPreset } = useSettings();
@@ -39,6 +70,7 @@ function AppInner({
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [headings, setHeadings] = useState<HeadingItem[]>([]);
   const [splitRatio, setSplitRatio] = useState(0.5);
+  const [showDropHint, setShowDropHint] = useState(false);
   const { t } = useTranslation();
   const { info: updateInfo, dismiss: dismissUpdate } = useUpdateCheck();
 
@@ -160,6 +192,29 @@ function AppInner({
     pushHistory({ rootDir, selectedFile: file });
   }, [rootDir, pushHistory]);
 
+  const handleDropFile = useCallback((file: string) => {
+    const nextRootDir = getParentDir(file) ?? rootDir;
+    setRootDir(nextRootDir);
+    setSelectedFile(file);
+    pushHistory({ rootDir: nextRootDir, selectedFile: file });
+  }, [rootDir, pushHistory]);
+
+  useEffect(() => {
+    const unlisteners = [
+      listen(TauriEvent.DRAG_ENTER, (event) => {
+        const droppedPath = findDroppedMarkdownPath(event.payload);
+        setShowDropHint(Boolean(droppedPath));
+      }),
+      listen(TauriEvent.DRAG_LEAVE, () => setShowDropHint(false)),
+      listen(TauriEvent.DRAG_DROP, (event) => {
+        setShowDropHint(false);
+        const droppedPath = findDroppedMarkdownPath(event.payload);
+        if (droppedPath) handleDropFile(droppedPath);
+      }),
+    ];
+    return () => { unlisteners.forEach((p) => p.then((fn) => fn()).catch(() => {})); };
+  }, [handleDropFile]);
+
   handleOpenFolderRef.current = handleOpenFolder;
   handleOpenFileRef.current = handleOpenFile;
 
@@ -278,7 +333,12 @@ function AppInner({
       )}
 
       {/* Main content */}
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col relative">
+        {showDropHint && (
+          <div className="drop-overlay">
+            <div className="drop-overlay-label">{t("drop.openMarkdown")}</div>
+          </div>
+        )}
         {selectedFile ? (
           <MarkdownViewer filePath={selectedFile} settings={settings} onHeadingsChange={setHeadings} />
         ) : rootDir ? (
