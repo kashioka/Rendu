@@ -115,6 +115,9 @@ export interface Translations {
   "help.collapsible": string;
   "help.superSub": string;
   "help.mermaid": string;
+  "help.link": string;
+  "help.html": string;
+  "help.mermaidTitle": string;
   "help.footer": string;
 }
 
@@ -220,6 +223,9 @@ const en: Translations = {
   "help.lineBreak": "Line break",
   "help.collapsible": "Collapsible section",
   "help.superSub": "Superscript / Subscript",
+  "help.link": "Link",
+  "help.html": "HTML",
+  "help.mermaidTitle": "Mermaid",
   "help.mermaid": "Diagram (flowchart, sequence, etc.)",
   "help.footer": "GitHub Flavored Markdown (GFM) + HTML",
 };
@@ -326,6 +332,9 @@ const ja: Translations = {
   "help.lineBreak": "改行",
   "help.collapsible": "折りたたみセクション",
   "help.superSub": "上付き / 下付き文字",
+  "help.link": "リンク",
+  "help.html": "HTML",
+  "help.mermaidTitle": "Mermaid",
   "help.mermaid": "図（フローチャート、シーケンス図など）",
   "help.footer": "GitHub Flavored Markdown (GFM) + HTML",
 };

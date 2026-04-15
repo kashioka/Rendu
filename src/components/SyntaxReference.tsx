@@ -15,7 +15,7 @@ export function SyntaxReference() {
               <tr><td className="syntax-code">*{t("help.italic")}*</td><td><em>{t("help.italic")}</em></td></tr>
               <tr><td className="syntax-code">~~{t("help.strikethrough")}~~</td><td><del>{t("help.strikethrough")}</del></td></tr>
               <tr><td className="syntax-code">`code`</td><td><code>code</code></td></tr>
-              <tr><td className="syntax-code">[Link](url)</td><td><span className="syntax-link">Link</span></td></tr>
+              <tr><td className="syntax-code">[{t("help.link")}](url)</td><td><span className="syntax-link">{t("help.link")}</span></td></tr>
             </tbody>
           </table>
         </section>
@@ -55,7 +55,7 @@ export function SyntaxReference() {
         </section>
 
         <section className="syntax-section">
-          <h4>HTML</h4>
+          <h4>{t("help.html")}</h4>
           <table>
             <tbody>
               <tr><td className="syntax-code">{"<br>"}</td><td>{t("help.lineBreak")}</td></tr>
@@ -67,7 +67,7 @@ export function SyntaxReference() {
         </section>
 
         <section className="syntax-section">
-          <h4>Mermaid</h4>
+          <h4>{t("help.mermaidTitle")}</h4>
           <table>
             <tbody>
               <tr>
