@@ -1,9 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen } from "@testing-library/react";
 import { renderWithLocale } from "../test/helpers";
 import { SyntaxReference } from "./SyntaxReference";
 
 describe("SyntaxReference", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("renders the title", () => {
     renderWithLocale(<SyntaxReference />);
     expect(screen.getByText("Supported Syntax")).toBeInTheDocument();
