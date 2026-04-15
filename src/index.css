@@ -390,15 +390,63 @@ button, a, input, select, textarea {
   background: rgba(0, 0, 0, 0.5);
 }
 .syntax-modal {
-  background: var(--bg-color, #09090b);
-  border: 1px solid var(--border-color, #3f3f46);
+  --modal-bg: #ffffff;
+  --modal-text: #1a1a1a;
+  --modal-text-muted: #52525b;
+  --modal-border: #d4d4d8;
+  --modal-surface: #f4f4f5;
+  --modal-link: #2563eb;
+
+  background: var(--modal-bg);
+  color: var(--modal-text);
+  border: 1px solid var(--modal-border);
   border-radius: 12px;
   padding: 24px;
   width: 90%;
   max-width: 600px;
   max-height: 80vh;
   overflow-y: auto;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+.syntax-modal .syntax-modal-close {
+  color: var(--modal-text-muted);
+}
+.syntax-modal .syntax-modal-close:hover {
+  background: var(--modal-surface);
+  color: var(--modal-text);
+}
+.syntax-modal .syntax-modal-description {
+  color: var(--modal-text-muted);
+}
+.syntax-modal .syntax-section h4 {
+  color: var(--modal-text);
+}
+.syntax-modal .syntax-section td {
+  color: var(--modal-text-muted);
+}
+.syntax-modal .syntax-section td.syntax-code {
+  color: var(--modal-text);
+}
+.syntax-modal .syntax-section code {
+  background: var(--modal-surface);
+}
+.syntax-modal .syntax-section kbd {
+  background: var(--modal-surface);
+  border-color: var(--modal-border);
+}
+.syntax-modal .syntax-link {
+  color: var(--modal-link);
+}
+.syntax-modal .syntax-reference-footer {
+  color: var(--modal-text-muted);
+}
+.syntax-modal .syntax-reference-title {
+  color: var(--modal-text-muted);
+}
+.syntax-modal .btn {
+  background: var(--modal-surface);
+  color: var(--modal-text);
+  border-color: var(--modal-border);
 }
 .syntax-modal-header {
   display: flex;
