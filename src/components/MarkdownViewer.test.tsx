@@ -259,4 +259,19 @@ describe('MarkdownViewer', () => {
       expect(container.querySelector('.mermaid-container')).toBeInTheDocument();
     });
   });
+
+  it('hides YAML frontmatter from rendered output', async () => {
+    (readTextFile as Mock).mockResolvedValue(
+      '---\nmarp: true\ntheme: default\n---\n\n# Slide Title\n\nContent here.'
+    );
+    renderWithLocale(
+      <MarkdownViewer filePath="/test.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Slide Title')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Content here.')).toBeInTheDocument();
+    expect(screen.queryByText('marp: true')).not.toBeInTheDocument();
+    expect(screen.queryByText('theme: default')).not.toBeInTheDocument();
+  });
 });

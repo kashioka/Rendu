@@ -4,6 +4,7 @@ import { save } from "@tauri-apps/plugin-dialog";
 import html2pdf from "html2pdf.js";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkFrontmatter from "remark-frontmatter";
 import rehypeHighlight from "rehype-highlight";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
@@ -671,7 +672,7 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
               } : {}),
             }}
           >
-            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeHighlight]} components={components}>
+            <ReactMarkdown remarkPlugins={[remarkGfm, remarkFrontmatter]} rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeHighlight]} components={components}>
               {content}
             </ReactMarkdown>
           </div>
