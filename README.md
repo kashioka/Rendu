@@ -24,7 +24,7 @@ A fast, no-fuss Markdown reader for anyone who just wants to open a folder and r
 
 ### macOS
 
-**[Download Rendu.dmg](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.4.0_aarch64.dmg)** — open and drag to Applications.
+**[Download Rendu.dmg](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.5.0_aarch64.dmg)** — open and drag to Applications.
 
 > Rendu is code-signed and notarized by Apple. Just open the DMG, drag to Applications, and launch — no extra steps needed.
 
@@ -33,7 +33,6 @@ Other install methods:
 | Method | Command |
 |--------|---------|
 | Homebrew | `brew install --cask kashioka/tap/rendu` |
-| One-liner | `curl -fsSL https://github.com/kashioka/Rendu/releases/latest/download/install.sh \| bash` |
 
 ### Windows
 

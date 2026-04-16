@@ -24,7 +24,7 @@
 
 ### macOS
 
-**[Rendu.dmg をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.4.0_aarch64.dmg)** — 開いて Applications にドラッグしてください。
+**[Rendu.dmg をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.5.0_aarch64.dmg)** — 開いて Applications にドラッグしてください。
 
 > Rendu はAppleによるコード署名・公証済みです。DMGを開いてApplicationsにドラッグするだけで、すぐに使えます。
 
@@ -33,7 +33,6 @@
 | 方法 | コマンド |
 |------|---------|
 | Homebrew | `brew install --cask kashioka/tap/rendu` |
-| ワンライナー | `curl -fsSL https://github.com/kashioka/Rendu/releases/latest/download/install.sh \| bash` |
 
 ### Windows
 
