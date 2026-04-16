@@ -131,7 +131,7 @@ async function saveToFile(settings: ThemeSettings): Promise<void> {
 
 /** Apply all theme settings as CSS custom properties on <html> + window theme */
 function applyThemeToDOM(s: ThemeSettings) {
-  getCurrentWindow().setTheme(s.preset === "dark" ? "dark" : "light").catch(() => {});
+  try { getCurrentWindow().setTheme(s.preset === "dark" ? "dark" : "light").catch(() => {}); } catch { /* outside Tauri runtime */ }
   const root = document.documentElement;
   root.style.setProperty("--app-bg", s.appBg);
   root.style.setProperty("--sidebar-bg", s.sidebarBg);

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
-import { listen, TauriEvent } from "@tauri-apps/api/event";
+import { listen } from "@tauri-apps/api/event";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { FileTree } from "./components/FileTree";
 import { MarkdownViewer } from "./components/MarkdownViewer";
 import { OutlinePanel, type HeadingItem } from "./components/OutlinePanel";
@@ -173,19 +174,19 @@ function AppInner({
   }, [rootDir, pushHistory]);
 
   useEffect(() => {
-    const unlisteners = [
-      listen(TauriEvent.DRAG_ENTER, (event) => {
+    const unlisten = getCurrentWebview().onDragDropEvent((event) => {
+      if (event.payload.type === "enter") {
         const droppedPath = findDroppedMarkdownPath(event.payload);
         setShowDropHint(Boolean(droppedPath));
-      }),
-      listen(TauriEvent.DRAG_LEAVE, () => setShowDropHint(false)),
-      listen(TauriEvent.DRAG_DROP, (event) => {
+      } else if (event.payload.type === "leave") {
+        setShowDropHint(false);
+      } else if (event.payload.type === "drop") {
         setShowDropHint(false);
         const droppedPath = findDroppedMarkdownPath(event.payload);
         if (droppedPath) handleDropFile(droppedPath);
-      }),
-    ];
-    return () => { unlisteners.forEach((p) => p.then((fn) => fn()).catch(() => {})); };
+      }
+    });
+    return () => { unlisten.then((fn) => fn()).catch(() => {}); };
   }, [handleDropFile]);
 
   handleOpenFolderRef.current = handleOpenFolder;
