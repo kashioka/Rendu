@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { stat } from "@tauri-apps/plugin-fs";
 import { FileTree } from "./components/FileTree";
 import { MarkdownViewer } from "./components/MarkdownViewer";
 import { OutlinePanel, type HeadingItem } from "./components/OutlinePanel";
@@ -11,7 +12,7 @@ import { LocaleProvider } from "./LocaleContext";
 import { useTranslation } from "./LocaleContext";
 import { useUpdateCheck } from "./useUpdateCheck";
 import { SyntaxReference } from "./components/SyntaxReference";
-import { findDroppedMarkdownPath, getParentDir } from "./dropUtils";
+import { extractDroppedPaths, findDroppedTarget, getParentDir, isMarkdownFile } from "./dropUtils";
 
 function App() {
   const { settings, setSettings, applyPreset } = useSettings();
@@ -173,21 +174,46 @@ function AppInner({
     pushHistory({ rootDir: nextRootDir, selectedFile: file });
   }, [rootDir, pushHistory]);
 
+  const handleDropFolder = useCallback((dir: string) => {
+    setRootDir(dir);
+    setSelectedFile(null);
+    setHeadings([]);
+    pushHistory({ rootDir: dir, selectedFile: null });
+  }, [pushHistory]);
+
   useEffect(() => {
-    const unlisten = getCurrentWebview().onDragDropEvent((event) => {
+    const unlisten = getCurrentWebview().onDragDropEvent(async (event) => {
       if (event.payload.type === "enter") {
-        const droppedPath = findDroppedMarkdownPath(event.payload);
-        setShowDropHint(Boolean(droppedPath));
+        const target = findDroppedTarget(event.payload);
+        setShowDropHint(Boolean(target));
       } else if (event.payload.type === "leave") {
         setShowDropHint(false);
       } else if (event.payload.type === "drop") {
         setShowDropHint(false);
-        const droppedPath = findDroppedMarkdownPath(event.payload);
-        if (droppedPath) handleDropFile(droppedPath);
+        const paths = extractDroppedPaths(event.payload);
+        // Fast path: first markdown file wins
+        const mdPath = paths.find(isMarkdownFile);
+        if (mdPath) {
+          handleDropFile(mdPath);
+          return;
+        }
+        // Otherwise stat each path — handles dotted folders (e.g. project.v2)
+        // and other targets the sync heuristic misses.
+        for (const p of paths) {
+          try {
+            const info = await stat(p);
+            if (info.isDirectory) {
+              handleDropFolder(p);
+              return;
+            }
+          } catch {
+            // try next path
+          }
+        }
       }
     });
     return () => { unlisten.then((fn) => fn()).catch(() => {}); };
-  }, [handleDropFile]);
+  }, [handleDropFile, handleDropFolder]);
 
   handleOpenFolderRef.current = handleOpenFolder;
   handleOpenFileRef.current = handleOpenFile;
