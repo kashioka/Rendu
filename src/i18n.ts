@@ -141,7 +141,7 @@ const en: Translations = {
   "empty.openFile": "Open File",
   "empty.selectFile": "Select a file to view",
   "empty.selectFile.sub": "Choose a Markdown (.md) file from the sidebar to start reading.",
-  "drop.openMarkdown": "Drop a Markdown file to open",
+  "drop.openMarkdown": "Drop a Markdown file or folder to open",
 
   "outline.title": "Outline",
   "outline.noHeadings": "No headings",
@@ -250,7 +250,7 @@ const ja: Translations = {
   "empty.openFile": "ファイルを開く",
   "empty.selectFile": "ファイルを選択して表示",
   "empty.selectFile.sub": "サイドバーからMarkdownファイル（.md）を選んで閲覧できます。",
-  "drop.openMarkdown": "Markdownファイルをドロップして開く",
+  "drop.openMarkdown": "Markdownファイルまたはフォルダをドロップして開く",
 
   "outline.title": "目次",
   "outline.noHeadings": "見出しなし",

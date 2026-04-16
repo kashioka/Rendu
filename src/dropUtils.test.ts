@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { isMarkdownFile, getParentDir, findDroppedMarkdownPath } from './dropUtils';
+import {
+  isMarkdownFile,
+  getParentDir,
+  findDroppedMarkdownPath,
+  looksLikeFolder,
+  findDroppedTarget,
+  extractDroppedPaths,
+} from './dropUtils';
 
 describe('isMarkdownFile', () => {
   it('accepts .md extension', () => {
@@ -112,5 +119,96 @@ describe('findDroppedMarkdownPath', () => {
   it('skips non-string entries in paths array', () => {
     const payload = { paths: [123, null, '/docs/file.md'] };
     expect(findDroppedMarkdownPath(payload)).toBe('/docs/file.md');
+  });
+});
+
+describe('looksLikeFolder', () => {
+  it('returns true for paths whose basename has no dot', () => {
+    expect(looksLikeFolder('/home/user/docs')).toBe(true);
+    expect(looksLikeFolder('/home/user/my-project')).toBe(true);
+  });
+
+  it('returns false for paths that look like files with extensions', () => {
+    expect(looksLikeFolder('/home/user/README.md')).toBe(false);
+    expect(looksLikeFolder('/home/user/photo.png')).toBe(false);
+  });
+
+  it('strips trailing slashes before evaluating', () => {
+    expect(looksLikeFolder('/home/user/docs/')).toBe(true);
+  });
+
+  it('handles Windows backslash paths', () => {
+    expect(looksLikeFolder('C:\\Users\\kato\\docs')).toBe(true);
+    expect(looksLikeFolder('C:\\Users\\kato\\file.md')).toBe(false);
+  });
+
+  it('returns false for empty or root-only paths', () => {
+    expect(looksLikeFolder('')).toBe(false);
+    expect(looksLikeFolder('/')).toBe(false);
+  });
+
+  it('treats dotted folders as files (heuristic limitation)', () => {
+    // This is a known false-negative; stat() catches it at drop time
+    expect(looksLikeFolder('/Applications/Safari.app')).toBe(false);
+  });
+});
+
+describe('extractDroppedPaths', () => {
+  it('returns string paths from payload', () => {
+    expect(extractDroppedPaths({ paths: ['/a', '/b'] })).toEqual(['/a', '/b']);
+  });
+
+  it('filters out non-string entries', () => {
+    expect(extractDroppedPaths({ paths: ['/a', 1, null, undefined, '/b'] })).toEqual([
+      '/a',
+      '/b',
+    ]);
+  });
+
+  it('returns empty array for invalid payloads', () => {
+    expect(extractDroppedPaths(null)).toEqual([]);
+    expect(extractDroppedPaths(undefined)).toEqual([]);
+    expect(extractDroppedPaths({})).toEqual([]);
+    expect(extractDroppedPaths({ paths: 'not-array' })).toEqual([]);
+    expect(extractDroppedPaths('string')).toEqual([]);
+  });
+});
+
+describe('findDroppedTarget', () => {
+  it('returns a markdown target when a .md file is present', () => {
+    const payload = { paths: ['/docs/README.md'] };
+    expect(findDroppedTarget(payload)).toEqual({
+      kind: 'markdown',
+      path: '/docs/README.md',
+    });
+  });
+
+  it('prefers markdown over folder when both are present', () => {
+    const payload = { paths: ['/home/user/project', '/docs/notes.md'] };
+    expect(findDroppedTarget(payload)).toEqual({
+      kind: 'markdown',
+      path: '/docs/notes.md',
+    });
+  });
+
+  it('returns a maybe-folder target when only folder-like paths exist', () => {
+    const payload = { paths: ['/home/user/project'] };
+    expect(findDroppedTarget(payload)).toEqual({
+      kind: 'maybe-folder',
+      path: '/home/user/project',
+    });
+  });
+
+  it('returns null when only non-markdown files are present', () => {
+    const payload = { paths: ['/img/photo.png', '/style.css'] };
+    expect(findDroppedTarget(payload)).toBe(null);
+  });
+
+  it('returns null for empty or invalid payloads', () => {
+    expect(findDroppedTarget(null)).toBe(null);
+    expect(findDroppedTarget(undefined)).toBe(null);
+    expect(findDroppedTarget({})).toBe(null);
+    expect(findDroppedTarget({ paths: [] })).toBe(null);
+    expect(findDroppedTarget({ paths: 'not-array' })).toBe(null);
   });
 });
