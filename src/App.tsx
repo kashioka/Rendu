@@ -12,7 +12,7 @@ import { LocaleProvider } from "./LocaleContext";
 import { useTranslation } from "./LocaleContext";
 import { useUpdateCheck } from "./useUpdateCheck";
 import { SyntaxReference } from "./components/SyntaxReference";
-import { extractDroppedPaths, findDroppedTarget, getParentDir, isMarkdownFile } from "./dropUtils";
+import { extractDroppedPaths, getParentDir, isMarkdownFile } from "./dropUtils";
 
 function App() {
   const { settings, setSettings, applyPreset } = useSettings();
@@ -184,8 +184,11 @@ function AppInner({
   useEffect(() => {
     const unlisten = getCurrentWebview().onDragDropEvent(async (event) => {
       if (event.payload.type === "enter") {
-        const target = findDroppedTarget(event.payload);
-        setShowDropHint(Boolean(target));
+        // Show overlay whenever any path is being dragged over the window.
+        // Validation (folder vs. .md) happens on drop via stat(); the sync
+        // heuristic used previously silently skipped dotted folder names.
+        const paths = extractDroppedPaths(event.payload);
+        setShowDropHint(paths.length > 0);
       } else if (event.payload.type === "leave") {
         setShowDropHint(false);
       } else if (event.payload.type === "drop") {
@@ -197,8 +200,8 @@ function AppInner({
           handleDropFile(mdPath);
           return;
         }
-        // Otherwise stat each path — handles dotted folders (e.g. project.v2)
-        // and other targets the sync heuristic misses.
+        // Otherwise stat each path — handles folder names like `project.v2`
+        // and any target the sync heuristic would miss.
         for (const p of paths) {
           try {
             const info = await stat(p);
@@ -206,11 +209,13 @@ function AppInner({
               handleDropFolder(p);
               return;
             }
-          } catch {
-            // try next path
+          } catch (err) {
+            console.warn("[drop] stat failed for", p, err);
           }
         }
       }
+      // "over" events carry no paths and no new info; ignore to preserve
+      // the overlay shown by the preceding "enter".
     });
     return () => { unlisten.then((fn) => fn()).catch(() => {}); };
   }, [handleDropFile, handleDropFolder]);
