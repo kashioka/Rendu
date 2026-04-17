@@ -43,6 +43,7 @@
         "description": "Markdown Document"
       }
     ],
+    "resources": ["resources/rendu-cli"],
     "windows": {
       "webviewInstallMode": { "type": "downloadBootstrapper" },
       "nsis": { "installMode": "currentUser" }
