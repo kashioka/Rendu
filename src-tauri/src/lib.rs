@@ -204,7 +204,7 @@ pub fn run() {
         let path = if url.scheme() == "file" {
           url.to_file_path().ok().and_then(|p| p.to_str().map(String::from))
         } else {
-          Some(url.to_string())
+          None
         };
         if let Some(p) = path {
           if is_markdown_path(&p) {

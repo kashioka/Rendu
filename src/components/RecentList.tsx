@@ -36,8 +36,9 @@ export function RecentList({ entries, onOpenFile, onOpenFolder, onRemove }: Rece
     <div className="recent-list">
       <h3 className="recent-list-title">{t("recent.title")}</h3>
       {entries.map((entry) => {
-        const name = entry.path.split("/").pop() || entry.path;
-        const dir = entry.path.slice(0, entry.path.length - name.length - 1) || "/";
+        const parts = entry.path.split(/[/\\]/);
+        const name = parts.pop() || entry.path;
+        const dir = parts.length ? parts.join("/") : "/";
         return (
           <div key={entry.path} className="recent-item">
             <button
