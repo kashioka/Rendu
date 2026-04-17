@@ -25,6 +25,11 @@ export interface Translations {
   "empty.selectFile.sub": string;
   "drop.openMarkdown": string;
 
+  // Recent files
+  "recent.title": string;
+  "recent.remove": string;
+  "recent.openError": string;
+
   // Outline
   "outline.title": string;
   "outline.noHeadings": string;
@@ -50,6 +55,8 @@ export interface Translations {
   "viewer.mermaid.download": string;
   "viewer.lightbox.close": string;
   "viewer.lightbox.download": string;
+  "viewer.code.copy": string;
+  "viewer.code.copied": string;
 
   // Mermaid
   "mermaid.renderError": string;
@@ -143,6 +150,10 @@ const en: Translations = {
   "empty.selectFile.sub": "Choose a Markdown (.md) file from the sidebar to start reading.",
   "drop.openMarkdown": "Drop a Markdown file or folder to open",
 
+  "recent.title": "Recent",
+  "recent.remove": "Remove from recent",
+  "recent.openError": "This file or folder no longer exists.",
+
   "outline.title": "Outline",
   "outline.noHeadings": "No headings",
 
@@ -166,6 +177,8 @@ const en: Translations = {
   "viewer.mermaid.download": "Download as PNG",
   "viewer.lightbox.close": "Close",
   "viewer.lightbox.download": "Download",
+  "viewer.code.copy": "Copy code",
+  "viewer.code.copied": "Copied!",
 
   "mermaid.renderError": "Mermaid render error",
 
@@ -252,6 +265,10 @@ const ja: Translations = {
   "empty.selectFile.sub": "サイドバーからMarkdownファイル（.md）を選んで閲覧できます。",
   "drop.openMarkdown": "Markdownファイルまたはフォルダをドロップして開く",
 
+  "recent.title": "最近使ったファイル",
+  "recent.remove": "履歴から削除",
+  "recent.openError": "このファイルまたはフォルダはもう存在しません。",
+
   "outline.title": "目次",
   "outline.noHeadings": "見出しなし",
 
@@ -275,6 +292,8 @@ const ja: Translations = {
   "viewer.mermaid.download": "PNGでダウンロード",
   "viewer.lightbox.close": "閉じる",
   "viewer.lightbox.download": "ダウンロード",
+  "viewer.code.copy": "コードをコピー",
+  "viewer.code.copied": "コピーしました！",
 
   "mermaid.renderError": "Mermaid描画エラー",
 

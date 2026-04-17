@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { stat } from "@tauri-apps/plugin-fs";
 import { FileTree } from "./components/FileTree";
@@ -13,6 +14,8 @@ import { useTranslation } from "./LocaleContext";
 import { useUpdateCheck } from "./useUpdateCheck";
 import { SyntaxReference } from "./components/SyntaxReference";
 import { extractDroppedPaths, getParentDir, isMarkdownFile } from "./dropUtils";
+import { useRecentFiles } from "./useRecentFiles";
+import { RecentList } from "./components/RecentList";
 
 function App() {
   const { settings, setSettings, applyPreset } = useSettings();
@@ -47,6 +50,7 @@ function AppInner({
   const [showDropHint, setShowDropHint] = useState(false);
   const { t } = useTranslation();
   const { info: updateInfo, dismiss: dismissUpdate } = useUpdateCheck();
+  const { entries: recentEntries, addRecent, removeRecent } = useRecentFiles();
 
   // Navigation history
   type HistoryEntry = { rootDir: string | null; selectedFile: string | null };
@@ -128,9 +132,10 @@ function AppInner({
     document.addEventListener("mouseup", onMouseUp);
   }, []);
 
-  // Listen for native menu events
+  // Listen for native menu events & file open requests
   const handleOpenFolderRef = useRef<(() => void) | undefined>(undefined);
   const handleOpenFileRef = useRef<(() => void) | undefined>(undefined);
+  const handleDropFileRef = useRef<((file: string) => void) | undefined>(undefined);
 
   useEffect(() => {
     const unlisteners = [
@@ -138,8 +143,23 @@ function AppInner({
       listen("menu-open-file", () => handleOpenFileRef.current?.()),
       listen("menu-print", () => window.print()),
       listen("menu-supported-syntax", () => setShowSyntaxHelp(true)),
+      listen<string>("file-open-request", (event) => {
+        const filePath = event.payload;
+        if (filePath) {
+          handleDropFileRef.current?.(filePath);
+        }
+      }),
     ];
     return () => { unlisteners.forEach((p) => p.then((fn) => fn()).catch(() => {})); };
+  }, []);
+
+  // Fetch initial file opened via file association or CLI argument
+  useEffect(() => {
+    invoke<string | null>("get_initial_file").then((filePath) => {
+      if (filePath) {
+        handleDropFileRef.current?.(filePath);
+      }
+    }).catch(() => {});
   }, []);
 
   const handleOpenFolder = async () => {
@@ -149,6 +169,7 @@ function AppInner({
       setSelectedFile(null);
       setHeadings([]);
       pushHistory({ rootDir: dir, selectedFile: null });
+      addRecent(dir, "folder");
     }
   };
 
@@ -159,27 +180,31 @@ function AppInner({
     if (file) {
       setSelectedFile(file);
       pushHistory({ rootDir, selectedFile: file });
+      addRecent(file, "file");
     }
   };
 
   const handleSelectFile = useCallback((file: string) => {
     setSelectedFile(file);
     pushHistory({ rootDir, selectedFile: file });
-  }, [rootDir, pushHistory]);
+    addRecent(file, "file");
+  }, [rootDir, pushHistory, addRecent]);
 
   const handleDropFile = useCallback((file: string) => {
     const nextRootDir = getParentDir(file) ?? rootDir;
     setRootDir(nextRootDir);
     setSelectedFile(file);
     pushHistory({ rootDir: nextRootDir, selectedFile: file });
-  }, [rootDir, pushHistory]);
+    addRecent(file, "file");
+  }, [rootDir, pushHistory, addRecent]);
 
   const handleDropFolder = useCallback((dir: string) => {
     setRootDir(dir);
     setSelectedFile(null);
     setHeadings([]);
     pushHistory({ rootDir: dir, selectedFile: null });
-  }, [pushHistory]);
+    addRecent(dir, "folder");
+  }, [pushHistory, addRecent]);
 
   useEffect(() => {
     const unlisten = getCurrentWebview().onDragDropEvent(async (event) => {
@@ -222,6 +247,7 @@ function AppInner({
 
   handleOpenFolderRef.current = handleOpenFolder;
   handleOpenFileRef.current = handleOpenFile;
+  handleDropFileRef.current = handleDropFile;
 
   return (
     <div className="flex flex-col h-full">
@@ -403,6 +429,12 @@ function AppInner({
                 {t("empty.openFile")}
               </button>
             </div>
+            <RecentList
+              entries={recentEntries}
+              onOpenFile={handleDropFile}
+              onOpenFolder={handleDropFolder}
+              onRemove={removeRecent}
+            />
           </div>
         )}
       </div>

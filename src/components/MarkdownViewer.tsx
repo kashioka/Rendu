@@ -11,6 +11,7 @@ import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import type { Components } from "react-markdown";
 import { MermaidBlock } from "./MermaidBlock";
 import { ImageWithOverlay } from "./ImageWithOverlay";
+import { CodeBlockWrapper } from "./CodeBlockWrapper";
 import type { ThemeSettings } from "../useSettings";
 import type { HeadingItem } from "./OutlinePanel";
 import { useTranslation } from "../LocaleContext";
@@ -413,6 +414,7 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
       return <code className={className} {...props}>{children}</code>;
     },
     img: ImageWithOverlay as Components["img"],
+    pre: CodeBlockWrapper as Components["pre"],
   }), [settings]);
 
   const handleExportPdf = async () => {
