@@ -88,6 +88,7 @@ export interface Translations {
   "update.available": string;
   "update.download": string;
   "update.homebrew": string;
+  "update.latest": string;
 
   // Settings - Mermaid Colors
   "settings.color.mermaidBg": string;
@@ -185,6 +186,7 @@ const en: Translations = {
   "update.available": "v{version} is available",
   "update.download": "Download",
   "update.homebrew": "or: brew upgrade --cask kashioka/tap/rendu",
+  "update.latest": "You're on the latest version",
 
   "settings.title": "Settings",
   "settings.language": "Language",
@@ -300,6 +302,7 @@ const ja: Translations = {
   "update.available": "v{version} が利用可能です",
   "update.download": "ダウンロード",
   "update.homebrew": "または: brew upgrade --cask kashioka/tap/rendu",
+  "update.latest": "最新版をご利用いただいています",
 
   "settings.title": "設定",
   "settings.language": "言語",

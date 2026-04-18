@@ -14,9 +14,16 @@ interface UpdateCheckResult {
   release_url: string;
 }
 
-export function useUpdateCheck(): { info: UpdateInfo | null; dismiss: () => void } {
+export function useUpdateCheck(): {
+  info: UpdateInfo | null;
+  isLatest: boolean;
+  dismissUpdate: () => void;
+  dismissLatest: () => void;
+} {
   const [info, setInfo] = useState<UpdateInfo | null>(null);
-  const [dismissed, setDismissed] = useState(false);
+  const [isLatest, setIsLatest] = useState(false);
+  const [updateDismissed, setUpdateDismissed] = useState(false);
+  const [latestDismissed, setLatestDismissed] = useState(false);
 
   useEffect(() => {
     invoke<UpdateCheckResult>("check_for_updates")
@@ -27,13 +34,17 @@ export function useUpdateCheck(): { info: UpdateInfo | null; dismiss: () => void
             currentVersion: result.current_version,
             releaseUrl: result.release_url,
           });
+        } else {
+          setIsLatest(true);
         }
       })
       .catch(() => {});
   }, []);
 
   return {
-    info: dismissed ? null : info,
-    dismiss: () => setDismissed(true),
+    info: updateDismissed ? null : info,
+    isLatest: latestDismissed ? false : isLatest,
+    dismissUpdate: () => setUpdateDismissed(true),
+    dismissLatest: () => setLatestDismissed(true),
   };
 }

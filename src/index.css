@@ -926,6 +926,9 @@ button, a, input, select, textarea {
   background-color: var(--hover-bg, #3f3f4680);
   color: var(--text-color, #e4e4e7);
 }
+.update-banner-latest {
+  color: var(--text-muted, #71717a);
+}
 
 /* ========= Sidebar divider (resizable) ========= */
 .sidebar-divider {

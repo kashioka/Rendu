@@ -49,7 +49,7 @@ function AppInner({
   const [splitRatio, setSplitRatio] = useState(0.5);
   const [showDropHint, setShowDropHint] = useState(false);
   const { t } = useTranslation();
-  const { info: updateInfo, dismiss: dismissUpdate } = useUpdateCheck();
+  const { info: updateInfo, isLatest, dismissUpdate, dismissLatest } = useUpdateCheck();
   const { entries: recentEntries, addRecent, removeRecent } = useRecentFiles();
 
   // Navigation history
@@ -294,6 +294,19 @@ function AppInner({
             <span style={{ color: "var(--text-muted, #71717a)" }}>{t("update.homebrew")}</span>
           </div>
           <button className="update-banner-close" onClick={dismissUpdate} aria-label="Close">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z"/>
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {isLatest && (
+        <div className="update-banner update-banner-latest">
+          <div className="update-banner-text">
+            <span>{t("update.latest")}</span>
+          </div>
+          <button className="update-banner-close" onClick={dismissLatest} aria-label="Close">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
               <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z"/>
             </svg>
