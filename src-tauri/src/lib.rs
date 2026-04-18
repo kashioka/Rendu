@@ -197,9 +197,10 @@ pub fn run() {
     .build(tauri::generate_context!())
     .expect("error while building tauri application");
 
-  built_app.run(|app_handle, event| {
+  built_app.run(|_app_handle, _event| {
     // macOS: handle file open via Finder double-click / "Open With" / `open -a`
-    if let RunEvent::Opened { urls } = &event {
+    #[cfg(target_os = "macos")]
+    if let RunEvent::Opened { urls } = &_event {
       for url in urls {
         let path = if url.scheme() == "file" {
           url.to_file_path().ok().and_then(|p| p.to_str().map(String::from))
@@ -209,9 +210,9 @@ pub fn run() {
         if let Some(p) = path {
           if is_markdown_path(&p) {
             // Store in InitialFile so the frontend can pick it up on cold start
-            let state = app_handle.state::<InitialFile>();
+            let state = _app_handle.state::<InitialFile>();
             *state.0.lock().unwrap() = Some(p.clone());
-            let _ = app_handle.emit("file-open-request", &p);
+            let _ = _app_handle.emit("file-open-request", &p);
             break;
           }
         }
