@@ -1,70 +1,68 @@
 # Contributing to Rendu
 
-コントリビューションを歓迎します。PRやIssueを送る前に、このガイドを一読してください。
+We welcome contributions! Please read this guide before submitting a PR or Issue.
 
-## 前提条件
+**[日本語版はこちら](./CONTRIBUTING.ja.md)**
 
-- Node.js 20 以上
-- Rust（最新 stable）— Tauri のビルドに必要: https://www.rust-lang.org/tools/install
+## Prerequisites
 
-## 開発環境
+- Node.js 20+
+- Rust (latest stable) — required for Tauri: https://www.rust-lang.org/tools/install
+
+## Development Setup
 
 ```bash
 npm ci
-npm run dev          # Vite dev server（フロントのみ）
-npm run tauri dev    # Tauri ネイティブ機能を含む起動
+npm run dev          # Vite dev server (frontend only)
+npm run tauri dev    # Full app with native features
 npm run test:run     # Vitest
-npx tsc --noEmit     # 型チェック
+npx tsc --noEmit     # Type checking
 ```
 
-## ブランチ命名規則
+## Branch Naming
 
-`main` に直接プッシュしないでください。以下の命名でブランチを切ってください。
+Do not push directly to `main`. Create a branch with one of these prefixes:
 
-| 種類 | 命名 | 例 |
-|------|------|----|
-| 新機能 | `feat/xxx` | `feat/drag-and-drop` |
-| バグ修正 | `fix/xxx` | `fix/sidebar-scroll` |
-| リファクタ | `refactor/xxx` | `refactor/split-app` |
-| ドキュメント | `docs/xxx` | `docs/contributing` |
-| CI・ビルド | `chore/xxx` | `chore/update-deps` |
+| Type | Prefix | Example |
+|------|--------|---------|
+| Feature | `feat/xxx` | `feat/drag-and-drop` |
+| Bug fix | `fix/xxx` | `fix/sidebar-scroll` |
+| Refactor | `refactor/xxx` | `refactor/split-app` |
+| Docs | `docs/xxx` | `docs/contributing` |
+| CI/Build | `chore/xxx` | `chore/update-deps` |
 
-フォークからPRを送る場合も同様です。`main` ブランチからではなく、上記の命名でブランチを作ってください。
+If you are contributing from a fork, please use the same branch naming convention.
 
-```
-例: feat/drag-and-drop → kashioka/Rendu:main
-```
+## Commit Messages
 
-## コミットメッセージ
-
-Conventional Commits 形式で書いてください。
+Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
-feat: 新機能
-fix: バグ修正
-docs: ドキュメントのみの変更
-refactor: リファクタリング
-chore: ビルド・依存関係の変更
+feat: add new feature
+fix: fix a bug
+docs: documentation only
+refactor: code refactoring
+chore: build/dependency changes
 ```
 
-## Pull Request
+## Pull Requests
 
-1. PRの説明には **何をしたか** と **確認方法** を書く
-2. 新機能・バグ修正には **対応するテストを追加** する
-3. CI（型チェック + テスト）が通っていることを確認してからレビュー依頼する
-4. PRを出す前にローカルで確認:
+1. Describe **what** you changed and **how to verify** it
+2. Add **tests** for new features or bug fixes
+3. Make sure CI passes (type check + tests) before requesting review
+4. Run locally before submitting:
 
 ```bash
 npm run test:run   # Vitest
-npx tsc --noEmit   # 型チェック
+npx tsc --noEmit   # Type checking
 ```
 
-## マージポリシー
+## Merge Policy
 
-- **Squash merge** を使用します
-- **1人以上の Approve** が必要です
-- マージ後はブランチを削除してください
+- **Squash merge** is used
+- **1+ approval** required
+- Delete the branch after merge
 
-## AIツールの使用について
+## AI-Generated Code
 
-AI生成コードをPRに含める場合、コードの内容を理解し、テストが通ることを確認してからサブミットしてください。
+If your PR includes AI-generated code, please make sure you understand the code and that all tests pass before submitting.
