@@ -59,8 +59,9 @@ npx tsc --noEmit   # Type checking
 
 ## Merge Policy
 
-- **Squash merge** is used
-- **1+ approval** required
+- **Squash merge** only
+- **Code Owner approval required** — all PRs need approval from [@kashioka](https://github.com/kashioka) before merging
+- CI must pass (type check + tests)
 - Delete the branch after merge
 
 ## AI-Generated Code

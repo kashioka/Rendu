@@ -59,8 +59,9 @@ npx tsc --noEmit   # 型チェック
 
 ## マージポリシー
 
-- **Squash merge** を使用します
-- **1人以上の Approve** が必要です
+- **Squash merge** のみ
+- **Code Owner（[@kashioka](https://github.com/kashioka)）の Approve が必須** — すべての PR はメンテナーの承認が必要です
+- CI（型チェック + テスト）が通っていること
 - マージ後はブランチを削除してください
 
 ## AIツールの使用について
