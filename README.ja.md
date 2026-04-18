@@ -42,7 +42,7 @@
 
 ### macOS
 
-**[Rendu.dmg をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.5.1_aarch64.dmg)** — 開いて Applications にドラッグしてください。
+**[Rendu.dmg をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.5.2_aarch64.dmg)** — 開いて Applications にドラッグしてください。
 
 > Rendu はAppleによるコード署名・公証済みです。DMGを開いてApplicationsにドラッグするだけで、すぐに使えます。
 
