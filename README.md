@@ -1,12 +1,28 @@
 # Rendu
 
-**Rendu** — French for *rendered*. A lightweight desktop Markdown viewer built with Tauri and React.
+**Markdown in. Beautiful renders out.**
+Just drag a file to start reading. A free, lightweight viewer.
+No config, no account — ready in seconds.
 
-A fast, no-fuss Markdown reader for anyone who just wants to open a folder and read `.md` files — developers, writers, and teams.
+> *Rendu* is French for "a finished rendering" or "something delivered." Just as architects create a *rendu* to convey their design intent, Rendu transforms your Markdown blueprints into an intuitive, beautifully rendered form.
 
-- **Open a folder, start reading** — no setup, no config
-- **Mermaid / GFM / syntax highlighting** built in
-- **PDF export** with one click
+### Why Rendu?
+
+| | Rendu | Obsidian | Typora | VS Code |
+|---|:---:|:---:|:---:|:---:|
+| Instant startup | **Yes** | Slow | OK | Slow |
+| Zero config | **Yes** | Plugins required | Minimal | Extensions required |
+| Free | **Yes** | Freemium | Paid | Free |
+| Pure viewer | **Yes** | Editor-first | Editor-first | Editor-first |
+| Mermaid diagrams | **Yes** | Plugin | Plugin | Extension |
+
+### Built for reading, not editing
+
+- **Open a folder, start reading** — file tree, outline, and rendered Markdown in one window
+- **Mermaid diagrams, GFM tables, syntax highlighting** — all built in, nothing to install
+- **One-click PDF export** — share rendered docs with anyone
+- **Lightweight & native** — Tauri + Rust backend, under 15 MB on disk
+- **CLI friendly** — `rendu file.md` opens and renders instantly (macOS, via Homebrew)
 
 **[日本語](./README.ja.md)**
 
@@ -15,6 +31,8 @@ A fast, no-fuss Markdown reader for anyone who just wants to open a folder and r
 ![React](https://img.shields.io/badge/React-19-61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![License](https://img.shields.io/badge/License-MIT-green)
+
+![Rendu Demo](docs/demo.gif)
 
 ![Rendu — Dark theme](docs/screenshot.png)
 
@@ -33,6 +51,7 @@ Other install methods:
 | Method | Command |
 |--------|---------|
 | Homebrew | `brew install --cask kashioka/tap/rendu` |
+| CLI | After Homebrew install: `rendu README.md` |
 
 ### Windows
 
@@ -61,6 +80,14 @@ Other install methods:
 | Styling | Tailwind CSS 4 |
 
 ## Usage
+
+**From the terminal:**
+
+```bash
+rendu README.md
+```
+
+**From the app:**
 
 1. Launch the app
 2. Click **Open Folder** to select a folder containing Markdown files, or **Open File** to open a single file
