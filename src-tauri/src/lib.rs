@@ -72,6 +72,11 @@ fn get_initial_file(state: tauri::State<'_, InitialFile>) -> Option<String> {
   state.0.lock().unwrap().take()
 }
 
+#[tauri::command]
+fn open_external_url(url: String) {
+  let _ = open::that(&url);
+}
+
 /// Check if a path looks like a markdown file (by extension).
 fn is_markdown_path(path: &str) -> bool {
   let lower = path.to_lowercase();
@@ -84,7 +89,7 @@ pub fn run() {
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_dialog::init())
     .manage(InitialFile::default())
-    .invoke_handler(tauri::generate_handler![check_for_updates, get_initial_file]);
+    .invoke_handler(tauri::generate_handler![check_for_updates, get_initial_file, open_external_url]);
 
   #[cfg(feature = "e2e-testing")]
   {
