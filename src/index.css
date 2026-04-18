@@ -161,6 +161,88 @@ button, a, input, select, textarea {
   font-weight: 500;
 }
 
+/* ========= Recent files list ========= */
+.recent-list {
+  margin-top: 16px;
+  width: 100%;
+  max-width: 420px;
+  text-align: left;
+}
+.recent-list-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #71717a);
+  margin: 0 0 8px;
+  padding: 0 4px;
+}
+.recent-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 6px;
+}
+.recent-item:hover {
+  background-color: var(--hover-bg, #3f3f4680);
+}
+.recent-item-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: none;
+  border: none;
+  color: var(--text-color, #e4e4e7);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+}
+.recent-item-icon {
+  flex-shrink: 0;
+  color: var(--text-muted, #71717a);
+}
+.recent-item-name {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.recent-item-dir {
+  flex: 1;
+  color: var(--text-muted, #71717a);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+}
+.recent-item-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted, #71717a);
+  cursor: pointer;
+  opacity: 0;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+.recent-item:hover .recent-item-remove {
+  opacity: 1;
+}
+.recent-item-remove:hover {
+  background-color: var(--hover-bg, #3f3f4680);
+  color: var(--text-color, #e4e4e7);
+}
+
 /* ========= Native DnD overlay ========= */
 .drop-overlay {
   position: absolute;
@@ -255,6 +337,41 @@ button, a, input, select, textarea {
 }
 
 .markdown-body pre code { background: none; padding: 0; font-size: 0.85em; }
+
+/* ========= Code block copy button ========= */
+.code-block-container {
+  position: relative;
+}
+.code-block-container pre {
+  margin: 0;
+}
+.code-copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-muted, #71717a);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background-color 0.15s, color 0.15s;
+}
+.code-block-container:hover .code-copy-btn {
+  opacity: 1;
+}
+.code-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-color, #e4e4e7);
+}
+.pdf-export .code-copy-btn {
+  display: none;
+}
 
 /* Mermaid blocks inside <pre> should not inherit code-block styling */
 .markdown-body pre:has(.mermaid-container) {

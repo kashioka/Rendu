@@ -1,5 +1,6 @@
+use std::sync::Mutex;
 use tauri::menu::{AboutMetadataBuilder, MenuBuilder, MenuItemBuilder, SubmenuBuilder};
-use tauri::Emitter;
+use tauri::{Emitter, Manager, RunEvent};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -61,19 +62,36 @@ async fn check_for_updates() -> UpdateInfo {
   }
 }
 
+/// Holds the initial file path opened via file association or CLI argument.
+/// The frontend retrieves this once on startup.
+#[derive(Default)]
+struct InitialFile(Mutex<Option<String>>);
+
+#[tauri::command]
+fn get_initial_file(state: tauri::State<'_, InitialFile>) -> Option<String> {
+  state.0.lock().unwrap().take()
+}
+
+/// Check if a path looks like a markdown file (by extension).
+fn is_markdown_path(path: &str) -> bool {
+  let lower = path.to_lowercase();
+  lower.ends_with(".md") || lower.ends_with(".markdown")
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   let mut builder = tauri::Builder::default()
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_dialog::init())
-    .invoke_handler(tauri::generate_handler![check_for_updates]);
+    .manage(InitialFile::default())
+    .invoke_handler(tauri::generate_handler![check_for_updates, get_initial_file]);
 
   #[cfg(feature = "e2e-testing")]
   {
     builder = builder.plugin(tauri_plugin_playwright::init());
   }
 
-  builder
+  let built_app = builder
     .setup(|app| {
       // --- Build native menu bar ---
 
@@ -164,8 +182,40 @@ pub fn run() {
             .build(),
         )?;
       }
+
+      // Parse CLI arguments for file association (Windows / Linux / macOS open-with)
+      let args: Vec<String> = std::env::args().collect();
+      if let Some(file_path) = args.get(1) {
+        if is_markdown_path(file_path) && std::path::Path::new(file_path).exists() {
+          let state = app.state::<InitialFile>();
+          *state.0.lock().unwrap() = Some(file_path.clone());
+        }
+      }
+
       Ok(())
     })
-    .run(tauri::generate_context!())
-    .expect("error while running tauri application");
+    .build(tauri::generate_context!())
+    .expect("error while building tauri application");
+
+  built_app.run(|app_handle, event| {
+    // macOS: handle file open via Finder double-click / "Open With" / `open -a`
+    if let RunEvent::Opened { urls } = &event {
+      for url in urls {
+        let path = if url.scheme() == "file" {
+          url.to_file_path().ok().and_then(|p| p.to_str().map(String::from))
+        } else {
+          None
+        };
+        if let Some(p) = path {
+          if is_markdown_path(&p) {
+            // Store in InitialFile so the frontend can pick it up on cold start
+            let state = app_handle.state::<InitialFile>();
+            *state.0.lock().unwrap() = Some(p.clone());
+            let _ = app_handle.emit("file-open-request", &p);
+            break;
+          }
+        }
+      }
+    }
+  });
 }

@@ -3,8 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rendu — 軽量 Markdown ビューア</title>
-  <meta name="description" content="フォルダを開くだけですぐ読める、軽量なMarkdownビューア。Mermaid、GFM、PDF出力対応。">
+  <title>Rendu — 軽量 Markdown ビューア（macOS / Windows 対応）</title>
+  <meta name="description" content="AIの作るmdファイルを簡単に読もう。ドラッグするだけで読める無料の軽量リーダー。設定不要、アカウント不要。Mermaid 図表、シンタックスハイライト、PDF 出力対応。">
+
+  <!-- OGP -->
+  <meta property="og:title" content="Rendu — 軽量 Markdown ビューア">
+  <meta property="og:description" content="AIの作るmdファイルを簡単に読もう。ドラッグするだけで読める無料の軽量リーダー。設定不要、アカウント不要。">
+  <meta property="og:image" content="https://kashioka.github.io/Rendu/screenshot.png">
+  <meta property="og:url" content="https://kashioka.github.io/Rendu/ja/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Rendu">
+  <meta property="og:locale" content="ja_JP">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Rendu — 軽量 Markdown ビューア">
+  <meta name="twitter:description" content="AIの作るmdファイルを簡単に読もう。ドラッグするだけで読める無料の軽量リーダー。">
+  <meta name="twitter:image" content="https://kashioka.github.io/Rendu/screenshot.png">
+
+  <link rel="canonical" href="https://kashioka.github.io/Rendu/ja/">
   <style>
     :root {
       --bg: #0f0f0f;
@@ -14,10 +31,11 @@
       --muted: #a1a1aa;
       --accent: #60a5fa;
       --accent-hover: #93bbfc;
+      --green: #4ade80;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
@@ -25,41 +43,88 @@
     a { color: var(--accent); text-decoration: none; }
     a:hover { color: var(--accent-hover); }
 
-    /* Lang switch */
-    .lang-switch {
-      position: absolute;
-      top: 24px;
-      right: 24px;
-      font-size: 13px;
+    /* Navigation */
+    .nav {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
     }
+    .nav-brand {
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--text);
+    }
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+    .nav-links a { color: var(--muted); }
+    .nav-links a:hover { color: var(--text); }
 
     /* Hero */
     .hero {
-      position: relative;
-      max-width: 720px;
+      max-width: 760px;
       margin: 0 auto;
-      padding: 80px 24px 48px;
+      padding: 60px 24px 40px;
       text-align: center;
     }
     .hero h1 {
       font-size: 48px;
       font-weight: 700;
       letter-spacing: -0.02em;
-      margin-bottom: 12px;
+      line-height: 1.25;
+      margin-bottom: 16px;
+    }
+    .hero h1 em {
+      font-style: normal;
+      color: var(--accent);
     }
     .hero .tagline {
-      font-size: 20px;
+      font-size: 18px;
       color: var(--muted);
-      margin-bottom: 32px;
+      margin-bottom: 12px;
+      max-width: 540px;
+      margin-left: auto;
+      margin-right: auto;
     }
-    .hero .pitch {
+    .hero .sub-tagline {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 36px;
+      opacity: 0.7;
+    }
+    .hero .sub-tagline em {
+      font-style: normal;
+      color: var(--muted);
+      opacity: 1;
+    }
+
+    /* Badges */
+    .badges {
       display: flex;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 15px;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 36px;
+      font-size: 13px;
       color: var(--muted);
-      margin-bottom: 40px;
     }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 5px 12px;
+      border-radius: 20px;
+    }
+
+    /* CTA buttons */
     .download-buttons {
       display: flex;
       gap: 12px;
@@ -71,40 +136,70 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 12px 28px;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: 500;
-      transition: background 0.15s;
+      padding: 14px 32px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.15s;
     }
     .btn-primary {
       background: var(--accent);
       color: #000;
     }
-    .btn-primary:hover { background: var(--accent-hover); color: #000; }
+    .btn-primary:hover { background: var(--accent-hover); color: #000; transform: translateY(-1px); }
     .btn-secondary {
       background: var(--surface);
       color: var(--text);
       border: 1px solid var(--border);
     }
-    .btn-secondary:hover { background: #222; color: var(--text); }
+    .btn-secondary:hover { background: #222; color: var(--text); transform: translateY(-1px); }
     .alt-install {
       font-size: 13px;
       color: var(--muted);
-      margin-bottom: 0;
+      margin-bottom: 8px;
     }
     .alt-install code {
       background: var(--surface);
-      padding: 2px 8px;
+      padding: 3px 10px;
       border-radius: 4px;
-      font-size: 12px;
+      font-size: 13px;
+      user-select: all;
+    }
+    .os-list {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 12px;
+      margin-bottom: 0;
+    }
+
+    /* Demo */
+    .demo {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 40px 24px 24px;
+    }
+    .demo img {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    }
+    .demo-caption {
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 12px;
+      opacity: 0.7;
     }
 
     /* Screenshots */
     .screenshots {
       max-width: 960px;
       margin: 0 auto;
-      padding: 32px 24px 64px;
+      padding: 32px 24px 48px;
     }
     .screenshots img {
       width: 100%;
@@ -121,22 +216,77 @@
       margin-bottom: 0;
     }
 
-    /* Features */
-    .features {
+    /* Comparison table */
+    .comparison {
       max-width: 720px;
       margin: 0 auto;
-      padding: 48px 24px;
+      padding: 48px 24px 24px;
     }
-    .features h2 {
+    .comparison h2 {
       font-size: 28px;
       font-weight: 600;
       text-align: center;
+      margin-bottom: 8px;
+    }
+    .comparison .subtitle {
+      text-align: center;
+      font-size: 15px;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+    .comparison table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .comparison th, .comparison td {
+      padding: 10px 12px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .comparison th:first-child, .comparison td:first-child {
+      text-align: left;
+    }
+    .comparison th {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .comparison th.highlight {
+      color: var(--accent);
+    }
+    .comparison td.check {
+      color: var(--green);
+    }
+    .comparison td.cross {
+      color: var(--muted);
+      opacity: 0.5;
+    }
+
+    /* Feature sections */
+    .features-section {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 48px 24px 24px;
+    }
+    .features-section h2 {
+      font-size: 28px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .features-section .subtitle {
+      text-align: center;
+      font-size: 15px;
+      color: var(--muted);
       margin-bottom: 32px;
     }
     .feature-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      gap: 16px;
     }
     .feature {
       padding: 20px;
@@ -144,22 +294,77 @@
       border-radius: 10px;
       border: 1px solid var(--border);
     }
+    .feature .icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
     .feature h3 {
       font-size: 15px;
       font-weight: 600;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
     .feature p {
       font-size: 13px;
       color: var(--muted);
       line-height: 1.5;
     }
+    .feature-wide {
+      grid-column: 1 / -1;
+    }
+
+    /* Divider */
+    .divider {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    .divider hr {
+      border: none;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Bottom CTA */
+    .bottom-cta {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 24px 24px;
+      text-align: center;
+    }
+    .bottom-cta h2 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .bottom-cta p {
+      font-size: 15px;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    /* Note */
+    .note-section {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px 24px 0;
+    }
+    .note-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .note-box strong {
+      color: var(--text);
+    }
 
     /* Footer */
     footer {
       max-width: 720px;
       margin: 0 auto;
-      padding: 32px 24px 48px;
+      padding: 48px 24px;
       text-align: center;
       font-size: 13px;
       color: var(--muted);
@@ -168,100 +373,230 @@
     footer a { color: var(--muted); }
     footer a:hover { color: var(--text); }
 
-    /* Supported OS */
-    .os-list {
-      display: flex;
-      gap: 24px;
-      justify-content: center;
-      font-size: 13px;
-      color: var(--muted);
-      margin-top: 16px;
-      margin-bottom: 48px;
-    }
-
     @media (max-width: 600px) {
       .hero h1 { font-size: 32px; }
-      .hero .tagline { font-size: 17px; }
+      .hero .tagline { font-size: 16px; }
       .feature-grid { grid-template-columns: 1fr; }
       .screenshot-grid { grid-template-columns: 1fr; }
       .download-buttons { flex-direction: column; align-items: center; }
+      .badges { gap: 8px; }
+      .comparison table { font-size: 12px; }
+      .comparison th, .comparison td { padding: 8px 6px; }
+      .nav-links { gap: 12px; }
     }
   </style>
 </head>
 <body>
 
-  <section class="hero">
-    <a class="lang-switch" href="../">English</a>
-    <h1>Rendu</h1>
-    <p class="tagline">AIが作るドキュメント、きれいに読めるビューア</p>
-    <div class="pitch">
-      <span>Markdown（.md）はAIが出力する標準的なドキュメント形式です</span>
-      <span>アプリを起動して、フォルダかファイルを選ぶだけ</span>
-      <span>図表・表・コードもきれいに整形して表示します</span>
+  <!-- Navigation -->
+  <nav class="nav">
+    <span class="nav-brand">Rendu</span>
+    <div class="nav-links">
+      <a href="https://github.com/kashioka/Rendu">GitHub</a>
+      <a href="https://github.com/kashioka/Rendu/releases/latest">リリース</a>
+      <a href="../">English</a>
     </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <h1>Markdownという設計図を、<br><em>美しい完成形として返す。</em></h1>
+    <p class="tagline">ファイルをドラッグするだけで読める、無料の軽量リーダー。<br>設定不要、アカウント不要ですぐ使えます。</p>
+    <p class="sub-tagline"><em>Rendu</em> はフランス語で「仕上げられたもの」「手渡されたもの」を意味する。建築家が設計の意図を伝えるために描く完成予想図（rendu）になぞらえ、マークダウンという設計図を、直感的に伝わる美しい形へ返すためのビューワー。</p>
+
+    <div class="badges">
+      <span class="badge">無料 &amp; オープンソース</span>
+      <span class="badge">15 MB 以下</span>
+      <span class="badge">起動 1 秒以内</span>
+    </div>
+
     <div class="download-buttons">
       <a class="btn btn-primary" href="https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.5.0_aarch64.dmg">macOS 版ダウンロード</a>
-      <a class="btn btn-secondary" href="https://github.com/kashioka/Rendu/releases/latest">Windows / その他</a>
+      <a class="btn btn-secondary" href="https://github.com/kashioka/Rendu/releases/latest">Windows 版ダウンロード</a>
     </div>
     <p class="alt-install">または: <code>brew install --cask kashioka/tap/rendu</code></p>
     <div class="os-list">
       <span>macOS (Apple Silicon)</span>
       <span>Windows (x64)</span>
     </div>
-    <div class="note" style="max-width:720px;margin:0 auto;padding:0 0 0">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;font-size:13px;color:var(--muted);line-height:1.6">
-        <strong style="color:var(--text)">Windows をお使いの方へ:</strong>
-        .exe インストーラのダウンロード時に「一般的にダウンロードされていません」という警告が表示されることがあります。
-        Windows コード署名証明書を未取得のため表示されるもので、アプリ自体に問題はありません。
-        <strong style="color:var(--text)">「保持する」</strong>をクリックして進めてください。
-        ソースコードは <a href="https://github.com/kashioka/Rendu">GitHub</a> で公開しています。
-      </div>
-    </div>
   </section>
 
-  <section class="screenshots">
-    <img src="../screenshot.png" alt="Rendu — ダークテーマ">
-    <div class="screenshot-grid">
-      <img src="../screenshot-light.png" alt="Rendu — ライトテーマ">
-      <img src="../screenshot-viewer.png" alt="Rendu — ファイルツリーと検索">
-    </div>
+  <!-- Demo GIF -->
+  <section class="demo">
+    <img src="../demo.gif" alt="Rendu の操作デモ — フォルダを開いて Markdown ファイルを閲覧" loading="lazy">
+    <p class="demo-caption">フォルダを開いて、ファイルをクリック。それだけ。</p>
   </section>
 
-  <section class="features">
-    <h2>機能</h2>
+  <!-- Comparison -->
+  <section class="comparison">
+    <h2>なぜ Rendu？</h2>
+    <p class="subtitle">「読む」に特化した、唯一のビューア。</p>
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th class="highlight">Rendu</th>
+          <th>Obsidian</th>
+          <th>Typora</th>
+          <th>VS Code</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>瞬時に起動</td>
+          <td class="check">Yes</td>
+          <td class="cross">遅い</td>
+          <td class="cross">普通</td>
+          <td class="cross">遅い</td>
+        </tr>
+        <tr>
+          <td>設定不要</td>
+          <td class="check">Yes</td>
+          <td class="cross">プラグイン必要</td>
+          <td class="cross">少し必要</td>
+          <td class="cross">拡張機能必要</td>
+        </tr>
+        <tr>
+          <td>完全無料</td>
+          <td class="check">Yes</td>
+          <td class="cross">一部有料</td>
+          <td class="cross">$15</td>
+          <td class="check">Yes</td>
+        </tr>
+        <tr>
+          <td>閲覧専用</td>
+          <td class="check">Yes</td>
+          <td class="cross">エディタ</td>
+          <td class="cross">エディタ</td>
+          <td class="cross">エディタ</td>
+        </tr>
+        <tr>
+          <td>Mermaid 図表</td>
+          <td class="check">標準搭載</td>
+          <td class="cross">プラグイン</td>
+          <td class="cross">プラグイン</td>
+          <td class="cross">拡張機能</td>
+        </tr>
+        <tr>
+          <td>軽量・ネイティブ</td>
+          <td class="check">&lt;15 MB</td>
+          <td class="cross">~500 MB</td>
+          <td class="cross">~100 MB</td>
+          <td class="cross">~400 MB</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <div class="divider"><hr></div>
+
+  <!-- Features: For everyone -->
+  <section class="features-section">
+    <h2>みんなが使える機能</h2>
+    <p class="subtitle">フォルダを開くだけ。すぐ読める。</p>
     <div class="feature-grid">
       <div class="feature">
-        <h3>ファイルツリー</h3>
-        <p>フォルダ内の .md ファイルをツリー表示。クリックですぐプレビュー。</p>
+        <div class="icon">&#128194;</div>
+        <h3>フォルダ閲覧</h3>
+        <p>フォルダを開くと .md ファイルをツリー表示。クリックですぐプレビュー。D&amp;D にも対応。</p>
       </div>
       <div class="feature">
-        <h3>Mermaid 図表</h3>
-        <p>フローチャート、シーケンス図、ER図などをインライン描画。</p>
+        <div class="icon">&#127912;</div>
+        <h3>ライト &amp; ダークテーマ</h3>
+        <p>テーマ切替やカスタムカラー設定に対応。いつでも快適に読める。</p>
       </div>
       <div class="feature">
+        <div class="icon">&#128196;</div>
         <h3>PDF 出力</h3>
-        <p>表示中のページをワンクリックでA4 PDFにエクスポート。</p>
+        <p>ワンクリックで A4 PDF にエクスポート。整形済みドキュメントをそのまま共有。</p>
       </div>
       <div class="feature">
-        <h3>テーマカスタマイズ</h3>
-        <p>ダーク・ライトテーマ。背景色、文字色、コードブロック色を自由に変更。</p>
-      </div>
-      <div class="feature">
+        <div class="icon">&#128209;</div>
         <h3>ドキュメントアウトライン</h3>
         <p>見出し一覧をサイドバーに表示。クリックでジャンプ。</p>
       </div>
       <div class="feature">
-        <h3>GFM 完全対応</h3>
-        <p>テーブル、タスクリスト、取り消し線、シンタックスハイライト対応。</p>
+        <div class="icon">&#128203;</div>
+        <h3>コードブロックのコピー</h3>
+        <p>コードブロックのコピーボタンをクリック。プロジェクトにそのまま貼り付け。</p>
+      </div>
+      <div class="feature">
+        <div class="icon">&#128338;</div>
+        <h3>最近のファイル</h3>
+        <p>最近開いたファイルにすぐ戻れる。履歴は自動で保存。</p>
       </div>
     </div>
   </section>
 
+  <!-- Features: For engineers -->
+  <section class="features-section">
+    <h2>エンジニア向け機能</h2>
+    <p class="subtitle">必要なツールは、最初から入っている。</p>
+    <div class="feature-grid">
+      <div class="feature">
+        <div class="icon">&#128208;</div>
+        <h3>Mermaid 図表</h3>
+        <p>フローチャート、シーケンス図、ER 図、ガントチャートをインライン描画。</p>
+      </div>
+      <div class="feature">
+        <div class="icon">&#128161;</div>
+        <h3>シンタックスハイライト</h3>
+        <p>190 以上の言語を自動検出してハイライト表示。</p>
+      </div>
+      <div class="feature">
+        <div class="icon">&#128221;</div>
+        <h3>GFM 完全対応</h3>
+        <p>テーブル、タスクリスト、取り消し線、オートリンク — GitHub Flavored Markdown に完全対応。</p>
+      </div>
+      <div class="feature">
+        <div class="icon">&#9000;</div>
+        <h3>CLI</h3>
+        <p><code>rendu file.md</code> でターミナルから直接起動。Homebrew でインストール（macOS）。</p>
+      </div>
+      <div class="feature">
+        <div class="icon">&#128279;</div>
+        <h3>ファイル関連付け</h3>
+        <p>Finder や Explorer で .md ファイルをダブルクリックすると Rendu で直接開く。</p>
+      </div>
+      <div class="feature">
+        <div class="icon">&#9881;</div>
+        <h3>ネイティブ &amp; 高速</h3>
+        <p>Tauri 2.0 + Rust で構築。15 MB 以下。Electron の重さはなし。</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"><hr></div>
+
+  <!-- Bottom CTA -->
+  <section class="bottom-cta">
+    <h2>Markdown を、今すぐ読もう。</h2>
+    <p>無料・オープンソース。数秒で使い始められます。</p>
+    <div class="download-buttons">
+      <a class="btn btn-primary" href="https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.5.0_aarch64.dmg">macOS 版ダウンロード</a>
+      <a class="btn btn-secondary" href="https://github.com/kashioka/Rendu/releases/latest">Windows 版ダウンロード</a>
+    </div>
+    <p class="alt-install">または: <code>brew install --cask kashioka/tap/rendu</code></p>
+  </section>
+
+  <!-- Windows note -->
+  <section class="note-section">
+    <div class="note-box">
+      <strong>Windows をお使いの方へ:</strong>
+      .exe インストーラのダウンロード時に「一般的にダウンロードされていません」という警告が表示されることがあります。
+      Windows コード署名証明書を未取得のため表示されるもので、アプリ自体に問題はありません。
+      <strong>「保持する」</strong>をクリックして進めてください。
+      ソースコードは <a href="https://github.com/kashioka/Rendu">GitHub</a> で公開しています。
+    </div>
+  </section>
+
+  <!-- Footer -->
   <footer>
     <p>
       MIT License &middot;
-      <a href="https://github.com/kashioka/Rendu">GitHub</a> &middot;
-      <a href="https://github.com/kashioka/Rendu/issues">フィードバック</a>
+      <a href="https://github.com/kashioka/Rendu">ソースコード (GitHub)</a> &middot;
+      <a href="https://github.com/kashioka/Rendu/issues">フィードバック</a> &middot;
+      <a href="https://github.com/kashioka/Rendu/releases">全リリース</a>
     </p>
   </footer>
 

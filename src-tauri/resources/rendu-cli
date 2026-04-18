@@ -1,0 +1,13 @@
+#!/bin/bash
+# Resolve the directory where this script lives (inside Rendu.app/Contents/Resources/resources/)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+APP_DIR="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
+BINARY="$APP_DIR/Contents/MacOS/app"
+
+if [ ! -x "$BINARY" ]; then
+  echo "Error: Rendu binary not found at $BINARY" >&2
+  exit 1
+fi
+
+"$BINARY" "$@" &
+disown
