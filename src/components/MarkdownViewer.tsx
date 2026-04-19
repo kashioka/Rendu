@@ -422,8 +422,7 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
     },
     img({ src, alt, ...props }) {
       if (src && !src.startsWith("http://") && !src.startsWith("https://") && !src.startsWith("data:") && !src.startsWith("blob:")) {
-        const absolutePath = src.startsWith("/") ? src : `${baseDir}/${src.replace(/^\.\//, "")}`;
-        return <LocalImage absolutePath={absolutePath} alt={alt} {...props} />;
+        return <LocalImage baseDir={baseDir} src={src} alt={alt} {...props} />;
       }
       return <ImageWithOverlay src={src} alt={alt} {...props} />;
     },

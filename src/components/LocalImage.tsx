@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { readFile } from "@tauri-apps/plugin-fs";
+import { invoke } from "@tauri-apps/api/core";
 import { ImageWithOverlay } from "./ImageWithOverlay";
 
 interface LocalImageProps {
-  absolutePath: string;
+  baseDir: string;
+  src: string;
   alt?: string;
 }
 
@@ -18,33 +19,33 @@ const mimeTypes: Record<string, string> = {
   ico: "image/x-icon",
 };
 
-export function LocalImage({ absolutePath, alt, ...props }: LocalImageProps) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+export function LocalImage({ baseDir, src, alt, ...props }: LocalImageProps) {
+  const [dataUrl, setDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    let revoked = false;
-    let url: string | null = null;
+    let cancelled = false;
 
     (async () => {
       try {
-        const data = await readFile(absolutePath);
-        if (revoked) return;
-        const ext = absolutePath.split(".").pop()?.toLowerCase() || "";
+        // Resolve, validate, and read atomically on the Rust side
+        const base64 = await invoke<string>("read_safe_image", {
+          baseDir,
+          src,
+        });
+        if (cancelled) return;
+        const ext = src.split(".").pop()?.toLowerCase() || "";
         const mime = mimeTypes[ext] || "application/octet-stream";
-        const blob = new Blob([data], { type: mime });
-        url = URL.createObjectURL(blob);
-        if (!revoked) setBlobUrl(url);
+        setDataUrl(`data:${mime};base64,${base64}`);
       } catch {
-        // File not found or permission denied
+        // Path rejected, file not found, or permission denied
       }
     })();
 
     return () => {
-      revoked = true;
-      if (url) URL.revokeObjectURL(url);
+      cancelled = true;
     };
-  }, [absolutePath]);
+  }, [baseDir, src]);
 
-  if (!blobUrl) return <img alt={alt} {...props} />;
-  return <ImageWithOverlay src={blobUrl} alt={alt} {...props} />;
+  if (!dataUrl) return <img alt={alt} {...props} />;
+  return <ImageWithOverlay src={dataUrl} alt={alt} {...props} />;
 }

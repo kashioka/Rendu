@@ -77,6 +77,62 @@ fn open_external_url(url: String) {
   let _ = open::that(&url);
 }
 
+/// Resolve, validate, and read an image file atomically.
+/// Returns base64-encoded file contents if the path is within the base directory.
+#[tauri::command]
+fn read_safe_image(base_dir: String, src: String) -> Result<String, String> {
+  let base = std::path::Path::new(&base_dir);
+  let candidate = if std::path::Path::new(&src).is_absolute() {
+    std::path::PathBuf::from(&src)
+  } else {
+    base.join(&src)
+  };
+
+  let canonical = candidate
+    .canonicalize()
+    .map_err(|e| format!("Cannot resolve path: {}", e))?;
+  let canonical_base = base
+    .canonicalize()
+    .map_err(|e| format!("Cannot resolve base: {}", e))?;
+
+  if !canonical.starts_with(&canonical_base) {
+    return Err("Path is outside the document directory".to_string());
+  }
+
+  // Open without following symlinks to prevent TOCTOU after canonicalize.
+  // Note: O_NOFOLLOW / FILE_FLAG_OPEN_REPARSE_POINT protect the terminal path
+  // segment. Parent directory swaps would require openat(), which is out of scope
+  // for a desktop Markdown viewer.
+  use base64::Engine;
+  use std::io::Read;
+
+  #[cfg(unix)]
+  let file_result = {
+    use std::os::unix::fs::OpenOptionsExt;
+    std::fs::OpenOptions::new()
+      .read(true)
+      .custom_flags(libc::O_NOFOLLOW)
+      .open(&canonical)
+  };
+  #[cfg(windows)]
+  let file_result = {
+    use std::os::windows::fs::OpenOptionsExt;
+    // FILE_FLAG_OPEN_REPARSE_POINT: do not follow symlinks/junctions
+    std::fs::OpenOptions::new()
+      .read(true)
+      .custom_flags(0x00200000)
+      .open(&canonical)
+  };
+  #[cfg(not(any(unix, windows)))]
+  let file_result = std::fs::File::open(&canonical);
+
+  let mut file = file_result.map_err(|e| format!("Cannot open file: {}", e))?;
+  let mut bytes = Vec::new();
+  file.read_to_end(&mut bytes)
+    .map_err(|e| format!("Cannot read file: {}", e))?;
+  Ok(base64::engine::general_purpose::STANDARD.encode(&bytes))
+}
+
 /// Check if a path looks like a markdown file (by extension).
 fn is_markdown_path(path: &str) -> bool {
   let lower = path.to_lowercase();
@@ -89,7 +145,7 @@ pub fn run() {
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_dialog::init())
     .manage(InitialFile::default())
-    .invoke_handler(tauri::generate_handler![check_for_updates, get_initial_file, open_external_url]);
+    .invoke_handler(tauri::generate_handler![check_for_updates, get_initial_file, open_external_url, read_safe_image]);
 
   #[cfg(feature = "e2e-testing")]
   {
