@@ -11,6 +11,7 @@ import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import type { Components } from "react-markdown";
 import { MermaidBlock } from "./MermaidBlock";
 import { ImageWithOverlay } from "./ImageWithOverlay";
+import { LocalImage } from "./LocalImage";
 import { CodeBlockWrapper } from "./CodeBlockWrapper";
 import type { ThemeSettings } from "../useSettings";
 import type { HeadingItem } from "./OutlinePanel";
@@ -395,13 +396,19 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
     }
   };
 
-  const sanitizeSchema = useMemo(() => ({
-    ...defaultSchema,
-    attributes: {
-      ...defaultSchema.attributes,
-      code: [...(defaultSchema.attributes?.code || []), ["className", /^language-/]],
-    },
-  }), []);
+  const sanitizeSchema = useMemo(() => {
+    const { src: _, ...otherProtocols } = defaultSchema.protocols ?? {};
+    return {
+      ...defaultSchema,
+      attributes: {
+        ...defaultSchema.attributes,
+        code: [...(defaultSchema.attributes?.code || []), ["className", /^language-/]],
+      },
+      protocols: otherProtocols,
+    };
+  }, []);
+
+  const baseDir = filePath.replace(/[\\/][^\\/]*$/, "");
 
   const components = useMemo<Components>(() => ({
     code({ className, children, ...props }) {
@@ -413,9 +420,15 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
       }
       return <code className={className} {...props}>{children}</code>;
     },
-    img: ImageWithOverlay as Components["img"],
+    img({ src, alt, ...props }) {
+      if (src && !src.startsWith("http://") && !src.startsWith("https://") && !src.startsWith("data:") && !src.startsWith("blob:")) {
+        const absolutePath = src.startsWith("/") ? src : `${baseDir}/${src.replace(/^\.\//, "")}`;
+        return <LocalImage absolutePath={absolutePath} alt={alt} {...props} />;
+      }
+      return <ImageWithOverlay src={src} alt={alt} {...props} />;
+    },
     pre: CodeBlockWrapper as Components["pre"],
-  }), [settings]);
+  }), [settings, baseDir]);
 
   const handleExportPdf = async () => {
     if (!markdownBodyRef.current) return;

@@ -45,6 +45,19 @@ refactor: code refactoring
 chore: build/dependency changes
 ```
 
+## Testing
+
+All PRs must include tests. Run the test suite before submitting:
+
+```bash
+npm run test:run   # Vitest
+npx tsc --noEmit   # Type checking
+```
+
+- **New features**: Add unit tests covering the main behavior
+- **Bug fixes**: Add a test that reproduces the bug and verifies the fix
+- **Refactoring**: Ensure existing tests still pass; add tests if coverage gaps exist
+
 ## Pull Requests
 
 1. Describe **what** you changed and **how to verify** it
