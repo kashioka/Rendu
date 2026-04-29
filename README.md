@@ -1,5 +1,7 @@
 # Rendu
 
+**English** | [日本語](./README.ja.md)
+
 **Markdown in. Beautiful renders out.**
 Just drag a file to start reading. A free, lightweight viewer.
 No config, no account — ready in seconds.
@@ -23,8 +25,6 @@ No config, no account — ready in seconds.
 - **One-click PDF export** — share rendered docs with anyone
 - **Lightweight & native** — Tauri + Rust backend, under 15 MB on disk
 - **CLI friendly** — `rendu file.md` opens and renders instantly (macOS, via Homebrew)
-
-**[日本語](./README.ja.md)**
 
 ![CI](https://github.com/kashioka/Rendu/actions/workflows/ci.yml/badge.svg)
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-blue)

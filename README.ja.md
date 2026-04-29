@@ -1,5 +1,7 @@
 # Rendu
 
+[English](./README.md) | **日本語**
+
 **Markdownという設計図を、美しい完成形として返す。**
 ファイルをドラッグするだけで読める、無料の軽量リーダー。
 設定不要、アカウント不要ですぐ使えます。
@@ -23,8 +25,6 @@
 - **ワンクリックで PDF 出力** — レンダリング結果をそのまま共有
 - **軽量＆ネイティブ** — Tauri + Rust バックエンド、ディスク使用量 15 MB 以下
 - **CLI 対応** — `rendu file.md` で即座に開いてレンダリング（macOS、Homebrew 経由）
-
-**[English](./README.md)**
 
 ![CI](https://github.com/kashioka/Rendu/actions/workflows/ci.yml/badge.svg)
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-blue)
