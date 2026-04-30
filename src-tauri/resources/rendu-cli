@@ -1,4 +1,9 @@
 #!/bin/bash
+if [ "$(uname)" != "Darwin" ]; then
+  echo "rendu-cli is for macOS only. Run the rendu binary directly on this platform." >&2
+  exit 1
+fi
+
 if [ $# -eq 0 ]; then
   open -a Rendu
 else
