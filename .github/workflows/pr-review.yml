@@ -1,5 +1,6 @@
 name: AI PR Review
 
+# Triggered only when kashioka comments `/review` on an external contributor's PR.
 on:
   issue_comment:
     types: [created]
