@@ -42,7 +42,7 @@ No config, no account — ready in seconds.
 
 ### macOS
 
-**[Download Rendu.dmg](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.5.2_aarch64.dmg)** — open and drag to Applications.
+**[Download Rendu.dmg](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.6.1_aarch64.dmg)** — open and drag to Applications.
 
 > Rendu is code-signed and notarized by Apple. Just open the DMG, drag to Applications, and launch — no extra steps needed.
 
@@ -55,7 +55,29 @@ Other install methods:
 
 ### Windows
 
-**[Download Rendu installer (.exe)](https://github.com/kashioka/Rendu/releases/latest)** — run the installer.
+**[Download Rendu installer (.exe)](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.6.1_x64-setup.exe)** — run the installer.
+
+### Linux
+
+**[Download .deb](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.6.1_amd64.deb)** — install on Debian/Ubuntu/Mint with:
+
+```bash
+sudo apt install ./Rendu_0.6.1_amd64.deb
+```
+
+For Fedora/RHEL: **[Download .rpm](https://github.com/kashioka/Rendu/releases/latest/download/Rendu-0.6.1-1.x86_64.rpm)** —
+
+```bash
+sudo dnf install ./Rendu-0.6.1-1.x86_64.rpm
+```
+
+After install, Rendu is registered as a `text/markdown` handler. To make it the default for `.md` files:
+
+```bash
+xdg-mime default Rendu.desktop text/markdown
+```
+
+> Tested on Ubuntu 22.04. Requires `webkit2gtk-4.1` and `gtk-3` runtime libraries (resolved automatically by `apt install` / `dnf install`).
 
 ## Features
 
