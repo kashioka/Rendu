@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { appConfigDir } from "@tauri-apps/api/path";
-import { readTextFile, writeTextFile, mkdir, exists } from "@tauri-apps/plugin-fs";
+import { readTextFile, mkdir, exists } from "@tauri-apps/plugin-fs";
+import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { Locale } from "./i18n";
 
@@ -123,7 +124,8 @@ async function saveToFile(settings: ThemeSettings): Promise<void> {
     if (!(await exists(dir))) {
       await mkdir(dir, { recursive: true });
     }
-    await writeTextFile(`${dir.replace(/\/+$/, "")}/${CONFIG_FILE}`, JSON.stringify(settings, null, 2));
+    const path = `${dir.replace(/\/+$/, "")}/${CONFIG_FILE}`;
+    await invoke("atomic_write", { path, contents: JSON.stringify(settings, null, 2) });
   } catch (e) {
     console.error("Failed to save settings:", e);
   }

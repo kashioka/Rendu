@@ -4,6 +4,7 @@ import { renderHook, act } from '@testing-library/react';
 vi.mock('@tauri-apps/plugin-fs', () => import('./test/mocks/tauri-fs'));
 vi.mock('@tauri-apps/api/path', () => import('./test/mocks/tauri-path'));
 vi.mock('@tauri-apps/api/window', () => import('./test/mocks/tauri-window'));
+vi.mock('@tauri-apps/api/core', () => import('./test/mocks/tauri-core'));
 
 import { useSettings, darkPreset, lightPreset, presets } from './useSettings';
 

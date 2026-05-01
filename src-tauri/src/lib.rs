@@ -139,13 +139,52 @@ fn is_markdown_path(path: &str) -> bool {
   lower.ends_with(".md") || lower.ends_with(".markdown")
 }
 
+/// Atomically write `contents` to `path` via a sibling tmp file + rename.
+/// Guarantees the target is either the prior version or the new version —
+/// never a half-written file.
+#[tauri::command]
+fn atomic_write(path: String, contents: String) -> Result<(), String> {
+  use std::io::Write;
+  let target = std::path::PathBuf::from(&path);
+  let parent = target
+    .parent()
+    .ok_or_else(|| "Path has no parent directory".to_string())?;
+  let file_name = target
+    .file_name()
+    .ok_or_else(|| "Path has no file name".to_string())?;
+  let tmp = parent.join(format!("{}.tmp", file_name.to_string_lossy()));
+
+  {
+    let mut file = std::fs::File::create(&tmp)
+      .map_err(|e| format!("Cannot create tmp file: {}", e))?;
+    file
+      .write_all(contents.as_bytes())
+      .map_err(|e| {
+        let _ = std::fs::remove_file(&tmp);
+        format!("Cannot write tmp file: {}", e)
+      })?;
+    file
+      .sync_all()
+      .map_err(|e| {
+        let _ = std::fs::remove_file(&tmp);
+        format!("Cannot fsync tmp file: {}", e)
+      })?;
+  }
+
+  std::fs::rename(&tmp, &target).map_err(|e| {
+    let _ = std::fs::remove_file(&tmp);
+    format!("Cannot rename tmp to target: {}", e)
+  })?;
+  Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   let mut builder = tauri::Builder::default()
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_dialog::init())
     .manage(InitialFile::default())
-    .invoke_handler(tauri::generate_handler![check_for_updates, get_initial_file, open_external_url, read_safe_image]);
+    .invoke_handler(tauri::generate_handler![check_for_updates, get_initial_file, open_external_url, read_safe_image, atomic_write]);
 
   #[cfg(feature = "e2e-testing")]
   {
@@ -415,6 +454,79 @@ mod tests {
     let result = read_safe_image(
       "/nonexistent/base/dir".to_string(),
       "img.png".to_string(),
+    );
+    assert!(result.is_err());
+  }
+
+  // ------------------------------------------------------------------
+  // atomic_write
+  // ------------------------------------------------------------------
+
+  #[test]
+  fn atomic_write_creates_new_file() {
+    let dir = tempdir().unwrap();
+    let target = dir.path().join("settings.json");
+    let result = atomic_write(
+      target.to_string_lossy().to_string(),
+      "{\"k\":1}".to_string(),
+    );
+    assert!(result.is_ok(), "expected Ok, got {:?}", result);
+    assert_eq!(fs::read_to_string(&target).unwrap(), "{\"k\":1}");
+  }
+
+  #[test]
+  fn atomic_write_overwrites_existing_file() {
+    let dir = tempdir().unwrap();
+    let target = dir.path().join("settings.json");
+    write_file(&target, b"{\"k\":\"old\"}");
+
+    let result = atomic_write(
+      target.to_string_lossy().to_string(),
+      "{\"k\":\"new\"}".to_string(),
+    );
+    assert!(result.is_ok());
+    assert_eq!(fs::read_to_string(&target).unwrap(), "{\"k\":\"new\"}");
+  }
+
+  #[test]
+  fn atomic_write_does_not_leave_tmp_file_after_success() {
+    let dir = tempdir().unwrap();
+    let target = dir.path().join("settings.json");
+    atomic_write(
+      target.to_string_lossy().to_string(),
+      "x".to_string(),
+    )
+    .unwrap();
+    let tmp = dir.path().join("settings.json.tmp");
+    assert!(!tmp.exists(), "tmp file should be cleaned up after rename");
+  }
+
+  #[test]
+  fn atomic_write_overwrites_stale_tmp_file() {
+    // Simulates a prior interrupted write that left a stale .tmp behind.
+    // atomic_write must overwrite (not append to) the stale tmp.
+    let dir = tempdir().unwrap();
+    let target = dir.path().join("settings.json");
+    let tmp = dir.path().join("settings.json.tmp");
+    write_file(&tmp, b"STALE_PARTIAL_CONTENT");
+
+    atomic_write(
+      target.to_string_lossy().to_string(),
+      "FRESH".to_string(),
+    )
+    .unwrap();
+    assert_eq!(fs::read_to_string(&target).unwrap(), "FRESH");
+    assert!(!tmp.exists());
+  }
+
+  #[test]
+  fn atomic_write_preserves_target_when_rename_target_dir_missing() {
+    // If parent dir doesn't exist, File::create fails — no partial state.
+    let dir = tempdir().unwrap();
+    let missing_parent = dir.path().join("nonexistent").join("settings.json");
+    let result = atomic_write(
+      missing_parent.to_string_lossy().to_string(),
+      "x".to_string(),
     );
     assert!(result.is_err());
   }
