@@ -23,7 +23,7 @@
 - **フォルダを開くだけですぐ見られる** — ファイルツリー・アウトライン・レンダリング結果を一画面に
 - **Mermaid 図表・GFM テーブル・シンタックスハイライト** — すべて内蔵、追加インストール不要
 - **ワンクリックで PDF 出力** — レンダリング結果をそのまま共有
-- **軽量＆ネイティブ** — Tauri + Rust バックエンド、ディスク使用量 15 MB 以下
+- **軽量＆ネイティブ** — Tauri + Rust バックエンド、ネイティブパッケージ (DMG / EXE / .deb / .rpm) は 7 MB 以下
 - **CLI 対応** — `rendu file.md` で即座に開いてレンダリング（macOS、Homebrew 経由）
 
 ![CI](https://github.com/kashioka/Rendu/actions/workflows/ci.yml/badge.svg)
@@ -70,6 +70,15 @@ Fedora/RHEL の場合: **[.rpm をダウンロード](https://github.com/kashiok
 ```bash
 sudo dnf install ./Rendu-0.6.1-1.x86_64.rpm
 ```
+
+その他のディストロ（openSUSE / Arch / NixOS 等）の場合: **[AppImage をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.6.1_amd64.AppImage)** — 実行権限を付けて起動:
+
+```bash
+chmod +x Rendu_0.6.1_amd64.AppImage
+./Rendu_0.6.1_amd64.AppImage
+```
+
+> AppImage は GTK ランタイムを内包するため約 83 MB です。ネイティブの `.deb` / `.rpm` はシステム側のランタイムを利用するためそれぞれ 6 MB です。
 
 インストール後、Rendu は `text/markdown` のハンドラとして登録されます。`.md` ファイルの既定アプリにするには:
 

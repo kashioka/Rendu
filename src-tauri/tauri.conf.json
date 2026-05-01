@@ -28,7 +28,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "dmg", "msi", "nsis", "deb", "rpm"],
+    "targets": ["app", "dmg", "msi", "nsis", "deb", "rpm", "appimage"],
     "publisher": "Hideo Kashioka",
     "homepage": "https://github.com/kashioka/Rendu",
     "copyright": "© 2026 Hideo Kashioka",

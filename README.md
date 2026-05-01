@@ -23,7 +23,7 @@ No config, no account — ready in seconds.
 - **Open a folder, start reading** — file tree, outline, and rendered Markdown in one window
 - **Mermaid diagrams, GFM tables, syntax highlighting** — all built in, nothing to install
 - **One-click PDF export** — share rendered docs with anyone
-- **Lightweight & native** — Tauri + Rust backend, under 15 MB on disk
+- **Lightweight & native** — Tauri + Rust backend, native packages under 7 MB (DMG / EXE / .deb / .rpm)
 - **CLI friendly** — `rendu file.md` opens and renders instantly (macOS, via Homebrew)
 
 ![CI](https://github.com/kashioka/Rendu/actions/workflows/ci.yml/badge.svg)
@@ -70,6 +70,15 @@ For Fedora/RHEL: **[Download .rpm](https://github.com/kashioka/Rendu/releases/la
 ```bash
 sudo dnf install ./Rendu-0.6.1-1.x86_64.rpm
 ```
+
+For other distributions (openSUSE, Arch, NixOS, etc.): **[Download AppImage](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.6.1_amd64.AppImage)** — make it executable and run:
+
+```bash
+chmod +x Rendu_0.6.1_amd64.AppImage
+./Rendu_0.6.1_amd64.AppImage
+```
+
+> AppImage is ~83 MB because it bundles the GTK runtime for portability. Native `.deb` / `.rpm` packages are 6 MB each since they share the system runtime.
 
 After install, Rendu is registered as a `text/markdown` handler. To make it the default for `.md` files:
 
