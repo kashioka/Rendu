@@ -1,5 +1,5 @@
 [package]
-name = "app"
+name = "rendu"
 version = "0.6.1"
 description = "Lightweight desktop Markdown viewer"
 authors = ["Hideo Kashioka"]
