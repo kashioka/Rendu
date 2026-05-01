@@ -86,7 +86,7 @@ After install, Rendu is registered as a `text/markdown` handler. To make it the 
 xdg-mime default Rendu.desktop text/markdown
 ```
 
-> Tested on Ubuntu 22.04. Requires `webkit2gtk-4.1` and `gtk-3` runtime libraries (resolved automatically by `apt install` / `dnf install`).
+> **Supported environments:** Ubuntu 22.04+ / Debian 12+ / Linux Mint 21+ / equivalent on x86_64. Requires `webkit2gtk-4.1` (Tauri 2 dropped support for `webkit2gtk-4.0`, so Ubuntu 20.04 and Debian 11 are not supported). `gtk-3` is also required. Both are auto-resolved by `apt install` / `dnf install`.
 >
 > **Note for Ubuntu 24.04+:** The new App Center (Snap-based) may hang on "Preparing" for 15+ minutes when installing `.deb` files via the GUI. Use the CLI command above instead.
 

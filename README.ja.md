@@ -86,7 +86,7 @@ chmod +x Rendu_0.6.1_amd64.AppImage
 xdg-mime default Rendu.desktop text/markdown
 ```
 
-> Ubuntu 22.04 で動作確認済み。`webkit2gtk-4.1` と `gtk-3` のランタイムライブラリが必要（`apt install` / `dnf install` が自動解決）。
+> **対応環境:** Ubuntu 22.04 以降 / Debian 12 以降 / Linux Mint 21 以降 等の x86_64。`webkit2gtk-4.1` ランタイムが必要です（Tauri 2 が `webkit2gtk-4.0` のサポートを終了したため、Ubuntu 20.04 / Debian 11 は非対応）。`gtk-3` も必要。両方とも `apt install` / `dnf install` が自動解決します。
 >
 > **Ubuntu 24.04+ での注意:** 新しい App Center（Snap ベース）は GUI から `.deb` をインストールすると 15 分以上「準備中」のまま停止する場合があります。上記の CLI コマンドをご利用ください。
 
