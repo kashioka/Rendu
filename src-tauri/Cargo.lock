@@ -2997,7 +2997,7 @@ dependencies = [
 
 [[package]]
 name = "rendu"
-version = "0.6.1-beta.10"
+version = "0.6.1"
 dependencies = [
  "base64 0.22.1",
  "libc",
