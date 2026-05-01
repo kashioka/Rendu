@@ -139,43 +139,78 @@ fn is_markdown_path(path: &str) -> bool {
   lower.ends_with(".md") || lower.ends_with(".markdown")
 }
 
-/// Atomically write `contents` to `path` via a sibling tmp file + rename.
-/// Guarantees the target is either the prior version or the new version —
-/// never a half-written file.
-#[tauri::command]
-fn atomic_write(path: String, contents: String) -> Result<(), String> {
+/// Inner implementation: atomically write `contents` to `target` via a sibling
+/// tmp file + rename, but only if `target`'s canonicalized parent lives under
+/// `allowed_base`. Refuses any path that resolves outside the sandbox.
+fn atomic_write_inner(
+  allowed_base: &std::path::Path,
+  target: &std::path::Path,
+  contents: &[u8],
+) -> Result<(), String> {
   use std::io::Write;
-  let target = std::path::PathBuf::from(&path);
+
   let parent = target
     .parent()
+    .filter(|p| !p.as_os_str().is_empty())
     .ok_or_else(|| "Path has no parent directory".to_string())?;
   let file_name = target
     .file_name()
     .ok_or_else(|| "Path has no file name".to_string())?;
-  let tmp = parent.join(format!("{}.tmp", file_name.to_string_lossy()));
+
+  let canonical_parent = parent
+    .canonicalize()
+    .map_err(|e| format!("Cannot resolve target parent: {}", e))?;
+  let canonical_base = allowed_base
+    .canonicalize()
+    .map_err(|e| format!("Cannot resolve allowed base: {}", e))?;
+
+  if !canonical_parent.starts_with(&canonical_base) {
+    return Err("Path is outside the allowed directory".to_string());
+  }
+
+  // Use canonical_parent so the rename target matches the validated path.
+  let canonical_target = canonical_parent.join(file_name);
+  let tmp = {
+    let mut name = file_name.to_os_string();
+    name.push(".tmp");
+    canonical_parent.join(name)
+  };
 
   {
     let mut file = std::fs::File::create(&tmp)
       .map_err(|e| format!("Cannot create tmp file: {}", e))?;
-    file
-      .write_all(contents.as_bytes())
-      .map_err(|e| {
-        let _ = std::fs::remove_file(&tmp);
-        format!("Cannot write tmp file: {}", e)
-      })?;
-    file
-      .sync_all()
-      .map_err(|e| {
-        let _ = std::fs::remove_file(&tmp);
-        format!("Cannot fsync tmp file: {}", e)
-      })?;
+    file.write_all(contents).map_err(|e| {
+      let _ = std::fs::remove_file(&tmp);
+      format!("Cannot write tmp file: {}", e)
+    })?;
+    file.sync_all().map_err(|e| {
+      let _ = std::fs::remove_file(&tmp);
+      format!("Cannot fsync tmp file: {}", e)
+    })?;
   }
 
-  std::fs::rename(&tmp, &target).map_err(|e| {
+  std::fs::rename(&tmp, &canonical_target).map_err(|e| {
     let _ = std::fs::remove_file(&tmp);
     format!("Cannot rename tmp to target: {}", e)
   })?;
   Ok(())
+}
+
+/// Atomically write `contents` to `path` via a sibling tmp file + rename.
+/// Guarantees the target is either the prior version or the new version —
+/// never a half-written file. The webview can only write under the app
+/// config directory; any other path is rejected.
+#[tauri::command]
+fn atomic_write(app: tauri::AppHandle, path: String, contents: String) -> Result<(), String> {
+  let allowed_base = app
+    .path()
+    .app_config_dir()
+    .map_err(|e| format!("Cannot resolve app config dir: {}", e))?;
+  atomic_write_inner(
+    &allowed_base,
+    std::path::Path::new(&path),
+    contents.as_bytes(),
+  )
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -459,17 +494,14 @@ mod tests {
   }
 
   // ------------------------------------------------------------------
-  // atomic_write
+  // atomic_write_inner
   // ------------------------------------------------------------------
 
   #[test]
   fn atomic_write_creates_new_file() {
     let dir = tempdir().unwrap();
     let target = dir.path().join("settings.json");
-    let result = atomic_write(
-      target.to_string_lossy().to_string(),
-      "{\"k\":1}".to_string(),
-    );
+    let result = atomic_write_inner(dir.path(), &target, b"{\"k\":1}");
     assert!(result.is_ok(), "expected Ok, got {:?}", result);
     assert_eq!(fs::read_to_string(&target).unwrap(), "{\"k\":1}");
   }
@@ -480,10 +512,7 @@ mod tests {
     let target = dir.path().join("settings.json");
     write_file(&target, b"{\"k\":\"old\"}");
 
-    let result = atomic_write(
-      target.to_string_lossy().to_string(),
-      "{\"k\":\"new\"}".to_string(),
-    );
+    let result = atomic_write_inner(dir.path(), &target, b"{\"k\":\"new\"}");
     assert!(result.is_ok());
     assert_eq!(fs::read_to_string(&target).unwrap(), "{\"k\":\"new\"}");
   }
@@ -492,11 +521,7 @@ mod tests {
   fn atomic_write_does_not_leave_tmp_file_after_success() {
     let dir = tempdir().unwrap();
     let target = dir.path().join("settings.json");
-    atomic_write(
-      target.to_string_lossy().to_string(),
-      "x".to_string(),
-    )
-    .unwrap();
+    atomic_write_inner(dir.path(), &target, b"x").unwrap();
     let tmp = dir.path().join("settings.json.tmp");
     assert!(!tmp.exists(), "tmp file should be cleaned up after rename");
   }
@@ -510,25 +535,62 @@ mod tests {
     let tmp = dir.path().join("settings.json.tmp");
     write_file(&tmp, b"STALE_PARTIAL_CONTENT");
 
-    atomic_write(
-      target.to_string_lossy().to_string(),
-      "FRESH".to_string(),
-    )
-    .unwrap();
+    atomic_write_inner(dir.path(), &target, b"FRESH").unwrap();
     assert_eq!(fs::read_to_string(&target).unwrap(), "FRESH");
     assert!(!tmp.exists());
   }
 
   #[test]
   fn atomic_write_preserves_target_when_rename_target_dir_missing() {
-    // If parent dir doesn't exist, File::create fails — no partial state.
+    // If parent dir doesn't exist, canonicalize fails — no partial state.
     let dir = tempdir().unwrap();
     let missing_parent = dir.path().join("nonexistent").join("settings.json");
-    let result = atomic_write(
-      missing_parent.to_string_lossy().to_string(),
-      "x".to_string(),
-    );
+    let result = atomic_write_inner(dir.path(), &missing_parent, b"x");
     assert!(result.is_err());
+  }
+
+  #[test]
+  fn atomic_write_rejects_target_in_unrelated_directory() {
+    // An absolute path to a directory entirely outside allowed_base must be
+    // refused — protects against XSS-driven writes to arbitrary FS locations.
+    let allowed = tempdir().unwrap();
+    let outside = tempdir().unwrap();
+    let evil_target = outside.path().join("evil.json");
+
+    let result = atomic_write_inner(allowed.path(), &evil_target, b"pwn");
+    assert!(result.is_err(), "expected reject, got {:?}", result);
+    assert!(result.unwrap_err().contains("outside the allowed directory"));
+    assert!(!evil_target.exists());
+  }
+
+  #[test]
+  fn atomic_write_rejects_relative_path_traversal() {
+    // target = allowed_base/../escaped.json must canonicalize to outside base.
+    let allowed = tempdir().unwrap();
+    let nested = allowed.path().join("nested");
+    fs::create_dir_all(&nested).unwrap();
+    let escaping = nested.join("..").join("..").join("escaped.json");
+
+    let result = atomic_write_inner(&nested, &escaping, b"pwn");
+    assert!(result.is_err(), "expected reject, got {:?}", result);
+    assert!(result.unwrap_err().contains("outside the allowed directory"));
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn atomic_write_rejects_symlinked_parent_outside_allowed_base() {
+    use std::os::unix::fs::symlink;
+    let allowed = tempdir().unwrap();
+    let elsewhere = tempdir().unwrap();
+
+    // Create allowed/escape -> elsewhere (symlinked dir outside)
+    let link = allowed.path().join("escape");
+    symlink(elsewhere.path(), &link).unwrap();
+    let target = link.join("settings.json");
+
+    let result = atomic_write_inner(allowed.path(), &target, b"pwn");
+    assert!(result.is_err(), "symlinked parent must be rejected, got {:?}", result);
+    assert!(result.unwrap_err().contains("outside the allowed directory"));
   }
 
   #[cfg(unix)]
