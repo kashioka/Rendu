@@ -12,8 +12,22 @@ vi.mock('../utils/svgToPng', () => ({
 }));
 
 import mermaid from 'mermaid';
-import { MermaidBlock } from './MermaidBlock';
+import { MermaidBlock, hasRenderableMermaidCode } from './MermaidBlock';
 import { darkPreset } from '../useSettings';
+
+describe('hasRenderableMermaidCode', () => {
+  it('returns true for non-empty code', () => {
+    expect(hasRenderableMermaidCode('graph TD; A-->B;')).toBe(true);
+  });
+
+  it('returns false for empty string', () => {
+    expect(hasRenderableMermaidCode('')).toBe(false);
+  });
+
+  it('returns false for whitespace-only', () => {
+    expect(hasRenderableMermaidCode('   \n\t  ')).toBe(false);
+  });
+});
 
 describe('MermaidBlock', () => {
   beforeEach(() => {

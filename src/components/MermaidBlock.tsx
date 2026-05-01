@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import mermaid from "mermaid";
 import type { ThemeSettings } from "../useSettings";
 import { useTranslation } from "../LocaleContext";
 import { svgToPng } from "../utils/svgToPng";
 import { Lightbox } from "./Lightbox";
 
 let idCounter = 0;
+
+/** Whether a code block has any non-whitespace content worth rendering. */
+export function hasRenderableMermaidCode(code: string): boolean {
+  return code.trim().length > 0;
+}
 
 export function MermaidBlock({
   code,
@@ -22,66 +26,81 @@ export function MermaidBlock({
   const { t } = useTranslation();
 
   useEffect(() => {
+    // Skip the mermaid module load entirely when there's nothing to render.
+    if (!hasRenderableMermaidCode(code)) return;
+
     const id = `mermaid-${++idCounter}`;
     setError(null);
     setZoom(1);
 
-    // Skip redundant mermaid.initialize when only code changed
-    const settingsKey = `${settings.mermaidTheme}|${settings.mermaidBg}|${settings.mermaidPrimaryColor}|${settings.mermaidLineColor}`;
-    if (settingsKey !== prevSettingsKeyRef.current) {
-      prevSettingsKeyRef.current = settingsKey;
-      mermaid.initialize({
-      startOnLoad: false,
-      theme: settings.mermaidTheme,
-      securityLevel: "strict",
-      themeVariables: {
-        background: settings.mermaidBg,
-        primaryColor: settings.mermaidPrimaryColor,
-        primaryTextColor: settings.mermaidPrimaryTextColor,
-        primaryBorderColor: settings.mermaidLineColor,
-        lineColor: settings.mermaidLineColor,
-        secondaryColor: settings.mermaidSecondaryColor,
-        tertiaryColor: settings.mermaidBg,
-        noteBkgColor: settings.mermaidNoteBg,
-        noteTextColor: settings.mermaidNoteTextColor,
-        noteBorderColor: settings.mermaidLineColor,
-        actorBkg: settings.mermaidActorBg,
-        actorTextColor: settings.mermaidActorTextColor,
-        actorBorder: settings.mermaidLineColor,
-        actorLineColor: settings.mermaidLineColor,
-        signalColor: settings.mermaidSignalTextColor,
-        signalTextColor: settings.mermaidSignalTextColor,
-        labelTextColor: settings.mermaidPrimaryTextColor,
-        loopTextColor: settings.mermaidSignalTextColor,
-        activationBorderColor: settings.mermaidLineColor,
-        activationBkgColor: settings.mermaidSecondaryColor,
-        sequenceNumberColor: settings.mermaidPrimaryTextColor,
-        sectionBkgColor: settings.mermaidPrimaryColor,
-        altSectionBkgColor: settings.mermaidSecondaryColor,
-        sectionBkgColor2: settings.mermaidSecondaryColor,
-        taskBorderColor: settings.mermaidLineColor,
-        taskBkgColor: settings.mermaidPrimaryColor,
-        taskTextColor: settings.mermaidPrimaryTextColor,
-        activeTaskBorderColor: settings.mermaidPrimaryTextColor,
-        activeTaskBkgColor: settings.mermaidSecondaryColor,
-        gridColor: settings.mermaidLineColor,
-        doneTaskBkgColor: "#52525b",
-        doneTaskBorderColor: "#71717a",
-        titleColor: settings.mermaidPrimaryTextColor,
-        edgeLabelBackground: settings.mermaidBg,
-        mainBkg: settings.mermaidPrimaryColor,
-        nodeBorder: settings.mermaidLineColor,
-        clusterBkg: settings.mermaidSecondaryColor,
-        clusterBorder: settings.mermaidLineColor,
-        defaultLinkColor: settings.mermaidLineColor,
-        nodeTextColor: settings.mermaidPrimaryTextColor,
-      },
-    });
-    }
+    let cancelled = false;
 
-    mermaid
-      .render(id, code)
-      .then(({ svg }) => {
+    (async () => {
+      let mermaid;
+      try {
+        mermaid = (await import("mermaid")).default;
+      } catch (e) {
+        if (!cancelled) setError(`Failed to load Mermaid: ${String(e)}`);
+        return;
+      }
+      if (cancelled) return;
+
+      // Skip redundant mermaid.initialize when only code changed
+      const settingsKey = `${settings.mermaidTheme}|${settings.mermaidBg}|${settings.mermaidPrimaryColor}|${settings.mermaidLineColor}`;
+      if (settingsKey !== prevSettingsKeyRef.current) {
+        prevSettingsKeyRef.current = settingsKey;
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: settings.mermaidTheme,
+          securityLevel: "strict",
+          themeVariables: {
+            background: settings.mermaidBg,
+            primaryColor: settings.mermaidPrimaryColor,
+            primaryTextColor: settings.mermaidPrimaryTextColor,
+            primaryBorderColor: settings.mermaidLineColor,
+            lineColor: settings.mermaidLineColor,
+            secondaryColor: settings.mermaidSecondaryColor,
+            tertiaryColor: settings.mermaidBg,
+            noteBkgColor: settings.mermaidNoteBg,
+            noteTextColor: settings.mermaidNoteTextColor,
+            noteBorderColor: settings.mermaidLineColor,
+            actorBkg: settings.mermaidActorBg,
+            actorTextColor: settings.mermaidActorTextColor,
+            actorBorder: settings.mermaidLineColor,
+            actorLineColor: settings.mermaidLineColor,
+            signalColor: settings.mermaidSignalTextColor,
+            signalTextColor: settings.mermaidSignalTextColor,
+            labelTextColor: settings.mermaidPrimaryTextColor,
+            loopTextColor: settings.mermaidSignalTextColor,
+            activationBorderColor: settings.mermaidLineColor,
+            activationBkgColor: settings.mermaidSecondaryColor,
+            sequenceNumberColor: settings.mermaidPrimaryTextColor,
+            sectionBkgColor: settings.mermaidPrimaryColor,
+            altSectionBkgColor: settings.mermaidSecondaryColor,
+            sectionBkgColor2: settings.mermaidSecondaryColor,
+            taskBorderColor: settings.mermaidLineColor,
+            taskBkgColor: settings.mermaidPrimaryColor,
+            taskTextColor: settings.mermaidPrimaryTextColor,
+            activeTaskBorderColor: settings.mermaidPrimaryTextColor,
+            activeTaskBkgColor: settings.mermaidSecondaryColor,
+            gridColor: settings.mermaidLineColor,
+            doneTaskBkgColor: "#52525b",
+            doneTaskBorderColor: "#71717a",
+            titleColor: settings.mermaidPrimaryTextColor,
+            edgeLabelBackground: settings.mermaidBg,
+            mainBkg: settings.mermaidPrimaryColor,
+            nodeBorder: settings.mermaidLineColor,
+            clusterBkg: settings.mermaidSecondaryColor,
+            clusterBorder: settings.mermaidLineColor,
+            defaultLinkColor: settings.mermaidLineColor,
+            nodeTextColor: settings.mermaidPrimaryTextColor,
+          },
+        });
+      }
+
+      try {
+        const { svg } = await mermaid.render(id, code);
+        if (cancelled) return;
         if (ref.current) {
           // Use DOMParser instead of innerHTML to prevent XSS
           const parser = new DOMParser();
@@ -95,10 +114,14 @@ export function MermaidBlock({
             );
           }
         }
-      })
-      .catch((e) => {
-        setError(String(e));
-      });
+      } catch (e) {
+        if (!cancelled) setError(String(e));
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [code, settings]);
 
   const getSvg = (): SVGSVGElement | null => {
