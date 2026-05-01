@@ -281,3 +281,163 @@ pub fn run() {
     }
   });
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use std::fs;
+  use std::io::Write;
+  use tempfile::tempdir;
+
+  // ------------------------------------------------------------------
+  // is_markdown_path
+  // ------------------------------------------------------------------
+
+  #[test]
+  fn is_markdown_path_accepts_md_extension() {
+    assert!(is_markdown_path("README.md"));
+    assert!(is_markdown_path("/path/to/file.md"));
+    assert!(is_markdown_path("notes.markdown"));
+  }
+
+  #[test]
+  fn is_markdown_path_is_case_insensitive() {
+    assert!(is_markdown_path("README.MD"));
+    assert!(is_markdown_path("notes.MARKDOWN"));
+    assert!(is_markdown_path("hello.MarKdoWn"));
+  }
+
+  #[test]
+  fn is_markdown_path_rejects_other_extensions() {
+    assert!(!is_markdown_path("file.txt"));
+    assert!(!is_markdown_path("file.json"));
+    assert!(!is_markdown_path("file.html"));
+    assert!(!is_markdown_path("file.md.bak"));
+  }
+
+  #[test]
+  fn is_markdown_path_rejects_no_extension_or_empty() {
+    assert!(!is_markdown_path(""));
+    assert!(!is_markdown_path("README"));
+    assert!(!is_markdown_path("md"));
+    assert!(!is_markdown_path("markdown"));
+  }
+
+  // ------------------------------------------------------------------
+  // read_safe_image — tempfile を使った実 FS テスト（Marky パターン）
+  // ------------------------------------------------------------------
+
+  fn write_file(path: &std::path::Path, contents: &[u8]) {
+    if let Some(parent) = path.parent() {
+      fs::create_dir_all(parent).unwrap();
+    }
+    let mut f = fs::File::create(path).unwrap();
+    f.write_all(contents).unwrap();
+  }
+
+  #[test]
+  fn read_safe_image_reads_file_within_base_dir() {
+    let dir = tempdir().unwrap();
+    let img = dir.path().join("img.png");
+    write_file(&img, b"PNG_BYTES_HERE");
+
+    let result = read_safe_image(
+      dir.path().to_string_lossy().to_string(),
+      "img.png".to_string(),
+    );
+    assert!(result.is_ok(), "expected Ok, got {:?}", result);
+    let encoded = result.unwrap();
+    use base64::Engine;
+    let decoded = base64::engine::general_purpose::STANDARD
+      .decode(&encoded)
+      .unwrap();
+    assert_eq!(decoded, b"PNG_BYTES_HERE");
+  }
+
+  #[test]
+  fn read_safe_image_supports_subdirectories() {
+    let dir = tempdir().unwrap();
+    let img = dir.path().join("assets").join("nested.png");
+    write_file(&img, b"NESTED_PNG");
+
+    let result = read_safe_image(
+      dir.path().to_string_lossy().to_string(),
+      "assets/nested.png".to_string(),
+    );
+    assert!(result.is_ok());
+  }
+
+  #[test]
+  fn read_safe_image_rejects_relative_path_traversal() {
+    let dir = tempdir().unwrap();
+    let inner = dir.path().join("inner");
+    fs::create_dir_all(&inner).unwrap();
+    // base_dir = inner, but try to access ../outside.png at dir.path()
+    let outside = dir.path().join("outside.png");
+    write_file(&outside, b"SHOULD_NOT_READ");
+
+    let result = read_safe_image(
+      inner.to_string_lossy().to_string(),
+      "../outside.png".to_string(),
+    );
+    assert!(result.is_err(), "expected Err for path traversal");
+    assert!(result.unwrap_err().contains("outside the document directory"));
+  }
+
+  #[test]
+  fn read_safe_image_rejects_absolute_path_outside_base_dir() {
+    let base = tempdir().unwrap();
+    let elsewhere = tempdir().unwrap();
+    let outside = elsewhere.path().join("secret.png");
+    write_file(&outside, b"SECRET");
+
+    let result = read_safe_image(
+      base.path().to_string_lossy().to_string(),
+      outside.to_string_lossy().to_string(),
+    );
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("outside the document directory"));
+  }
+
+  #[test]
+  fn read_safe_image_returns_error_for_missing_file() {
+    let dir = tempdir().unwrap();
+    let result = read_safe_image(
+      dir.path().to_string_lossy().to_string(),
+      "does-not-exist.png".to_string(),
+    );
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Cannot resolve path"));
+  }
+
+  #[test]
+  fn read_safe_image_returns_error_for_missing_base_dir() {
+    let result = read_safe_image(
+      "/nonexistent/base/dir".to_string(),
+      "img.png".to_string(),
+    );
+    assert!(result.is_err());
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn read_safe_image_rejects_symlink_pointing_outside_base_dir() {
+    use std::os::unix::fs::symlink;
+    let base = tempdir().unwrap();
+    let elsewhere = tempdir().unwrap();
+    let target = elsewhere.path().join("secret.png");
+    write_file(&target, b"SECRET");
+
+    let link = base.path().join("link.png");
+    symlink(&target, &link).unwrap();
+
+    let result = read_safe_image(
+      base.path().to_string_lossy().to_string(),
+      "link.png".to_string(),
+    );
+    // canonicalize() resolves symlinks, so the canonical path will be outside base_dir
+    // and the starts_with() check should reject it.
+    assert!(result.is_err(), "symlink to outside should be rejected, got {:?}", result);
+    assert!(result.unwrap_err().contains("outside the document directory"));
+  }
+}
