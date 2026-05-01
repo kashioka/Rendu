@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use parking_lot::Mutex;
 use tauri::menu::{AboutMetadataBuilder, MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::{Emitter, Manager, RunEvent};
 use serde::Serialize;
@@ -69,7 +69,7 @@ struct InitialFile(Mutex<Option<String>>);
 
 #[tauri::command]
 fn get_initial_file(state: tauri::State<'_, InitialFile>) -> Option<String> {
-  state.0.lock().unwrap().take()
+  state.0.lock().take()
 }
 
 #[tauri::command]
@@ -249,7 +249,7 @@ pub fn run() {
       if let Some(file_path) = args.get(1) {
         if is_markdown_path(file_path) && std::path::Path::new(file_path).exists() {
           let state = app.state::<InitialFile>();
-          *state.0.lock().unwrap() = Some(file_path.clone());
+          *state.0.lock() = Some(file_path.clone());
         }
       }
 
@@ -272,7 +272,7 @@ pub fn run() {
           if is_markdown_path(&p) {
             // Store in InitialFile so the frontend can pick it up on cold start
             let state = _app_handle.state::<InitialFile>();
-            *state.0.lock().unwrap() = Some(p.clone());
+            *state.0.lock() = Some(p.clone());
             let _ = _app_handle.emit("file-open-request", &p);
             break;
           }
