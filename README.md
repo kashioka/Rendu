@@ -78,6 +78,8 @@ xdg-mime default Rendu.desktop text/markdown
 ```
 
 > Tested on Ubuntu 22.04. Requires `webkit2gtk-4.1` and `gtk-3` runtime libraries (resolved automatically by `apt install` / `dnf install`).
+>
+> **Note for Ubuntu 24.04+:** The new App Center (Snap-based) may hang on "Preparing" for 15+ minutes when installing `.deb` files via the GUI. Use the CLI command above instead.
 
 ## Features
 

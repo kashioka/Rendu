@@ -29,6 +29,12 @@
   "bundle": {
     "active": true,
     "targets": ["app", "dmg", "msi", "nsis", "deb", "rpm"],
+    "publisher": "Hideo Kashioka",
+    "homepage": "https://github.com/kashioka/Rendu",
+    "copyright": "© 2026 Hideo Kashioka",
+    "category": "Utility",
+    "shortDescription": "Lightweight desktop Markdown viewer",
+    "longDescription": "A lightweight desktop Markdown viewer built with Tauri and Rust. Render Markdown files with Mermaid diagrams, syntax highlighting, and PDF export. Drag-and-drop a folder or file to start reading — no setup or account required.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
