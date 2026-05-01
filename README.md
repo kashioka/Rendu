@@ -78,6 +78,8 @@ chmod +x Rendu_0.6.1_amd64.AppImage
 ./Rendu_0.6.1_amd64.AppImage
 ```
 
+> If you see `dlopen(): error loading libfuse.so.2`, install FUSE 2: `sudo apt install libfuse2t64` (Ubuntu 24.04+) or `sudo apt install libfuse2` (older). As a no-install workaround, run with `--appimage-extract-and-run`.
+>
 > AppImage is ~83 MB because it bundles the GTK runtime for portability. Native `.deb` / `.rpm` packages are 6 MB each since they share the system runtime.
 
 After install, Rendu is registered as a `text/markdown` handler. To make it the default for `.md` files:

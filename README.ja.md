@@ -78,6 +78,8 @@ chmod +x Rendu_0.6.1_amd64.AppImage
 ./Rendu_0.6.1_amd64.AppImage
 ```
 
+> `dlopen(): error loading libfuse.so.2` が出る場合は FUSE 2 をインストール: `sudo apt install libfuse2t64`（Ubuntu 24.04+）または `sudo apt install libfuse2`（旧環境）。インストールせずに動かしたい場合は `--appimage-extract-and-run` フラグを付けて実行してください。
+>
 > AppImage は GTK ランタイムを内包するため約 83 MB です。ネイティブの `.deb` / `.rpm` はシステム側のランタイムを利用するためそれぞれ 6 MB です。
 
 インストール後、Rendu は `text/markdown` のハンドラとして登録されます。`.md` ファイルの既定アプリにするには:
