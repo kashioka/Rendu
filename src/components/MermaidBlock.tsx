@@ -26,8 +26,15 @@ export function MermaidBlock({
   const { t } = useTranslation();
 
   useEffect(() => {
-    // Skip the mermaid module load entirely when there's nothing to render.
-    if (!hasRenderableMermaidCode(code)) return;
+    // Skip the mermaid module load entirely when there's nothing to render,
+    // but clear any prior diagram so a deleted code block doesn't leave a
+    // stale SVG or error visible.
+    if (!hasRenderableMermaidCode(code)) {
+      if (ref.current) ref.current.replaceChildren();
+      setError(null);
+      setZoom(1);
+      return;
+    }
 
     const id = `mermaid-${++idCounter}`;
     setError(null);

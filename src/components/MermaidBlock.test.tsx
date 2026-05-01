@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { renderWithLocale } from '../test/helpers';
+import { LocaleProvider } from '../LocaleContext';
 
 vi.mock('mermaid', () => import('../test/mocks/mermaid'));
 vi.mock('../utils/svgToPng', () => ({
@@ -70,5 +71,24 @@ describe('MermaidBlock', () => {
     });
     const initArg = (mermaid.initialize as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(initArg.theme).toBe(darkPreset.mermaidTheme);
+  });
+
+  it('clears the diagram when code transitions from non-empty to empty', async () => {
+    (mermaid.render as ReturnType<typeof vi.fn>).mockResolvedValue({
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" class="rendered"><text>X</text></svg>',
+    });
+    const Wrapper = ({ code }: { code: string }) => (
+      <LocaleProvider locale="en">
+        <MermaidBlock code={code} settings={darkPreset} />
+      </LocaleProvider>
+    );
+    const { container, rerender } = render(<Wrapper code="graph TD; A-->B;" />);
+    await waitFor(() => {
+      expect(container.querySelector('.mermaid-container')?.children.length).toBeGreaterThan(0);
+    });
+    rerender(<Wrapper code="" />);
+    await waitFor(() => {
+      expect(container.querySelector('.mermaid-container')?.children.length).toBe(0);
+    });
   });
 });
