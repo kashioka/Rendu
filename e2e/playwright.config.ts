@@ -21,7 +21,7 @@ export default defineConfig({
 
   webServer: {
     command: "npm run vite:dev",
-    port: 5173,
+    port: 14173,
     reuseExistingServer: true,
   },
 });

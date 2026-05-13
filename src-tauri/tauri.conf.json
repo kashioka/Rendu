@@ -1,11 +1,11 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Rendu",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "identifier": "com.alleyoop.md-viewer",
   "build": {
     "frontendDist": "../dist",
-    "devUrl": "http://localhost:5173",
+    "devUrl": "http://localhost:14173",
     "beforeDevCommand": "npm run vite:dev",
     "beforeBuildCommand": "npm run vite:build"
   },

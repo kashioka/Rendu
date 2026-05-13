@@ -170,6 +170,10 @@ npm install
 npm run dev
 ```
 
+> The Vite dev server uses port `14173` (`strictPort: true`). If something else
+> is already on that port, `npm run dev` exits immediately with an explicit
+> error — free the port and try again.
+
 **Build a release**
 
 ```bash

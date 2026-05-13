@@ -5,6 +5,13 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    // 5173 is the Vite default; 1420 is Tauri's legacy dev port. Combined for
+    // a Rendu-specific port that won't silently collide with other Vite/Tauri
+    // projects on the same machine. strictPort makes the failure loud.
+    port: 14173,
+    strictPort: true,
+  },
   test: {
     environment: 'jsdom',
     globals: true,
