@@ -36,3 +36,8 @@ coverage/
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code
+# Personal settings are excluded; shared skills/commands under .claude/
+# are intentionally tracked.
+.claude/settings.local.json
