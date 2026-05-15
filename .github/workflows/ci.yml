@@ -18,6 +18,9 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Check version sync (package.json / tauri.conf.json / Cargo.toml)
+        run: bash scripts/check-versions.sh
+
       - run: npm ci
 
       - name: Type check
