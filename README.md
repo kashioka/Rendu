@@ -42,7 +42,7 @@ No config, no account — ready in seconds.
 
 ### macOS
 
-**[Download Rendu.dmg](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.6.1_aarch64.dmg)** — open and drag to Applications.
+**[Download Rendu.dmg](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.7.0_aarch64.dmg)** — open and drag to Applications.
 
 > Rendu is code-signed and notarized by Apple. Just open the DMG, drag to Applications, and launch — no extra steps needed.
 
@@ -55,27 +55,27 @@ Other install methods:
 
 ### Windows
 
-**[Download Rendu installer (.exe)](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.6.1_x64-setup.exe)** — run the installer.
+**[Download Rendu installer (.exe)](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.7.0_x64-setup.exe)** — run the installer.
 
 ### Linux
 
-**[Download .deb](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.6.1_amd64.deb)** — install on Debian/Ubuntu/Mint with:
+**[Download .deb](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.7.0_amd64.deb)** — install on Debian/Ubuntu/Mint with:
 
 ```bash
-sudo apt install ./Rendu_0.6.1_amd64.deb
+sudo apt install ./Rendu_0.7.0_amd64.deb
 ```
 
-For Fedora/RHEL: **[Download .rpm](https://github.com/kashioka/Rendu/releases/latest/download/Rendu-0.6.1-1.x86_64.rpm)** —
+For Fedora/RHEL: **[Download .rpm](https://github.com/kashioka/Rendu/releases/latest/download/Rendu-0.7.0-1.x86_64.rpm)** —
 
 ```bash
-sudo dnf install ./Rendu-0.6.1-1.x86_64.rpm
+sudo dnf install ./Rendu-0.7.0-1.x86_64.rpm
 ```
 
-For other distributions (openSUSE, Arch, NixOS, etc.): **[Download AppImage](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.6.1_amd64.AppImage)** — make it executable and run:
+For other distributions (openSUSE, Arch, NixOS, etc.): **[Download AppImage](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.7.0_amd64.AppImage)** — make it executable and run:
 
 ```bash
-chmod +x Rendu_0.6.1_amd64.AppImage
-./Rendu_0.6.1_amd64.AppImage
+chmod +x Rendu_0.7.0_amd64.AppImage
+./Rendu_0.7.0_amd64.AppImage
 ```
 
 > If you see `dlopen(): error loading libfuse.so.2`, install FUSE 2: `sudo apt install libfuse2t64` (Ubuntu 24.04+) or `sudo apt install libfuse2` (older). As a no-install workaround, run with `--appimage-extract-and-run`.

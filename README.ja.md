@@ -6,7 +6,7 @@
 ファイルをドラッグするだけで読める、無料の軽量リーダー。
 設定不要、アカウント不要ですぐ使えます。
 
-> *Rendu* はフランス語で「仕上げられたもの」「手渡されたもの」を意味する。建築家が設計の意図を伝えるために描く完成予想図（rendu）になぞらえ、マークダウンという設計図を、直感的に伝わる美しい形へ返すためのビューワー。
+> *Rendu* はフランス語で「仕上げられたもの」「手渡されたもの」を意味する。建築家が設計の意図を伝えるために描く完成予想図（rendu）になぞらえ、マークダウンという設計図を、直感的に伝わる美しい形へ返すためのビューア。
 
 ### なぜ Rendu？
 
@@ -42,7 +42,7 @@
 
 ### macOS
 
-**[Rendu.dmg をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.6.1_aarch64.dmg)** — 開いて Applications にドラッグしてください。
+**[Rendu.dmg をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.7.0_aarch64.dmg)** — 開いて Applications にドラッグしてください。
 
 > Rendu はAppleによるコード署名・公証済みです。DMGを開いてApplicationsにドラッグするだけで、すぐに使えます。
 
@@ -55,27 +55,27 @@
 
 ### Windows
 
-**[Rendu インストーラ (.exe) をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.6.1_x64-setup.exe)** — インストーラを実行してください。
+**[Rendu インストーラ (.exe) をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.7.0_x64-setup.exe)** — インストーラを実行してください。
 
 ### Linux
 
-**[.deb をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.6.1_amd64.deb)** — Debian/Ubuntu/Mint では以下でインストール:
+**[.deb をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.7.0_amd64.deb)** — Debian/Ubuntu/Mint では以下でインストール:
 
 ```bash
-sudo apt install ./Rendu_0.6.1_amd64.deb
+sudo apt install ./Rendu_0.7.0_amd64.deb
 ```
 
-Fedora/RHEL の場合: **[.rpm をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu-0.6.1-1.x86_64.rpm)** —
+Fedora/RHEL の場合: **[.rpm をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu-0.7.0-1.x86_64.rpm)** —
 
 ```bash
-sudo dnf install ./Rendu-0.6.1-1.x86_64.rpm
+sudo dnf install ./Rendu-0.7.0-1.x86_64.rpm
 ```
 
-その他のディストロ（openSUSE / Arch / NixOS 等）の場合: **[AppImage をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.6.1_amd64.AppImage)** — 実行権限を付けて起動:
+その他のディストロ（openSUSE / Arch / NixOS 等）の場合: **[AppImage をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.7.0_amd64.AppImage)** — 実行権限を付けて起動:
 
 ```bash
-chmod +x Rendu_0.6.1_amd64.AppImage
-./Rendu_0.6.1_amd64.AppImage
+chmod +x Rendu_0.7.0_amd64.AppImage
+./Rendu_0.7.0_amd64.AppImage
 ```
 
 > `dlopen(): error loading libfuse.so.2` が出る場合は FUSE 2 をインストール: `sudo apt install libfuse2t64`（Ubuntu 24.04+）または `sudo apt install libfuse2`（旧環境）。インストールせずに動かしたい場合は `--appimage-extract-and-run` フラグを付けて実行してください。
