@@ -16,6 +16,7 @@ import { SyntaxReference } from "./components/SyntaxReference";
 import { extractDroppedPaths, getParentDir, isMarkdownFile } from "./dropUtils";
 import { useRecentFiles } from "./useRecentFiles";
 import { RecentList } from "./components/RecentList";
+import { restoreOnStartup, saveSession } from "./sessionRestore";
 
 function App() {
   const { settings, setSettings, applyPreset } = useSettings();
@@ -136,6 +137,7 @@ function AppInner({
   const handleOpenFolderRef = useRef<(() => void) | undefined>(undefined);
   const handleOpenFileRef = useRef<(() => void) | undefined>(undefined);
   const handleDropFileRef = useRef<((file: string) => void) | undefined>(undefined);
+  const handleDropFolderRef = useRef<((dir: string) => void) | undefined>(undefined);
 
   useEffect(() => {
     const unlisteners = [
@@ -153,14 +155,30 @@ function AppInner({
     return () => { unlisteners.forEach((p) => p.then((fn) => fn()).catch(() => {})); };
   }, []);
 
-  // Fetch initial file opened via file association or CLI argument
+  // Tracks whether startup restore has completed. The save effect must not
+  // run before this, otherwise the initial (null, null) render would wipe the
+  // sessionStorage entry we are about to read (Issue #59).
+  const restoredRef = useRef(false);
+
+  // Fetch initial file opened via file association or CLI argument.
+  // If none is provided, fall back to sessionStorage so that a webview reload
+  // (right-click → Reload) restores the previously open file/folder (Issue #59).
   useEffect(() => {
-    invoke<string | null>("get_initial_file").then((filePath) => {
-      if (filePath) {
-        handleDropFileRef.current?.(filePath);
-      }
-    }).catch(() => {});
+    restoreOnStartup({
+      getInitialFile: () => invoke<string | null>("get_initial_file"),
+      openFile: (p) => handleDropFileRef.current?.(p),
+      openFolder: (p) => handleDropFolderRef.current?.(p),
+    }).finally(() => {
+      restoredRef.current = true;
+    });
   }, []);
+
+  // Persist current file/folder to sessionStorage so a webview reload can
+  // restore them (Issue #59). sessionStorage is cleared on full app exit.
+  useEffect(() => {
+    if (!restoredRef.current) return;
+    saveSession({ rootDir, selectedFile });
+  }, [rootDir, selectedFile]);
 
   const handleOpenFolder = async () => {
     const dir = await open({ directory: true });
@@ -248,6 +266,7 @@ function AppInner({
   handleOpenFolderRef.current = handleOpenFolder;
   handleOpenFileRef.current = handleOpenFile;
   handleDropFileRef.current = handleDropFile;
+  handleDropFolderRef.current = handleDropFolder;
 
   return (
     <div className="flex flex-col h-full">
