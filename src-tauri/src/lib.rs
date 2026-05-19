@@ -139,6 +139,30 @@ fn is_markdown_path(path: &str) -> bool {
   lower.ends_with(".md") || lower.ends_with(".markdown")
 }
 
+/// Find the first markdown file path in CLI argv, resolved against `cwd`.
+/// `argv[0]` is the executable path and is always skipped.
+/// Returns the absolute path as a String if it exists and looks like markdown.
+#[cfg(desktop)]
+fn pick_markdown_arg(argv: &[String], cwd: &std::path::Path) -> Option<String> {
+  for arg in argv.iter().skip(1) {
+    if !is_markdown_path(arg) {
+      continue;
+    }
+    let candidate = std::path::Path::new(arg);
+    let resolved = if candidate.is_absolute() {
+      candidate.to_path_buf()
+    } else {
+      cwd.join(candidate)
+    };
+    if resolved.exists() {
+      if let Some(s) = resolved.to_str() {
+        return Some(s.to_string());
+      }
+    }
+  }
+  None
+}
+
 /// Inner implementation: atomically write `contents` to `target` via a sibling
 /// tmp file + rename, but only if `target`'s canonicalized parent lives under
 /// `allowed_base`. Refuses any path that resolves outside the sandbox.
@@ -215,7 +239,37 @@ fn atomic_write(app: tauri::AppHandle, path: String, contents: String) -> Result
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  let mut builder = tauri::Builder::default()
+  let mut builder = tauri::Builder::default();
+
+  // Single-instance plugin must be registered first per Tauri v2 docs.
+  // When a second instance is launched, the OS forwards its argv/cwd here and
+  // exits the second process; we surface the file (if any) to the running one.
+  #[cfg(desktop)]
+  {
+    builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+      let cwd_path = std::path::PathBuf::from(&cwd);
+      let file = pick_markdown_arg(&argv, &cwd_path);
+
+      if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+      }
+
+      if let Some(path) = file {
+        // Stash into InitialFile so the frontend can pick it up via
+        // get_initial_file if the React listener hasn't mounted yet
+        // (race on cold start). The listener also handles the live case.
+        // Mirrors the macOS RunEvent::Opened path.
+        if let Some(state) = app.try_state::<InitialFile>() {
+          *state.0.lock() = Some(path.clone());
+        }
+        let _ = app.emit("file-open-request", &path);
+      }
+    }));
+  }
+
+  builder = builder
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_dialog::init())
     .manage(InitialFile::default())
@@ -395,6 +449,113 @@ mod tests {
     assert!(!is_markdown_path("README"));
     assert!(!is_markdown_path("md"));
     assert!(!is_markdown_path("markdown"));
+  }
+
+  // ------------------------------------------------------------------
+  // pick_markdown_arg — single-instance argv parser
+  // ------------------------------------------------------------------
+
+  #[cfg(desktop)]
+  #[test]
+  fn pick_markdown_arg_resolves_relative_path_via_cwd() {
+    let dir = tempdir().unwrap();
+    let md = dir.path().join("notes.md");
+    write_file(&md, b"# hi");
+
+    let argv = vec!["rendu".to_string(), "notes.md".to_string()];
+    let picked = pick_markdown_arg(&argv, dir.path()).expect("should pick");
+    assert_eq!(std::path::PathBuf::from(picked), md);
+  }
+
+  #[cfg(desktop)]
+  #[test]
+  fn pick_markdown_arg_returns_absolute_path_as_is() {
+    let dir = tempdir().unwrap();
+    let md = dir.path().join("a.markdown");
+    write_file(&md, b"x");
+
+    let argv = vec!["rendu".to_string(), md.to_string_lossy().to_string()];
+    // cwd is irrelevant when arg is absolute
+    let picked = pick_markdown_arg(&argv, std::path::Path::new("/")).expect("should pick");
+    assert_eq!(std::path::PathBuf::from(picked), md);
+  }
+
+  #[cfg(desktop)]
+  #[test]
+  fn pick_markdown_arg_skips_argv0_executable() {
+    // argv[0] is the executable path; even if it happens to end in .md it
+    // must not be returned. (Defensive: callers should not rely on this.)
+    let dir = tempdir().unwrap();
+    let fake_exe = dir.path().join("rendu.md");
+    write_file(&fake_exe, b"not really markdown");
+
+    let argv = vec![fake_exe.to_string_lossy().to_string()];
+    assert!(pick_markdown_arg(&argv, dir.path()).is_none());
+  }
+
+  #[cfg(desktop)]
+  #[test]
+  fn pick_markdown_arg_returns_none_for_missing_file() {
+    let dir = tempdir().unwrap();
+    let argv = vec!["rendu".to_string(), "missing.md".to_string()];
+    assert!(pick_markdown_arg(&argv, dir.path()).is_none());
+  }
+
+  #[cfg(desktop)]
+  #[test]
+  fn pick_markdown_arg_returns_none_for_non_markdown_arg() {
+    let dir = tempdir().unwrap();
+    let other = dir.path().join("notes.txt");
+    write_file(&other, b"x");
+    let argv = vec!["rendu".to_string(), "notes.txt".to_string()];
+    assert!(pick_markdown_arg(&argv, dir.path()).is_none());
+  }
+
+  #[cfg(desktop)]
+  #[test]
+  fn pick_markdown_arg_returns_none_when_no_extra_args() {
+    let dir = tempdir().unwrap();
+    let argv = vec!["rendu".to_string()];
+    assert!(pick_markdown_arg(&argv, dir.path()).is_none());
+  }
+
+  // Regression test for Codex finding: when a second instance forwards a
+  // markdown file before the React listener has mounted, the path must be
+  // observable via InitialFile so the frontend can still pick it up.
+  #[test]
+  fn initial_file_take_returns_then_clears() {
+    let state = InitialFile::default();
+    *state.0.lock() = Some("/path/to/notes.md".to_string());
+    assert_eq!(state.0.lock().take(), Some("/path/to/notes.md".to_string()));
+    assert_eq!(state.0.lock().take(), None);
+  }
+
+  #[test]
+  fn initial_file_overwrites_previous_value() {
+    // Simulates the single-instance handler receiving a second forwarded
+    // file while a stale value from cold start hasn't been consumed yet.
+    let state = InitialFile::default();
+    *state.0.lock() = Some("/first.md".to_string());
+    *state.0.lock() = Some("/second.md".to_string());
+    assert_eq!(state.0.lock().take(), Some("/second.md".to_string()));
+  }
+
+  #[cfg(desktop)]
+  #[test]
+  fn pick_markdown_arg_picks_first_markdown_among_multiple_args() {
+    let dir = tempdir().unwrap();
+    let first = dir.path().join("first.md");
+    let second = dir.path().join("second.md");
+    write_file(&first, b"1");
+    write_file(&second, b"2");
+    let argv = vec![
+      "rendu".to_string(),
+      "--flag".to_string(),
+      "first.md".to_string(),
+      "second.md".to_string(),
+    ];
+    let picked = pick_markdown_arg(&argv, dir.path()).expect("should pick");
+    assert_eq!(std::path::PathBuf::from(picked), first);
   }
 
   // ------------------------------------------------------------------
