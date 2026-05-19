@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "tauri dev",
-    "build": "tauri build --bundles app,dmg",
+    "build": "tauri build --bundles app",
+    "build:dmg": "tauri build --bundles app,dmg",
+    "install:local": "npm run build && cp -R src-tauri/target/release/bundle/macos/Rendu.app /Applications/ && rm -rf src-tauri/target/release/bundle && echo 'Installed /Applications/Rendu.app'",
     "lint": "eslint .",
     "preview": "vite preview",
     "vite:dev": "vite",
