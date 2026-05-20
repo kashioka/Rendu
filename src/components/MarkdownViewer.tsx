@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState, useCallback, useMemo } from "react";
 import { readTextFile, writeFile, stat } from "@tauri-apps/plugin-fs";
 import { save } from "@tauri-apps/plugin-dialog";
 import html2pdf from "html2pdf.js";
@@ -24,6 +24,10 @@ interface MarkdownViewerProps {
   onHeadingsChange?: (headings: HeadingItem[]) => void;
 }
 
+export interface MarkdownViewerHandle {
+  reload: () => void;
+}
+
 interface SearchResult {
   lineNum: number;
   text: string;
@@ -34,7 +38,10 @@ interface GutterEntry {
   top: number;
 }
 
-export function MarkdownViewer({ filePath, settings, onHeadingsChange }: MarkdownViewerProps) {
+export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerProps>(function MarkdownViewer(
+  { filePath, settings, onHeadingsChange },
+  ref,
+) {
   const [content, setContent] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -130,12 +137,17 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
     };
   }, [filePath, loading, error]);
 
-  // Manual refresh — re-read the file without flashing the loading state
-  // and without resetting scroll position.
+  // Re-read the file without flashing the loading state and without
+  // resetting scroll position. Invoked via the imperative ref (fs-changed
+  // event) and webview right-click reload. On read failure we keep the last
+  // successfully loaded content — e.g. if the file is briefly missing during
+  // an editor save, or deleted by the user.
   const handleRefresh = useCallback(async () => {
     try {
       const text = await readTextFile(filePath);
       setContent(text);
+      // Clear any prior error (e.g. initial load failed because the file did
+      // not exist yet, then it was created and the watcher fired).
       setError(null);
       try {
         const info = await stat(filePath);
@@ -143,10 +155,13 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
       } catch {
         // ignore
       }
-    } catch (e) {
-      setError(String(e));
+    } catch {
+      // Preserve current content on read failure (file briefly missing
+      // during an editor save, or deleted by the user).
     }
   }, [filePath]);
+
+  useImperativeHandle(ref, () => ({ reload: handleRefresh }), [handleRefresh]);
 
   // After markdown renders, scan the DOM for headings and assign IDs
   useEffect(() => {
@@ -556,17 +571,6 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
               <line x1="9" y1="13" x2="15" y2="13" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
             </svg>
           </button>
-          <button
-            onClick={handleRefresh}
-            className="line-gutter-toggle"
-            title={t("viewer.refresh")}
-            aria-label={t("viewer.refresh")}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-              <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
-            </svg>
-          </button>
           {/* Zoom controls */}
           <div className="flex items-center" data-tauri-drag-region>
             <button className="zoom-btn" onClick={zoomOut} title={t("viewer.zoom.out")} aria-label={t("viewer.zoom.out")}>−</button>
@@ -694,4 +698,4 @@ export function MarkdownViewer({ filePath, settings, onHeadingsChange }: Markdow
       </div>
     </div>
   );
-}
+});

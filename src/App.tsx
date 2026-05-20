@@ -4,8 +4,8 @@ import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { stat } from "@tauri-apps/plugin-fs";
-import { FileTree } from "./components/FileTree";
-import { MarkdownViewer } from "./components/MarkdownViewer";
+import { FileTree, type FileTreeHandle } from "./components/FileTree";
+import { MarkdownViewer, type MarkdownViewerHandle } from "./components/MarkdownViewer";
 import { OutlinePanel, type HeadingItem } from "./components/OutlinePanel";
 import { Settings } from "./components/Settings";
 import { useSettings } from "./useSettings";
@@ -224,6 +224,42 @@ function AppInner({
     addRecent(dir, "folder");
   }, [pushHistory, addRecent]);
 
+  // Filesystem watch: track the active file (preferred) or root folder.
+  // Rust manages a single watcher and auto-stops the previous one when a new
+  // start_watching call arrives; we just declare intent on every change.
+  const viewerRef = useRef<MarkdownViewerHandle>(null);
+  const fileTreeRef = useRef<FileTreeHandle>(null);
+  useEffect(() => {
+    if (selectedFile) {
+      invoke("start_watching", { path: selectedFile, kind: "file" }).catch((e) => {
+        console.warn("[fs-watch] start_watching(file) failed", e);
+      });
+    } else if (rootDir) {
+      invoke("start_watching", { path: rootDir, kind: "directory" }).catch((e) => {
+        console.warn("[fs-watch] start_watching(directory) failed", e);
+      });
+    } else {
+      invoke("stop_watching").catch((e) => {
+        console.warn("[fs-watch] stop_watching failed", e);
+      });
+    }
+  }, [selectedFile, rootDir]);
+
+  useEffect(() => {
+    const unlisten = listen<{ kind: "file" | "directory"; path: string }>(
+      "fs-changed",
+      (event) => {
+        if (event.payload.kind === "directory") {
+          fileTreeRef.current?.rescan();
+          if (selectedFile) viewerRef.current?.reload();
+        } else {
+          viewerRef.current?.reload();
+        }
+      },
+    );
+    return () => { unlisten.then((fn) => fn()).catch(() => {}); };
+  }, [selectedFile]);
+
   useEffect(() => {
     const unlisten = getCurrentWebview().onDragDropEvent(async (event) => {
       if (event.payload.type === "enter") {
@@ -372,6 +408,7 @@ function AppInner({
         <div className="overflow-y-auto" style={{ flex: `0 0 ${splitRatio * 100}%` }}>
           {rootDir ? (
             <FileTree
+              ref={fileTreeRef}
               rootDir={rootDir}
               selectedFile={selectedFile}
               onSelectFile={handleSelectFile}
@@ -403,7 +440,7 @@ function AppInner({
           </div>
         )}
         {selectedFile ? (
-          <MarkdownViewer filePath={selectedFile} settings={settings} onHeadingsChange={setHeadings} />
+          <MarkdownViewer ref={viewerRef} filePath={selectedFile} settings={settings} onHeadingsChange={setHeadings} />
         ) : rootDir ? (
           <div className="empty-state">
             <svg

@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
 import { readDir, type DirEntry } from "@tauri-apps/plugin-fs";
 
 interface FileTreeProps {
   rootDir: string;
   selectedFile: string | null;
   onSelectFile: (path: string) => void;
+}
+
+export interface FileTreeHandle {
+  rescan: () => void;
 }
 
 interface TreeNode {
@@ -105,14 +109,23 @@ function TreeItem({
   );
 }
 
-export function FileTree({ rootDir, selectedFile, onSelectFile }: FileTreeProps) {
+export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(function FileTree(
+  { rootDir, selectedFile, onSelectFile },
+  ref,
+) {
   const [nodes, setNodes] = useState<TreeNode[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setError(null);
     buildTree(rootDir).then(setNodes).catch((e) => setError(String(e)));
   }, [rootDir]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useImperativeHandle(ref, () => ({ rescan: load }), [load]);
 
   if (error) return <div className="p-4 text-sm" style={{ color: "#f87171" }}>{error}</div>;
 
@@ -123,4 +136,4 @@ export function FileTree({ rootDir, selectedFile, onSelectFile }: FileTreeProps)
       ))}
     </div>
   );
-}
+});

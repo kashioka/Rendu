@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, type Mock } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { createRef } from 'react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { render } from '@testing-library/react';
 
 vi.mock('@tauri-apps/plugin-fs', () => import('../test/mocks/tauri-fs'));
 
 import { readDir } from '@tauri-apps/plugin-fs';
-import { FileTree } from './FileTree';
+import { FileTree, type FileTreeHandle } from './FileTree';
 
 const mockEntries = [
   { name: 'README.md', isDirectory: false, isFile: true, isSymlink: false },
@@ -101,6 +102,29 @@ describe('FileTree', () => {
     });
     const dirItem = screen.getByText('docs').closest('[role="treeitem"]') as HTMLElement;
     expect(dirItem).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('rescans on imperative ref.rescan() and reflects added/removed entries', async () => {
+    (readDir as Mock).mockResolvedValueOnce(mockEntries);
+    const handle = createRef<FileTreeHandle>();
+    render(<FileTree ref={handle} rootDir="/root" selectedFile={null} onSelectFile={vi.fn()} />);
+    await waitFor(() => {
+      expect(screen.getByText('README.md')).toBeInTheDocument();
+    });
+
+    // Simulate filesystem change: README.md deleted, new note.md added
+    (readDir as Mock).mockResolvedValueOnce([
+      { name: 'note.md', isDirectory: false, isFile: true, isSymlink: false },
+      { name: 'docs', isDirectory: true, isFile: false, isSymlink: false },
+    ]);
+    await act(async () => {
+      handle.current?.rescan();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('note.md')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('README.md')).toBeNull();
   });
 
   it('expands directory on click', async () => {
