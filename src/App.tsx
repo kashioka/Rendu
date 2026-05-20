@@ -182,12 +182,19 @@ function AppInner({
 
   const handleOpenFolder = async () => {
     const dir = await open({ directory: true });
-    if (dir) {
-      setRootDir(dir);
-      setSelectedFile(null);
-      setHeadings([]);
-      pushHistory({ rootDir: dir, selectedFile: null });
-      addRecent(dir, "folder");
+    if (!dir) return;
+    // Re-opening the same folder is a no-op for setRootDir (React skips
+    // state updates when the value is unchanged), so the dependent
+    // useEffects don't re-fire. Trigger an explicit rescan in that case
+    // so the user gets a refresh from the "open folder" action.
+    const isSameFolder = dir === rootDir;
+    setRootDir(dir);
+    setSelectedFile(null);
+    setHeadings([]);
+    pushHistory({ rootDir: dir, selectedFile: null });
+    addRecent(dir, "folder");
+    if (isSameFolder) {
+      fileTreeRef.current?.rescan();
     }
   };
 
@@ -217,12 +224,19 @@ function AppInner({
   }, [rootDir, pushHistory, addRecent]);
 
   const handleDropFolder = useCallback((dir: string) => {
+    // Same as handleOpenFolder: dropping the same folder again is a no-op
+    // for setRootDir, so trigger an explicit rescan to keep the action
+    // meaningful for the user.
+    const isSameFolder = dir === rootDir;
     setRootDir(dir);
     setSelectedFile(null);
     setHeadings([]);
     pushHistory({ rootDir: dir, selectedFile: null });
     addRecent(dir, "folder");
-  }, [pushHistory, addRecent]);
+    if (isSameFolder) {
+      fileTreeRef.current?.rescan();
+    }
+  }, [rootDir, pushHistory, addRecent]);
 
   // Filesystem watch: prefer the root folder so the tree also picks up
   // changes (notify's directory watch covers descendant file changes too).
