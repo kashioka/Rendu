@@ -224,19 +224,21 @@ function AppInner({
     addRecent(dir, "folder");
   }, [pushHistory, addRecent]);
 
-  // Filesystem watch: track the active file (preferred) or root folder.
-  // Rust manages a single watcher and auto-stops the previous one when a new
+  // Filesystem watch: prefer the root folder so the tree also picks up
+  // changes (notify's directory watch covers descendant file changes too).
+  // Fall back to file watch only when no folder is open. Rust manages a
+  // single watcher and auto-stops the previous one when a new
   // start_watching call arrives; we just declare intent on every change.
   const viewerRef = useRef<MarkdownViewerHandle>(null);
   const fileTreeRef = useRef<FileTreeHandle>(null);
   useEffect(() => {
-    if (selectedFile) {
-      invoke("start_watching", { path: selectedFile, kind: "file" }).catch((e) => {
-        console.warn("[fs-watch] start_watching(file) failed", e);
-      });
-    } else if (rootDir) {
+    if (rootDir) {
       invoke("start_watching", { path: rootDir, kind: "directory" }).catch((e) => {
         console.warn("[fs-watch] start_watching(directory) failed", e);
+      });
+    } else if (selectedFile) {
+      invoke("start_watching", { path: selectedFile, kind: "file" }).catch((e) => {
+        console.warn("[fs-watch] start_watching(file) failed", e);
       });
     } else {
       invoke("stop_watching").catch((e) => {
