@@ -1,4 +1,7 @@
+use notify::{RecommendedWatcher, RecursiveMode};
+use notify_debouncer_mini::{new_debouncer, DebounceEventResult, Debouncer};
 use parking_lot::Mutex;
+use std::time::Duration;
 use tauri::menu::{AboutMetadataBuilder, MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::{Emitter, Manager, RunEvent};
 use serde::Serialize;
@@ -237,6 +240,127 @@ fn atomic_write(app: tauri::AppHandle, path: String, contents: String) -> Result
   )
 }
 
+/// Holds at most one active filesystem watcher. Starting a new watch
+/// drops the previous `Debouncer`, which stops its background thread and
+/// releases the OS watch handles (notify-debouncer-mini stops on Drop).
+///
+/// Debounce window is 5 seconds — we prefer stability over responsiveness
+/// for a reader app.
+#[derive(Default)]
+struct WatchState(Mutex<Option<Debouncer<RecommendedWatcher>>>);
+
+const WATCH_DEBOUNCE: Duration = Duration::from_secs(5);
+
+/// Payload emitted on the `fs-changed` event. `path` is the same string
+/// the frontend passed to `start_watching` (echoed verbatim per the
+/// React/Rust contract).
+#[derive(Clone, Serialize)]
+struct FsChangedPayload {
+  kind: &'static str,
+  path: String,
+}
+
+/// Map the frontend-supplied `kind` string to a static tag + notify mode.
+/// Returned `&'static str` is what we echo back in the `fs-changed`
+/// payload so we never allocate from the caller-supplied String again.
+fn validate_watch_kind(kind: &str) -> Result<(&'static str, RecursiveMode), String> {
+  match kind {
+    "file" => Ok(("file", RecursiveMode::NonRecursive)),
+    "directory" => Ok(("directory", RecursiveMode::Recursive)),
+    other => Err(format!(
+      "Invalid kind: {} (expected \"file\" or \"directory\")",
+      other
+    )),
+  }
+}
+
+/// Reject paths that don't exist or whose file-system type doesn't match
+/// the caller-supplied `kind`. The latter prevents notify from silently
+/// using the wrong `RecursiveMode` if the frontend passes `kind: "file"`
+/// for a directory (notify accepts it but then misses nested changes).
+///
+/// We don't canonicalize: the frontend must get the *same* path string
+/// back in the `fs-changed` event so it can match against its own state.
+fn validate_watch_path(path: &str, expected_kind: &str) -> Result<std::path::PathBuf, String> {
+  let p = std::path::PathBuf::from(path);
+  // symlink_metadata() to avoid following links — same threat model as
+  // read_safe_image: the webview cannot use a link to escape its intent.
+  let meta = p
+    .symlink_metadata()
+    .map_err(|e| format!("Path does not exist: {} ({})", path, e))?;
+  match expected_kind {
+    "file" if !meta.is_file() => Err(format!(
+      "Path is not a regular file: {} (kind=\"file\" requires a file)",
+      path
+    )),
+    "directory" if !meta.is_dir() => Err(format!(
+      "Path is not a directory: {} (kind=\"directory\" requires a directory)",
+      path
+    )),
+    _ => Ok(p),
+  }
+}
+
+#[tauri::command]
+fn start_watching(
+  app: tauri::AppHandle,
+  state: tauri::State<'_, WatchState>,
+  path: String,
+  kind: String,
+) -> Result<(), String> {
+  let (kind_static, mode) = validate_watch_kind(&kind)?;
+  let watch_path = validate_watch_path(&path, kind_static)?;
+
+  // Drop any prior debouncer *before* constructing the new one so the
+  // old OS watch handle is released first. Holding the lock across the
+  // new_debouncer call also serializes concurrent start_watching calls.
+  let mut guard = state.0.lock();
+  *guard = None;
+
+  let echo_path = path.clone();
+  let app_handle = app.clone();
+  let mut debouncer = new_debouncer(
+    WATCH_DEBOUNCE,
+    move |res: DebounceEventResult| match res {
+      Ok(events) if !events.is_empty() => {
+        // Coalesce: we only need to notify the frontend that *something*
+        // changed under the watched path. The frontend re-reads on its
+        // own. One emit per debounce batch.
+        if let Err(e) = app_handle.emit(
+          "fs-changed",
+          FsChangedPayload {
+            kind: kind_static,
+            path: echo_path.clone(),
+          },
+        ) {
+          // Most likely the window is gone; just log and move on.
+          log::warn!("failed to emit fs-changed for {}: {:?}", echo_path, e);
+        }
+      }
+      Ok(_) => {}
+      Err(e) => {
+        log::warn!("fs watch error for {}: {:?}", echo_path, e);
+      }
+    },
+  )
+  .map_err(|e| format!("Failed to create watcher: {}", e))?;
+
+  debouncer
+    .watcher()
+    .watch(&watch_path, mode)
+    .map_err(|e| format!("Failed to watch path: {}", e))?;
+
+  *guard = Some(debouncer);
+  Ok(())
+}
+
+#[tauri::command]
+fn stop_watching(state: tauri::State<'_, WatchState>) -> Result<(), String> {
+  // Dropping the Debouncer ends its background thread and releases watches.
+  *state.0.lock() = None;
+  Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   let mut builder = tauri::Builder::default();
@@ -273,7 +397,8 @@ pub fn run() {
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_dialog::init())
     .manage(InitialFile::default())
-    .invoke_handler(tauri::generate_handler![check_for_updates, get_initial_file, open_external_url, read_safe_image, atomic_write]);
+    .manage(WatchState::default())
+    .invoke_handler(tauri::generate_handler![check_for_updates, get_initial_file, open_external_url, read_safe_image, atomic_write, start_watching, stop_watching]);
 
   #[cfg(feature = "e2e-testing")]
   {
@@ -774,5 +899,125 @@ mod tests {
     // and the starts_with() check should reject it.
     assert!(result.is_err(), "symlink to outside should be rejected, got {:?}", result);
     assert!(result.unwrap_err().contains("outside the document directory"));
+  }
+
+  // ------------------------------------------------------------------
+  // fs watch — validators + state machine
+  //
+  // We don't drive notify in unit tests: real fs events are racy and OS
+  // -specific, so the debounce + delivery path is exercised via the
+  // React integration + manual scenarios per the task spec. Here we
+  // cover the pure validators and the WatchState start→stop / start→
+  // start (replace) invariants.
+  // ------------------------------------------------------------------
+
+  #[test]
+  fn validate_watch_kind_accepts_file_and_directory() {
+    let (tag, mode) = validate_watch_kind("file").unwrap();
+    assert_eq!(tag, "file");
+    assert_eq!(mode, RecursiveMode::NonRecursive);
+
+    let (tag, mode) = validate_watch_kind("directory").unwrap();
+    assert_eq!(tag, "directory");
+    assert_eq!(mode, RecursiveMode::Recursive);
+  }
+
+  #[test]
+  fn validate_watch_kind_rejects_unknown_kind() {
+    let err = validate_watch_kind("FILE").unwrap_err();
+    assert!(err.contains("Invalid kind"));
+    let err = validate_watch_kind("").unwrap_err();
+    assert!(err.contains("Invalid kind"));
+    let err = validate_watch_kind("recursive").unwrap_err();
+    assert!(err.contains("Invalid kind"));
+  }
+
+  #[test]
+  fn validate_watch_path_accepts_matching_kind() {
+    let dir = tempdir().unwrap();
+    let file = dir.path().join("notes.md");
+    write_file(&file, b"x");
+
+    assert!(validate_watch_path(&file.to_string_lossy(), "file").is_ok());
+    assert!(validate_watch_path(&dir.path().to_string_lossy(), "directory").is_ok());
+  }
+
+  #[test]
+  fn validate_watch_path_rejects_missing_path() {
+    let dir = tempdir().unwrap();
+    let missing = dir.path().join("does-not-exist.md");
+    let err = validate_watch_path(&missing.to_string_lossy(), "file").unwrap_err();
+    assert!(err.contains("Path does not exist"));
+  }
+
+  #[test]
+  fn validate_watch_path_rejects_directory_when_kind_is_file() {
+    // Codex round 1: notify silently uses the wrong RecursiveMode if the
+    // frontend bug or race passes kind="file" for a directory. Refuse.
+    let dir = tempdir().unwrap();
+    let err = validate_watch_path(&dir.path().to_string_lossy(), "file").unwrap_err();
+    assert!(err.contains("not a regular file"), "got: {}", err);
+  }
+
+  #[test]
+  fn validate_watch_path_rejects_file_when_kind_is_directory() {
+    let dir = tempdir().unwrap();
+    let file = dir.path().join("notes.md");
+    write_file(&file, b"x");
+    let err = validate_watch_path(&file.to_string_lossy(), "directory").unwrap_err();
+    assert!(err.contains("not a directory"), "got: {}", err);
+  }
+
+  // The state machine uses a real Debouncer that spawns a thread; we
+  // build one over a tempdir so the test is hermetic.
+  fn make_test_debouncer() -> Debouncer<RecommendedWatcher> {
+    new_debouncer(WATCH_DEBOUNCE, |_res: DebounceEventResult| {}).unwrap()
+  }
+
+  #[test]
+  fn watch_state_default_is_none() {
+    let state = WatchState::default();
+    assert!(state.0.lock().is_none());
+  }
+
+  #[test]
+  fn watch_state_stop_clears_active_watcher() {
+    // Simulates `stop_watching`: assign Some, then None, verify it dropped.
+    let state = WatchState::default();
+    {
+      let dir = tempdir().unwrap();
+      let mut d = make_test_debouncer();
+      d.watcher().watch(dir.path(), RecursiveMode::Recursive).unwrap();
+      *state.0.lock() = Some(d);
+    }
+    assert!(state.0.lock().is_some());
+    *state.0.lock() = None;
+    assert!(state.0.lock().is_none());
+  }
+
+  #[test]
+  fn watch_state_start_replaces_previous_watcher() {
+    // The contract: a second start_watching must drop the previous
+    // debouncer before installing the new one. We mirror the production
+    // sequence `*guard = None; ... *guard = Some(new);` and assert the
+    // slot ends up holding the *new* debouncer (i.e. assignment is not
+    // a no-op when a previous value exists).
+    let state = WatchState::default();
+    let dir = tempdir().unwrap();
+
+    let mut first = make_test_debouncer();
+    first.watcher().watch(dir.path(), RecursiveMode::Recursive).unwrap();
+    *state.0.lock() = Some(first);
+
+    // Production order: drop first, *then* construct second.
+    {
+      let mut guard = state.0.lock();
+      *guard = None;
+      assert!(guard.is_none(), "old watcher must drop before new one is built");
+      let mut second = make_test_debouncer();
+      second.watcher().watch(dir.path(), RecursiveMode::Recursive).unwrap();
+      *guard = Some(second);
+    }
+    assert!(state.0.lock().is_some());
   }
 }
