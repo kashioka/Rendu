@@ -4,8 +4,8 @@ import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { stat } from "@tauri-apps/plugin-fs";
-import { FileTree } from "./components/FileTree";
-import { MarkdownViewer } from "./components/MarkdownViewer";
+import { FileTree, type FileTreeHandle } from "./components/FileTree";
+import { MarkdownViewer, type MarkdownViewerHandle } from "./components/MarkdownViewer";
 import { OutlinePanel, type HeadingItem } from "./components/OutlinePanel";
 import { Settings } from "./components/Settings";
 import { useSettings } from "./useSettings";
@@ -182,12 +182,19 @@ function AppInner({
 
   const handleOpenFolder = async () => {
     const dir = await open({ directory: true });
-    if (dir) {
-      setRootDir(dir);
-      setSelectedFile(null);
-      setHeadings([]);
-      pushHistory({ rootDir: dir, selectedFile: null });
-      addRecent(dir, "folder");
+    if (!dir) return;
+    // Re-opening the same folder is a no-op for setRootDir (React skips
+    // state updates when the value is unchanged), so the dependent
+    // useEffects don't re-fire. Trigger an explicit rescan in that case
+    // so the user gets a refresh from the "open folder" action.
+    const isSameFolder = dir === rootDir;
+    setRootDir(dir);
+    setSelectedFile(null);
+    setHeadings([]);
+    pushHistory({ rootDir: dir, selectedFile: null });
+    addRecent(dir, "folder");
+    if (isSameFolder) {
+      fileTreeRef.current?.rescan();
     }
   };
 
@@ -217,12 +224,57 @@ function AppInner({
   }, [rootDir, pushHistory, addRecent]);
 
   const handleDropFolder = useCallback((dir: string) => {
+    // Same as handleOpenFolder: dropping the same folder again is a no-op
+    // for setRootDir, so trigger an explicit rescan to keep the action
+    // meaningful for the user.
+    const isSameFolder = dir === rootDir;
     setRootDir(dir);
     setSelectedFile(null);
     setHeadings([]);
     pushHistory({ rootDir: dir, selectedFile: null });
     addRecent(dir, "folder");
-  }, [pushHistory, addRecent]);
+    if (isSameFolder) {
+      fileTreeRef.current?.rescan();
+    }
+  }, [rootDir, pushHistory, addRecent]);
+
+  // Filesystem watch: prefer the root folder so the tree also picks up
+  // changes (notify's directory watch covers descendant file changes too).
+  // Fall back to file watch only when no folder is open. Rust manages a
+  // single watcher and auto-stops the previous one when a new
+  // start_watching call arrives; we just declare intent on every change.
+  const viewerRef = useRef<MarkdownViewerHandle>(null);
+  const fileTreeRef = useRef<FileTreeHandle>(null);
+  useEffect(() => {
+    if (rootDir) {
+      invoke("start_watching", { path: rootDir, kind: "directory" }).catch((e) => {
+        console.warn("[fs-watch] start_watching(directory) failed", e);
+      });
+    } else if (selectedFile) {
+      invoke("start_watching", { path: selectedFile, kind: "file" }).catch((e) => {
+        console.warn("[fs-watch] start_watching(file) failed", e);
+      });
+    } else {
+      invoke("stop_watching").catch((e) => {
+        console.warn("[fs-watch] stop_watching failed", e);
+      });
+    }
+  }, [selectedFile, rootDir]);
+
+  useEffect(() => {
+    const unlisten = listen<{ kind: "file" | "directory"; path: string }>(
+      "fs-changed",
+      (event) => {
+        if (event.payload.kind === "directory") {
+          fileTreeRef.current?.rescan();
+          if (selectedFile) viewerRef.current?.reload();
+        } else {
+          viewerRef.current?.reload();
+        }
+      },
+    );
+    return () => { unlisten.then((fn) => fn()).catch(() => {}); };
+  }, [selectedFile]);
 
   useEffect(() => {
     const unlisten = getCurrentWebview().onDragDropEvent(async (event) => {
@@ -372,6 +424,7 @@ function AppInner({
         <div className="overflow-y-auto" style={{ flex: `0 0 ${splitRatio * 100}%` }}>
           {rootDir ? (
             <FileTree
+              ref={fileTreeRef}
               rootDir={rootDir}
               selectedFile={selectedFile}
               onSelectFile={handleSelectFile}
@@ -403,7 +456,7 @@ function AppInner({
           </div>
         )}
         {selectedFile ? (
-          <MarkdownViewer filePath={selectedFile} settings={settings} onHeadingsChange={setHeadings} />
+          <MarkdownViewer ref={viewerRef} filePath={selectedFile} settings={settings} onHeadingsChange={setHeadings} />
         ) : rootDir ? (
           <div className="empty-state">
             <svg

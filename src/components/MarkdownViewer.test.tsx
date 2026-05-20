@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, type Mock } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { createRef } from 'react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithLocale } from '../test/helpers';
 
@@ -18,7 +19,7 @@ vi.mock('../utils/svgToPng', () => ({
 }));
 
 import { readTextFile } from '@tauri-apps/plugin-fs';
-import { MarkdownViewer } from './MarkdownViewer';
+import { MarkdownViewer, type MarkdownViewerHandle } from './MarkdownViewer';
 import { darkPreset } from '../useSettings';
 
 describe('MarkdownViewer', () => {
@@ -257,6 +258,81 @@ describe('MarkdownViewer', () => {
     );
     await waitFor(() => {
       expect(container.querySelector('.mermaid-container')).toBeInTheDocument();
+    });
+  });
+
+  it('does not render a toolbar refresh button', async () => {
+    (readTextFile as Mock).mockResolvedValue('# Test');
+    renderWithLocale(
+      <MarkdownViewer filePath="/test.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(screen.getByText('100%')).toBeInTheDocument();
+    });
+    expect(screen.queryByTitle('Reload file')).toBeNull();
+    expect(screen.queryByLabelText('Reload file')).toBeNull();
+  });
+
+  it('preserves last content when reload() read fails (deleted file)', async () => {
+    (readTextFile as Mock).mockResolvedValueOnce('# Original heading');
+    const handle = createRef<MarkdownViewerHandle>();
+    renderWithLocale(
+      <MarkdownViewer ref={handle} filePath="/test.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Original heading')).toBeInTheDocument();
+    });
+
+    // Simulate the next read failing (e.g. file deleted by user)
+    (readTextFile as Mock).mockRejectedValueOnce(new Error('No such file'));
+    await act(async () => {
+      await handle.current?.reload();
+    });
+
+    // Content stays, no error UI is shown
+    expect(screen.getByText('Original heading')).toBeInTheDocument();
+    expect(screen.queryByText('Failed to load file')).toBeNull();
+  });
+
+  it('reload() recovers from an initial error state on successful re-read', async () => {
+    // Initial load fails (e.g. file did not exist yet when MarkdownViewer mounted).
+    (readTextFile as Mock).mockRejectedValueOnce(new Error('File not found'));
+    const handle = createRef<MarkdownViewerHandle>();
+    renderWithLocale(
+      <MarkdownViewer ref={handle} filePath="/late.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Failed to load file')).toBeInTheDocument();
+    });
+
+    // File now exists; the fs watcher (in real usage) calls reload().
+    (readTextFile as Mock).mockResolvedValueOnce('# Recovered');
+    await act(async () => {
+      await handle.current?.reload();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Recovered')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Failed to load file')).toBeNull();
+  });
+
+  it('reload() updates content on successful re-read', async () => {
+    (readTextFile as Mock).mockResolvedValueOnce('# First');
+    const handle = createRef<MarkdownViewerHandle>();
+    renderWithLocale(
+      <MarkdownViewer ref={handle} filePath="/test.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(screen.getByText('First')).toBeInTheDocument();
+    });
+
+    (readTextFile as Mock).mockResolvedValueOnce('# Second');
+    await act(async () => {
+      await handle.current?.reload();
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Second')).toBeInTheDocument();
     });
   });
 

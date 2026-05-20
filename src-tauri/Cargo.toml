@@ -30,6 +30,8 @@ base64 = "0.22"
 libc = "0.2"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
 parking_lot = "0.12"
+notify = "8"
+notify-debouncer-mini = "0.7"
 tauri-plugin-playwright = { version = "0.2", optional = true }
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
