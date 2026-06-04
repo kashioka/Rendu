@@ -1,4 +1,4 @@
-export type Locale = "en" | "ja";
+export type Locale = "en" | "ja" | "zh-CN";
 
 export interface Translations {
   // App / Sidebar
@@ -64,6 +64,9 @@ export interface Translations {
   "settings.title": string;
   "settings.language": string;
   "settings.theme": string;
+  "settings.theme.system": string;
+  "settings.theme.dark": string;
+  "settings.theme.light": string;
   "settings.appColors": string;
   "settings.markdownColors": string;
   "settings.mermaidColors": string;
@@ -189,6 +192,9 @@ const en: Translations = {
   "settings.title": "Settings",
   "settings.language": "Language",
   "settings.theme": "Theme",
+  "settings.theme.system": "System",
+  "settings.theme.dark": "Dark",
+  "settings.theme.light": "Light",
   "settings.appColors": "App Colors",
   "settings.markdownColors": "Markdown Colors",
   "settings.mermaidColors": "Mermaid Diagram Colors",
@@ -304,6 +310,9 @@ const ja: Translations = {
   "settings.title": "設定",
   "settings.language": "言語",
   "settings.theme": "テーマ",
+  "settings.theme.system": "システム",
+  "settings.theme.dark": "ダーク",
+  "settings.theme.light": "ライト",
   "settings.appColors": "アプリカラー",
   "settings.markdownColors": "Markdownカラー",
   "settings.mermaidColors": "Mermaid図カラー",
@@ -358,7 +367,125 @@ const ja: Translations = {
   "help.footer": "GitHub Flavored Markdown (GFM) + HTML",
 };
 
-const dictionaries: Record<Locale, Translations> = { en, ja };
+const zhCN: Translations = {
+  "sidebar.toggle.hide": "隐藏侧边栏",
+  "sidebar.toggle.show": "显示侧边栏",
+  "sidebar.folder": "文件夹",
+  "sidebar.folder.title": "打开文件夹",
+  "sidebar.file": "文件",
+  "sidebar.file.title": "打开文件",
+  "sidebar.settings.title": "设置",
+  "sidebar.emptyFolder": "请选择一个文件夹开始",
+  "sidebar.outline": "大纲",
+
+  "nav.back": "后退",
+  "nav.forward": "前进",
+
+  "empty.heading": "打开一个 Markdown（.md）文件开始阅读",
+  "empty.subheading": "Markdown 文件是带有简单格式的纯文本文档。你可以选择文件夹浏览，也可以直接打开单个文件。",
+  "empty.openFolder": "打开文件夹",
+  "empty.openFile": "打开文件",
+  "empty.selectFile": "选择要查看的文件",
+  "empty.selectFile.sub": "从侧边栏选择一个 Markdown（.md）文件开始阅读。",
+  "drop.openMarkdown": "拖入 Markdown 文件或文件夹以打开",
+
+  "recent.title": "最近打开",
+  "recent.remove": "从最近打开中移除",
+  "recent.openError": "这个文件或文件夹已不存在。",
+
+  "outline.title": "大纲",
+  "outline.noHeadings": "没有标题",
+
+  "viewer.loading": "正在加载...",
+  "viewer.error.title": "文件加载失败",
+  "viewer.error.path": "路径：{path}",
+  "viewer.search.placeholder": "搜索...",
+  "viewer.search.noResults": "无结果",
+  "viewer.matchCount": "{count} 个匹配项",
+  "viewer.lineToggle.hide": "隐藏行号",
+  "viewer.lineToggle.show": "显示行号",
+  "viewer.exportPdf": "导出 PDF",
+  "viewer.exportPdf.exporting": "正在导出...",
+  "viewer.exportPdf.overlay": "正在导出 PDF...",
+  "viewer.exportPdf.error": "PDF 导出失败",
+  "viewer.zoom.in": "放大",
+  "viewer.zoom.out": "缩小",
+  "viewer.zoom.reset": "重置缩放",
+  "viewer.image.download": "下载图片",
+  "viewer.mermaid.download": "下载为 PNG",
+  "viewer.lightbox.close": "关闭",
+  "viewer.lightbox.download": "下载",
+  "viewer.code.copy": "复制代码",
+  "viewer.code.copied": "已复制！",
+
+  "mermaid.renderError": "Mermaid 渲染错误",
+
+  "update.available": "v{version} 可用",
+  "update.download": "下载",
+  "update.homebrew": "或运行：brew upgrade --cask kashioka/tap/rendu",
+  "update.latest": "当前已是最新版本",
+
+  "settings.title": "设置",
+  "settings.language": "语言",
+  "settings.theme": "主题",
+  "settings.theme.system": "跟随系统",
+  "settings.theme.dark": "深色",
+  "settings.theme.light": "浅色",
+  "settings.appColors": "应用颜色",
+  "settings.markdownColors": "Markdown 颜色",
+  "settings.mermaidColors": "Mermaid 图表颜色",
+  "settings.autoSave": "设置会自动保存。",
+
+  "settings.color.background": "背景",
+  "settings.color.sidebar": "侧边栏",
+  "settings.color.text": "文字",
+  "settings.color.mutedText": "辅助文字",
+  "settings.color.border": "边框",
+  "settings.color.button": "按钮",
+
+  "settings.color.heading": "标题",
+  "settings.color.link": "链接",
+  "settings.color.codeBg": "代码背景",
+  "settings.color.mdBorder": "边框",
+
+  "settings.color.mermaidBg": "背景",
+  "settings.color.primary": "主色（节点）",
+  "settings.color.primaryText": "主文字",
+  "settings.color.lineArrow": "线条 / 箭头",
+  "settings.color.actorBox": "角色框",
+  "settings.color.actorText": "角色文字",
+  "settings.color.signalText": "信号文字",
+  "settings.color.noteBg": "注释背景",
+  "settings.color.noteText": "注释文字",
+
+  "help.syntaxTitle": "支持的语法",
+  "help.description": "Rendu 支持 GitHub Flavored Markdown（GFM）和 HTML 扩展。",
+  "help.basicFormatting": "格式",
+  "help.bold": "粗体",
+  "help.italic": "斜体",
+  "help.strikethrough": "删除线",
+  "help.headings": "标题",
+  "help.headingLevel": "{n} 级标题",
+  "help.lists": "列表",
+  "help.unorderedList": "项目符号列表",
+  "help.orderedList": "编号列表",
+  "help.taskList": "任务列表",
+  "help.blocks": "区块",
+  "help.codeBlock": "代码块",
+  "help.blockquote": "引用",
+  "help.horizontalRule": "分隔线",
+  "help.table": "表格",
+  "help.lineBreak": "换行",
+  "help.collapsible": "可折叠区块",
+  "help.superSub": "上标 / 下标",
+  "help.link": "链接",
+  "help.html": "HTML",
+  "help.mermaidTitle": "Mermaid",
+  "help.mermaid": "图表（流程图、时序图等）",
+  "help.footer": "GitHub Flavored Markdown（GFM）+ HTML",
+};
+
+const dictionaries: Record<Locale, Translations> = { en, ja, "zh-CN": zhCN };
 
 export function getTranslations(locale: Locale): Translations {
   return dictionaries[locale];

@@ -6,12 +6,13 @@ vi.mock('@tauri-apps/api/path', () => import('./test/mocks/tauri-path'));
 vi.mock('@tauri-apps/api/window', () => import('./test/mocks/tauri-window'));
 vi.mock('@tauri-apps/api/core', () => import('./test/mocks/tauri-core'));
 
-import { useSettings, darkPreset, lightPreset, presets } from './useSettings';
+import { useSettings, darkPreset, lightPreset, systemPreset, presets } from './useSettings';
 
 describe('useSettings', () => {
-  it('has dark and light presets', () => {
+  it('has dark, light, and system presets', () => {
     expect(presets.dark).toBe(darkPreset);
     expect(presets.light).toBe(lightPreset);
+    expect(presets.system).toBe(systemPreset);
   });
 
   it('darkPreset has all required fields', () => {
@@ -28,11 +29,18 @@ describe('useSettings', () => {
     expect(lightPreset.mermaidTheme).toBe('base');
   });
 
-  it('defaults to darkPreset', async () => {
+  it('systemPreset has all required fields', () => {
+    expect(systemPreset.preset).toBe('system');
+    expect(systemPreset.locale).toBe('en');
+    expect(systemPreset.appBg).toBeDefined();
+    expect(systemPreset.mermaidTheme).toBe('base');
+  });
+
+  it('defaults to systemPreset', async () => {
     const { result } = renderHook(() => useSettings());
     // Wait for async loadFromFile
     await act(async () => {});
-    expect(result.current.settings.preset).toBe('dark');
+    expect(result.current.settings.preset).toBe('system');
   });
 
   it('patches settings with setSettings', async () => {
@@ -43,7 +51,7 @@ describe('useSettings', () => {
     });
     expect(result.current.settings.appBg).toBe('#000000');
     // Other fields remain unchanged
-    expect(result.current.settings.preset).toBe('dark');
+    expect(result.current.settings.preset).toBe('system');
   });
 
   it('switches preset while preserving locale', async () => {
