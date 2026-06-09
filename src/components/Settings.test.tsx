@@ -22,6 +22,7 @@ describe('Settings', () => {
     renderWithLocale(<Settings {...defaultProps} />);
     expect(screen.getByText('English')).toBeInTheDocument();
     expect(screen.getByText('日本語')).toBeInTheDocument();
+    expect(screen.getByText('简体中文')).toBeInTheDocument();
   });
 
   it('calls onChange with locale when language button clicked', async () => {
@@ -31,10 +32,25 @@ describe('Settings', () => {
     expect(onChange).toHaveBeenCalledWith({ locale: 'ja' });
   });
 
+  it('calls onChange with zh-CN when Simplified Chinese button clicked', async () => {
+    const onChange = vi.fn();
+    renderWithLocale(<Settings {...defaultProps} onChange={onChange} />);
+    await userEvent.click(screen.getByText('简体中文'));
+    expect(onChange).toHaveBeenCalledWith({ locale: 'zh-CN' });
+  });
+
   it('renders theme preset buttons', () => {
     renderWithLocale(<Settings {...defaultProps} />);
+    expect(screen.getByText('System')).toBeInTheDocument();
     expect(screen.getByText('Dark')).toBeInTheDocument();
     expect(screen.getByText('Light')).toBeInTheDocument();
+  });
+
+  it('calls onApplyPreset when system theme button clicked', async () => {
+    const onApplyPreset = vi.fn();
+    renderWithLocale(<Settings {...defaultProps} onApplyPreset={onApplyPreset} />);
+    await userEvent.click(screen.getByText('System'));
+    expect(onApplyPreset).toHaveBeenCalledWith('system');
   });
 
   it('calls onApplyPreset when theme button clicked', async () => {

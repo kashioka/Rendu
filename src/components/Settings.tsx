@@ -6,7 +6,7 @@ import type { Locale } from "../i18n";
 interface SettingsProps {
   settings: ThemeSettings;
   onChange: (patch: Partial<ThemeSettings>) => void;
-  onApplyPreset: (name: "dark" | "light") => void;
+  onApplyPreset: (name: "dark" | "light" | "system") => void;
   onClose: () => void;
 }
 
@@ -56,6 +56,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+const languageNames: Record<Locale, string> = {
+  en: "English",
+  ja: "日本語",
+  "zh-CN": "简体中文",
+};
+
 export function Settings({ settings, onChange, onApplyPreset, onClose }: SettingsProps) {
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -97,14 +103,14 @@ export function Settings({ settings, onChange, onApplyPreset, onClose }: Setting
           <div className="mb-5">
             <h3 className="text-muted text-xs font-semibold uppercase tracking-wider mb-3">{t("settings.language")}</h3>
             <div className="grid grid-cols-2 gap-3">
-              {(["en", "ja"] as Locale[]).map((loc) => (
+              {(["en", "ja", "zh-CN"] as Locale[]).map((loc) => (
                 <button
                   key={loc}
                   onClick={() => onChange({ locale: loc })}
                   className="rounded-lg px-3 py-2 text-sm font-medium transition-colors"
                   style={{ border: `2px solid ${settings.locale === loc ? "#6366f1" : "var(--border-color)"}` }}
                 >
-                  {loc === "en" ? "English" : "日本語"}
+                  {languageNames[loc]}
                 </button>
               ))}
             </div>
@@ -113,7 +119,29 @@ export function Settings({ settings, onChange, onApplyPreset, onClose }: Setting
           {/* Preset theme selector */}
           <div className="mb-5">
             <h3 className="text-muted text-xs font-semibold uppercase tracking-wider mb-3">{t("settings.theme")}</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
+              <button
+                onClick={() => onApplyPreset("system")}
+                className="rounded-lg p-3 transition-colors"
+                style={{ border: `2px solid ${settings.preset === "system" ? "#6366f1" : "var(--border-color)"}` }}
+              >
+                <div className="rounded overflow-hidden" style={{ border: "1px solid #a1a1aa" }}>
+                  <div className="flex h-16">
+                    <div className="w-1/2 p-1" style={{ backgroundColor: "#f4f4f5" }}>
+                      <div className="h-1 w-3/4 rounded mb-1" style={{ backgroundColor: "#a1a1aa" }} />
+                      <div className="h-1 w-1/2 rounded mb-1" style={{ backgroundColor: "#a1a1aa" }} />
+                      <div className="h-1 w-2/3 rounded" style={{ backgroundColor: "#a1a1aa" }} />
+                    </div>
+                    <div className="w-1/2 p-1" style={{ backgroundColor: "#18181b" }}>
+                      <div className="h-1 w-3/4 rounded mb-1" style={{ backgroundColor: "#71717a" }} />
+                      <div className="h-1 w-1/2 rounded mb-1" style={{ backgroundColor: "#3f3f46" }} />
+                      <div className="h-1 w-2/3 rounded" style={{ backgroundColor: "#3f3f46" }} />
+                    </div>
+                  </div>
+                </div>
+                <div className="text-sm font-medium mt-2">{t("settings.theme.system")}</div>
+              </button>
+
               <button
                 onClick={() => onApplyPreset("dark")}
                 className="rounded-lg p-3 transition-colors"
@@ -134,7 +162,7 @@ export function Settings({ settings, onChange, onApplyPreset, onClose }: Setting
                     </div>
                   </div>
                 </div>
-                <div className="text-sm font-medium mt-2">Dark</div>
+                <div className="text-sm font-medium mt-2">{t("settings.theme.dark")}</div>
               </button>
 
               <button
@@ -157,7 +185,7 @@ export function Settings({ settings, onChange, onApplyPreset, onClose }: Setting
                     </div>
                   </div>
                 </div>
-                <div className="text-sm font-medium mt-2">Light</div>
+                <div className="text-sm font-medium mt-2">{t("settings.theme.light")}</div>
               </button>
             </div>
           </div>

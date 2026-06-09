@@ -7,7 +7,7 @@ import type { Locale } from "./i18n";
 
 export interface ThemeSettings {
   locale: Locale;
-  preset: "dark" | "light";
+  preset: "dark" | "light" | "system";
   appBg: string;
   sidebarBg: string;
   textColor: string;
@@ -95,7 +95,13 @@ export const lightPreset: ThemeSettings = {
   mermaidSignalTextColor: "#27272a",
 };
 
-export const presets = { dark: darkPreset, light: lightPreset };
+export const systemPreset: ThemeSettings = {
+  ...lightPreset,
+  locale: "en",
+  preset: "system",
+};
+
+export const presets = { dark: darkPreset, light: lightPreset, system: systemPreset };
 
 const CONFIG_FILE = "settings.json";
 
@@ -109,10 +115,10 @@ async function loadFromFile(): Promise<ThemeSettings | null> {
     const parsed: unknown = JSON.parse(text);
     if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
     const obj = parsed as Record<string, unknown>;
-    if (obj.preset !== undefined && obj.preset !== "dark" && obj.preset !== "light") {
-      obj.preset = "dark";
+    if (obj.preset !== undefined && obj.preset !== "dark" && obj.preset !== "light" && obj.preset !== "system") {
+      obj.preset = "system";
     }
-    return { ...darkPreset, ...obj };
+    return { ...systemPreset, ...obj };
   } catch {
     return null;
   }
@@ -131,34 +137,45 @@ async function saveToFile(settings: ThemeSettings): Promise<void> {
   }
 }
 
+function prefersDarkMode(): boolean {
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+}
+
+function resolveSystemPreset(s: ThemeSettings): ThemeSettings {
+  if (s.preset !== "system") return s;
+  const base = prefersDarkMode() ? darkPreset : lightPreset;
+  return { ...base, locale: s.locale, preset: "system" };
+}
+
 /** Apply all theme settings as CSS custom properties on <html> + window theme */
 function applyThemeToDOM(s: ThemeSettings) {
-  try { getCurrentWindow().setTheme(s.preset === "dark" ? "dark" : "light").catch(() => {}); } catch { /* outside Tauri runtime */ }
+  const resolved = resolveSystemPreset(s);
+  try { getCurrentWindow().setTheme(resolved.preset === "dark" || (s.preset === "system" && prefersDarkMode()) ? "dark" : "light").catch(() => {}); } catch { /* outside Tauri runtime */ }
   const root = document.documentElement;
-  root.style.setProperty("--app-bg", s.appBg);
-  root.style.setProperty("--sidebar-bg", s.sidebarBg);
-  root.style.setProperty("--text-color", s.textColor);
-  root.style.setProperty("--text-muted", s.textMuted);
-  root.style.setProperty("--border-color", s.borderColor);
-  root.style.setProperty("--button-bg", s.buttonBg);
-  root.style.setProperty("--button-text", s.buttonText);
-  root.style.setProperty("--hover-bg", s.hoverBg);
-  root.style.setProperty("--selected-bg", s.selectedBg);
-  root.style.setProperty("--selected-text", s.selectedText);
-  root.style.setProperty("--md-heading", s.mdHeadingColor);
-  root.style.setProperty("--md-link", s.mdLinkColor);
-  root.style.setProperty("--md-code-bg", s.mdCodeBg);
-  root.style.setProperty("--md-border", s.mdBorderColor);
+  root.style.setProperty("--app-bg", resolved.appBg);
+  root.style.setProperty("--sidebar-bg", resolved.sidebarBg);
+  root.style.setProperty("--text-color", resolved.textColor);
+  root.style.setProperty("--text-muted", resolved.textMuted);
+  root.style.setProperty("--border-color", resolved.borderColor);
+  root.style.setProperty("--button-bg", resolved.buttonBg);
+  root.style.setProperty("--button-text", resolved.buttonText);
+  root.style.setProperty("--hover-bg", resolved.hoverBg);
+  root.style.setProperty("--selected-bg", resolved.selectedBg);
+  root.style.setProperty("--selected-text", resolved.selectedText);
+  root.style.setProperty("--md-heading", resolved.mdHeadingColor);
+  root.style.setProperty("--md-link", resolved.mdLinkColor);
+  root.style.setProperty("--md-code-bg", resolved.mdCodeBg);
+  root.style.setProperty("--md-border", resolved.mdBorderColor);
 }
 
 export function useSettings() {
-  const [settings, setSettingsState] = useState<ThemeSettings>(darkPreset);
+  const [settings, setSettingsState] = useState<ThemeSettings>(systemPreset);
   const [loaded, setLoaded] = useState(false);
 
   // Load from file on mount
   useEffect(() => {
     loadFromFile().then((saved) => {
-      const initial = saved ?? darkPreset;
+      const initial = saved ?? systemPreset;
       setSettingsState(initial);
       applyThemeToDOM(initial);
       setLoaded(true);
@@ -171,6 +188,15 @@ export function useSettings() {
     if (loaded) saveToFile(settings);
   }, [settings, loaded]);
 
+  useEffect(() => {
+    if (settings.preset !== "system") return;
+    const media = window.matchMedia?.("(prefers-color-scheme: dark)");
+    if (!media) return;
+    const listener = () => applyThemeToDOM(settings);
+    media.addEventListener?.("change", listener);
+    return () => media.removeEventListener?.("change", listener);
+  }, [settings]);
+
   const setSettings = useCallback(
     (patch: Partial<ThemeSettings>) => {
       setSettingsState((prev) => ({ ...prev, ...patch }));
@@ -178,7 +204,7 @@ export function useSettings() {
     []
   );
 
-  const applyPreset = useCallback((name: "dark" | "light") => {
+  const applyPreset = useCallback((name: "dark" | "light" | "system") => {
     setSettingsState((prev) => ({ ...presets[name], locale: prev.locale }));
   }, []);
 
