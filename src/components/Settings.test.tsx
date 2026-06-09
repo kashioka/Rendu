@@ -3,7 +3,7 @@ import { screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithLocale } from '../test/helpers';
 import { Settings } from './Settings';
-import { darkPreset } from '../useSettings';
+import { darkPreset, systemPreset } from '../useSettings';
 
 describe('Settings', () => {
   const defaultProps = {
@@ -58,6 +58,23 @@ describe('Settings', () => {
     renderWithLocale(<Settings {...defaultProps} onApplyPreset={onApplyPreset} />);
     await userEvent.click(screen.getByText('Light'));
     expect(onApplyPreset).toHaveBeenCalledWith('light');
+  });
+
+  it('shows color picker sections when a concrete preset is selected', () => {
+    renderWithLocale(<Settings {...defaultProps} settings={darkPreset} />);
+    expect(screen.getByText('App Colors')).toBeInTheDocument();
+    expect(screen.getByText('Markdown Colors')).toBeInTheDocument();
+    expect(screen.getByText('Mermaid Diagram Colors')).toBeInTheDocument();
+  });
+
+  it('hides color picker sections and shows a note while System is selected', () => {
+    renderWithLocale(<Settings {...defaultProps} settings={systemPreset} />);
+    expect(screen.queryByText('App Colors')).not.toBeInTheDocument();
+    expect(screen.queryByText('Markdown Colors')).not.toBeInTheDocument();
+    expect(screen.queryByText('Mermaid Diagram Colors')).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Colors follow your system's light/dark setting automatically. Choose Dark or Light to customize colors.")
+    ).toBeInTheDocument();
   });
 
   it('calls onClose when close button clicked', async () => {

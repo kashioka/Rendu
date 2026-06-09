@@ -190,33 +190,42 @@ export function Settings({ settings, onChange, onApplyPreset, onClose }: Setting
             </div>
           </div>
 
-          <Section title={t("settings.appColors")}>
-            <ColorRow label={t("settings.color.background")} value={settings.appBg} settingKey="appBg" onChange={onChange} />
-            <ColorRow label={t("settings.color.sidebar")} value={settings.sidebarBg} settingKey="sidebarBg" onChange={onChange} />
-            <ColorRow label={t("settings.color.text")} value={settings.textColor} settingKey="textColor" onChange={onChange} />
-            <ColorRow label={t("settings.color.mutedText")} value={settings.textMuted} settingKey="textMuted" onChange={onChange} />
-            <ColorRow label={t("settings.color.border")} value={settings.borderColor} settingKey="borderColor" onChange={onChange} />
-            <ColorRow label={t("settings.color.button")} value={settings.buttonBg} settingKey="buttonBg" onChange={onChange} />
-          </Section>
+          {/* Color pickers don't apply while System follows the OS palette, so hide them in that mode */}
+          {settings.preset === "system" ? (
+            <div className="text-muted mb-3 text-xs">
+              {t("settings.systemColorsNote")}
+            </div>
+          ) : (
+            <>
+              <Section title={t("settings.appColors")}>
+                <ColorRow label={t("settings.color.background")} value={settings.appBg} settingKey="appBg" onChange={onChange} />
+                <ColorRow label={t("settings.color.sidebar")} value={settings.sidebarBg} settingKey="sidebarBg" onChange={onChange} />
+                <ColorRow label={t("settings.color.text")} value={settings.textColor} settingKey="textColor" onChange={onChange} />
+                <ColorRow label={t("settings.color.mutedText")} value={settings.textMuted} settingKey="textMuted" onChange={onChange} />
+                <ColorRow label={t("settings.color.border")} value={settings.borderColor} settingKey="borderColor" onChange={onChange} />
+                <ColorRow label={t("settings.color.button")} value={settings.buttonBg} settingKey="buttonBg" onChange={onChange} />
+              </Section>
 
-          <Section title={t("settings.markdownColors")}>
-            <ColorRow label={t("settings.color.heading")} value={settings.mdHeadingColor} settingKey="mdHeadingColor" onChange={onChange} />
-            <ColorRow label={t("settings.color.link")} value={settings.mdLinkColor} settingKey="mdLinkColor" onChange={onChange} />
-            <ColorRow label={t("settings.color.codeBg")} value={settings.mdCodeBg} settingKey="mdCodeBg" onChange={onChange} />
-            <ColorRow label={t("settings.color.mdBorder")} value={settings.mdBorderColor} settingKey="mdBorderColor" onChange={onChange} />
-          </Section>
+              <Section title={t("settings.markdownColors")}>
+                <ColorRow label={t("settings.color.heading")} value={settings.mdHeadingColor} settingKey="mdHeadingColor" onChange={onChange} />
+                <ColorRow label={t("settings.color.link")} value={settings.mdLinkColor} settingKey="mdLinkColor" onChange={onChange} />
+                <ColorRow label={t("settings.color.codeBg")} value={settings.mdCodeBg} settingKey="mdCodeBg" onChange={onChange} />
+                <ColorRow label={t("settings.color.mdBorder")} value={settings.mdBorderColor} settingKey="mdBorderColor" onChange={onChange} />
+              </Section>
 
-          <Section title={t("settings.mermaidColors")}>
-            <ColorRow label={t("settings.color.mermaidBg")} value={settings.mermaidBg} settingKey="mermaidBg" onChange={onChange} />
-            <ColorRow label={t("settings.color.primary")} value={settings.mermaidPrimaryColor} settingKey="mermaidPrimaryColor" onChange={onChange} />
-            <ColorRow label={t("settings.color.primaryText")} value={settings.mermaidPrimaryTextColor} settingKey="mermaidPrimaryTextColor" onChange={onChange} />
-            <ColorRow label={t("settings.color.lineArrow")} value={settings.mermaidLineColor} settingKey="mermaidLineColor" onChange={onChange} />
-            <ColorRow label={t("settings.color.actorBox")} value={settings.mermaidActorBg} settingKey="mermaidActorBg" onChange={onChange} />
-            <ColorRow label={t("settings.color.actorText")} value={settings.mermaidActorTextColor} settingKey="mermaidActorTextColor" onChange={onChange} />
-            <ColorRow label={t("settings.color.signalText")} value={settings.mermaidSignalTextColor} settingKey="mermaidSignalTextColor" onChange={onChange} />
-            <ColorRow label={t("settings.color.noteBg")} value={settings.mermaidNoteBg} settingKey="mermaidNoteBg" onChange={onChange} />
-            <ColorRow label={t("settings.color.noteText")} value={settings.mermaidNoteTextColor} settingKey="mermaidNoteTextColor" onChange={onChange} />
-          </Section>
+              <Section title={t("settings.mermaidColors")}>
+                <ColorRow label={t("settings.color.mermaidBg")} value={settings.mermaidBg} settingKey="mermaidBg" onChange={onChange} />
+                <ColorRow label={t("settings.color.primary")} value={settings.mermaidPrimaryColor} settingKey="mermaidPrimaryColor" onChange={onChange} />
+                <ColorRow label={t("settings.color.primaryText")} value={settings.mermaidPrimaryTextColor} settingKey="mermaidPrimaryTextColor" onChange={onChange} />
+                <ColorRow label={t("settings.color.lineArrow")} value={settings.mermaidLineColor} settingKey="mermaidLineColor" onChange={onChange} />
+                <ColorRow label={t("settings.color.actorBox")} value={settings.mermaidActorBg} settingKey="mermaidActorBg" onChange={onChange} />
+                <ColorRow label={t("settings.color.actorText")} value={settings.mermaidActorTextColor} settingKey="mermaidActorTextColor" onChange={onChange} />
+                <ColorRow label={t("settings.color.signalText")} value={settings.mermaidSignalTextColor} settingKey="mermaidSignalTextColor" onChange={onChange} />
+                <ColorRow label={t("settings.color.noteBg")} value={settings.mermaidNoteBg} settingKey="mermaidNoteBg" onChange={onChange} />
+                <ColorRow label={t("settings.color.noteText")} value={settings.mermaidNoteTextColor} settingKey="mermaidNoteTextColor" onChange={onChange} />
+              </Section>
+            </>
+          )}
 
           <div className="text-muted mt-2 text-xs">
             {t("settings.autoSave")}

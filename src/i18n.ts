@@ -71,6 +71,7 @@ export interface Translations {
   "settings.markdownColors": string;
   "settings.mermaidColors": string;
   "settings.autoSave": string;
+  "settings.systemColorsNote": string;
 
   // Settings - App Colors
   "settings.color.background": string;
@@ -199,6 +200,7 @@ const en: Translations = {
   "settings.markdownColors": "Markdown Colors",
   "settings.mermaidColors": "Mermaid Diagram Colors",
   "settings.autoSave": "Settings are saved automatically.",
+  "settings.systemColorsNote": "Colors follow your system's light/dark setting automatically. Choose Dark or Light to customize colors.",
 
   "settings.color.background": "Background",
   "settings.color.sidebar": "Sidebar",
@@ -317,6 +319,7 @@ const ja: Translations = {
   "settings.markdownColors": "Markdownカラー",
   "settings.mermaidColors": "Mermaid図カラー",
   "settings.autoSave": "設定は自動的に保存されます。",
+  "settings.systemColorsNote": "システムテーマ選択中は、配色が OS のライト/ダーク設定に自動で従います。色をカスタマイズするには Dark または Light を選んでください。",
 
   "settings.color.background": "背景",
   "settings.color.sidebar": "サイドバー",
@@ -435,6 +438,7 @@ const zhCN: Translations = {
   "settings.markdownColors": "Markdown 颜色",
   "settings.mermaidColors": "Mermaid 图表颜色",
   "settings.autoSave": "设置会自动保存。",
+  "settings.systemColorsNote": "选择「跟随系统」时，配色会自动跟随系统的浅色/深色设置。如需自定义颜色，请选择「深色」或「浅色」。",
 
   "settings.color.background": "背景",
   "settings.color.sidebar": "侧边栏",
