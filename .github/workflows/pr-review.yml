@@ -68,57 +68,7 @@ jobs:
           PR_TITLE: ${{ steps.pr.outputs.pr_title }}
           PR_AUTHOR: ${{ steps.pr.outputs.pr_author }}
         run: |
-          REVIEW=$(python3 - <<'PYEOF'
-          import os, json, urllib.request
-
-          diff = os.environ.get("PR_DIFF", "")
-          title = os.environ.get("PR_TITLE", "")
-          author = os.environ.get("PR_AUTHOR", "")
-
-          prompt = f"""以下の外部コントリビュータのPRをコードレビューしてください。
-
-PR タイトル: {title}
-PR 作成者: {author}
-
-## 変更差分
-{diff}
-
-## レビュー観点
-- バグ・ロジックエラーの可能性
-- 型安全性（TypeScript）
-- パフォーマンス上の懸念
-- 設計・構造の問題
-- マージしてよいかの総合判断
-
-## 出力フォーマット
-🔴 **問題点** があれば箇条書き（マージブロッカーになるもの）
-🟡 **改善提案** があれば箇条書き（あると良いもの）
-✅ **良い点** があれば箇条書き
-📝 **総評** を2〜3行で
-🔀 **マージ推奨度**: ✅ 推奨 / 🟡 修正後推奨 / 🔴 非推奨
-
-問題がなければ「✅ 特に問題なし」と記載してください。"""
-
-          payload = {
-            "model": "claude-sonnet-4-6",
-            "max_tokens": 1500,
-            "messages": [{"role": "user", "content": prompt}]
-          }
-
-          req = urllib.request.Request(
-            "https://api.anthropic.com/v1/messages",
-            data=json.dumps(payload).encode(),
-            headers={
-              "Content-Type": "application/json",
-              "x-api-key": os.environ["ANTHROPIC_API_KEY"],
-              "anthropic-version": "2023-06-01"
-            }
-          )
-          with urllib.request.urlopen(req) as res:
-            result = json.loads(res.read())
-            print(result["content"][0]["text"])
-          PYEOF
-          )
+          REVIEW=$(python3 .github/scripts/pr_review.py)
           echo "REVIEW<<EOF" >> $GITHUB_ENV
           echo "$REVIEW" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
@@ -127,13 +77,15 @@ PR 作成者: {author}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          COMMENT="## 🤖 Claude (Anthropic) によるAIコードレビュー
-
-${REVIEW}
-
----
-*このコメントは \`/review\` コマンドによって自動生成されました。*"
+          {
+            echo "## 🤖 Claude (Anthropic) によるAIコードレビュー"
+            echo ""
+            echo "$REVIEW"
+            echo ""
+            echo "---"
+            echo "*このコメントは \`/review\` コマンドによって自動生成されました。*"
+          } > review-comment.md
 
           gh pr comment ${{ github.event.issue.number }} \
             --repo ${{ github.repository }} \
-            --body "$COMMENT"
+            --body-file review-comment.md

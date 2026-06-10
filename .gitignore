@@ -41,3 +41,6 @@ coverage/
 # Personal settings are excluded; shared skills/commands under .claude/
 # are intentionally tracked.
 .claude/settings.local.json
+
+# Python bytecode (e.g. .github/scripts/)
+__pycache__/
