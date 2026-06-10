@@ -7,6 +7,33 @@ on:
     branches: [main]
 
 jobs:
+  security-audit:
+    name: Security audit (npm + cargo)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # package-lock.json があれば node_modules 不要で audit できる
+      - name: npm audit (fail on high/critical)
+        run: npm audit --audit-level=high
+
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+
+      # cargo audit は「脆弱性」検出時のみ exit≠0。GTK3 bindings の
+      # unmaintained warning (RUSTSEC-2024-04xx, Tauri の Linux 依存チェーン
+      # 由来で回避不能) は warning 扱いのため CI は落ちない。
+      # --deny warnings は付けないこと (恒久的に赤になる)。
+      - name: cargo audit (fail on vulnerabilities)
+        working-directory: src-tauri
+        run: cargo audit
+
   test-frontend:
     name: Frontend (TS / React)
     runs-on: ubuntu-latest

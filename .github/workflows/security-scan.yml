@@ -1,0 +1,82 @@
+name: Weekly Security Scan
+
+# 毎週月曜 09:00 JST (00:00 UTC) に依存関係の脆弱性をスキャンし、
+# 検出時は GitHub Issue を自動作成する (既存の open issue があれば重複作成しない)。
+# CI の security-audit (high で block) より早期警戒寄りに moderate で検出する。
+on:
+  schedule:
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  scan:
+    name: Scan dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: npm audit (moderate)
+        id: npm_audit
+        continue-on-error: true
+        run: |
+          # pipefail がないと tee の exit 0 が採用され、検出時も成功扱いになる
+          set -o pipefail
+          npm audit --audit-level=moderate 2>&1 | tee npm-audit.txt
+
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+
+      - name: cargo audit
+        id: cargo_audit
+        continue-on-error: true
+        working-directory: src-tauri
+        run: |
+          set -o pipefail
+          cargo audit 2>&1 | tee ../cargo-audit.txt
+
+      - name: Create issue if vulnerabilities found
+        if: steps.npm_audit.outcome == 'failure' || steps.cargo_audit.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 既に open のスキャン issue があれば新規作成せずコメント追記
+          EXISTING=$(gh issue list --repo "${{ github.repository }}" \
+            --label security-scan --state open --json number --jq '.[0].number // empty')
+
+          {
+            echo "## 週次セキュリティスキャンで脆弱性を検出しました"
+            echo ""
+            echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo ""
+            if [ "${{ steps.npm_audit.outcome }}" = "failure" ]; then
+              echo "### npm audit (moderate+)"
+              echo '```'
+              tail -40 npm-audit.txt
+              echo '```'
+            fi
+            if [ "${{ steps.cargo_audit.outcome }}" = "failure" ]; then
+              echo "### cargo audit"
+              echo '```'
+              tail -40 cargo-audit.txt
+              echo '```'
+            fi
+          } > issue-body.md
+
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --repo "${{ github.repository }}" --body-file issue-body.md
+          else
+            gh issue create --repo "${{ github.repository }}" \
+              --title "Weekly security scan: vulnerabilities detected ($(date -u +%Y-%m-%d))" \
+              --label security-scan \
+              --body-file issue-body.md
+          fi
