@@ -7,6 +7,7 @@ interface SettingsProps {
   settings: ThemeSettings;
   onChange: (patch: Partial<ThemeSettings>) => void;
   onApplyPreset: (name: "dark" | "light" | "system") => void;
+  onResetPreset: () => void;
   onClose: () => void;
 }
 
@@ -62,7 +63,7 @@ const languageNames: Record<Locale, string> = {
   "zh-CN": "简体中文",
 };
 
-export function Settings({ settings, onChange, onApplyPreset, onClose }: SettingsProps) {
+export function Settings({ settings, onChange, onApplyPreset, onResetPreset, onClose }: SettingsProps) {
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -224,6 +225,13 @@ export function Settings({ settings, onChange, onApplyPreset, onClose }: Setting
                 <ColorRow label={t("settings.color.noteBg")} value={settings.mermaidNoteBg} settingKey="mermaidNoteBg" onChange={onChange} />
                 <ColorRow label={t("settings.color.noteText")} value={settings.mermaidNoteTextColor} settingKey="mermaidNoteTextColor" onChange={onChange} />
               </Section>
+
+              <button
+                onClick={onResetPreset}
+                className="settings-section-title text-xs font-medium mt-1 mb-2 underline-offset-2 hover:underline"
+              >
+                {t("settings.resetColors")}
+              </button>
             </>
           )}
 

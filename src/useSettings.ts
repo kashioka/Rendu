@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { appConfigDir } from "@tauri-apps/api/path";
 import { readTextFile, mkdir, exists } from "@tauri-apps/plugin-fs";
 import { invoke } from "@tauri-apps/api/core";
@@ -105,26 +105,87 @@ export const presets = { dark: darkPreset, light: lightPreset, system: systemPre
 
 const CONFIG_FILE = "settings.json";
 
-async function loadFromFile(): Promise<ThemeSettings | null> {
+/** Per-theme color set — every field except locale/preset. */
+type ColorSet = Omit<ThemeSettings, "locale" | "preset">;
+
+/** Persisted shape: one customizable color set per concrete theme. */
+interface StoredSettings {
+  preset: "dark" | "light" | "system";
+  locale: Locale;
+  dark: ColorSet;
+  light: ColorSet;
+}
+
+function colorsOf(p: ThemeSettings): ColorSet {
+  const colors = { ...p } as Partial<ThemeSettings>;
+  delete colors.locale;
+  delete colors.preset;
+  return colors as ColorSet;
+}
+
+const darkColors = colorsOf(darkPreset);
+const lightColors = colorsOf(lightPreset);
+const COLOR_KEYS = Object.keys(darkColors) as (keyof ColorSet)[];
+
+const defaultStored: StoredSettings = {
+  preset: "system",
+  locale: "en",
+  dark: { ...darkColors },
+  light: { ...lightColors },
+};
+
+function pickColors(obj: Record<string, unknown>): Partial<ColorSet> {
+  const out: Record<string, string> = {};
+  for (const k of COLOR_KEYS) {
+    const v = obj[k];
+    if (typeof v === "string") out[k] = v;
+  }
+  return out as Partial<ColorSet>;
+}
+
+/** Parse persisted settings, migrating the legacy flat schema into per-preset buckets. */
+export function migrateStored(parsed: unknown): StoredSettings | null {
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
+  const obj = parsed as Record<string, unknown>;
+  const preset =
+    obj.preset === "dark" || obj.preset === "light" || obj.preset === "system" ? obj.preset : "system";
+  const locale =
+    obj.locale === "ja" || obj.locale === "en" || obj.locale === "zh-CN" ? obj.locale : "en";
+
+  // New bucketed schema
+  if (obj.dark && obj.light && typeof obj.dark === "object" && typeof obj.light === "object") {
+    return {
+      preset,
+      locale,
+      dark: { ...darkColors, ...pickColors(obj.dark as Record<string, unknown>) },
+      light: { ...lightColors, ...pickColors(obj.light as Record<string, unknown>) },
+    };
+  }
+
+  // Legacy flat schema → seed the saved preset's bucket from the flat colors, leave the
+  // other bucket at stock defaults. (For system, the flat colors were stock-resolved anyway.)
+  const flat = pickColors(obj);
+  const dark = { ...darkColors };
+  const light = { ...lightColors };
+  if (preset === "dark") Object.assign(dark, flat);
+  else if (preset === "light") Object.assign(light, flat);
+  return { preset, locale, dark, light };
+}
+
+async function loadFromFile(): Promise<StoredSettings | null> {
   try {
     const dir = await appConfigDir();
     if (!(await exists(dir))) return null;
     const path = `${dir.replace(/\/+$/, "")}/${CONFIG_FILE}`;
     if (!(await exists(path))) return null;
     const text = await readTextFile(path);
-    const parsed: unknown = JSON.parse(text);
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
-    const obj = parsed as Record<string, unknown>;
-    if (obj.preset !== undefined && obj.preset !== "dark" && obj.preset !== "light" && obj.preset !== "system") {
-      obj.preset = "system";
-    }
-    return { ...systemPreset, ...obj };
+    return migrateStored(JSON.parse(text));
   } catch {
     return null;
   }
 }
 
-async function saveToFile(settings: ThemeSettings): Promise<void> {
+async function saveToFile(settings: StoredSettings): Promise<void> {
   try {
     const dir = await appConfigDir();
     if (!(await exists(dir))) {
@@ -141,72 +202,98 @@ function prefersDarkMode(): boolean {
   return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
 }
 
-function resolveSystemPreset(s: ThemeSettings): ThemeSettings {
-  if (s.preset !== "system") return s;
-  const base = prefersDarkMode() ? darkPreset : lightPreset;
-  return { ...base, locale: s.locale, preset: "system" };
+/** Which concrete palette is active right now (System resolves via the OS). */
+function resolvedPreset(s: StoredSettings): "dark" | "light" {
+  if (s.preset === "system") return prefersDarkMode() ? "dark" : "light";
+  return s.preset;
+}
+
+/** Flatten stored buckets into the resolved, app-facing ThemeSettings. */
+function flatten(s: StoredSettings): ThemeSettings {
+  return { preset: s.preset, locale: s.locale, ...s[resolvedPreset(s)] };
 }
 
 /** Apply all theme settings as CSS custom properties on <html> + window theme */
 function applyThemeToDOM(s: ThemeSettings) {
-  const resolved = resolveSystemPreset(s);
-  try { getCurrentWindow().setTheme(resolved.preset === "dark" || (s.preset === "system" && prefersDarkMode()) ? "dark" : "light").catch(() => {}); } catch { /* outside Tauri runtime */ }
+  const isDark = s.preset === "dark" || (s.preset === "system" && prefersDarkMode());
+  try { getCurrentWindow().setTheme(isDark ? "dark" : "light").catch(() => {}); } catch { /* outside Tauri runtime */ }
   const root = document.documentElement;
-  root.style.setProperty("--app-bg", resolved.appBg);
-  root.style.setProperty("--sidebar-bg", resolved.sidebarBg);
-  root.style.setProperty("--text-color", resolved.textColor);
-  root.style.setProperty("--text-muted", resolved.textMuted);
-  root.style.setProperty("--border-color", resolved.borderColor);
-  root.style.setProperty("--button-bg", resolved.buttonBg);
-  root.style.setProperty("--button-text", resolved.buttonText);
-  root.style.setProperty("--hover-bg", resolved.hoverBg);
-  root.style.setProperty("--selected-bg", resolved.selectedBg);
-  root.style.setProperty("--selected-text", resolved.selectedText);
-  root.style.setProperty("--md-heading", resolved.mdHeadingColor);
-  root.style.setProperty("--md-link", resolved.mdLinkColor);
-  root.style.setProperty("--md-code-bg", resolved.mdCodeBg);
-  root.style.setProperty("--md-border", resolved.mdBorderColor);
+  root.style.setProperty("--app-bg", s.appBg);
+  root.style.setProperty("--sidebar-bg", s.sidebarBg);
+  root.style.setProperty("--text-color", s.textColor);
+  root.style.setProperty("--text-muted", s.textMuted);
+  root.style.setProperty("--border-color", s.borderColor);
+  root.style.setProperty("--button-bg", s.buttonBg);
+  root.style.setProperty("--button-text", s.buttonText);
+  root.style.setProperty("--hover-bg", s.hoverBg);
+  root.style.setProperty("--selected-bg", s.selectedBg);
+  root.style.setProperty("--selected-text", s.selectedText);
+  root.style.setProperty("--md-heading", s.mdHeadingColor);
+  root.style.setProperty("--md-link", s.mdLinkColor);
+  root.style.setProperty("--md-code-bg", s.mdCodeBg);
+  root.style.setProperty("--md-border", s.mdBorderColor);
 }
 
 export function useSettings() {
-  const [settings, setSettingsState] = useState<ThemeSettings>(systemPreset);
+  const [stored, setStored] = useState<StoredSettings>(defaultStored);
   const [loaded, setLoaded] = useState(false);
+  const [osTick, bumpOsTick] = useState(0);
+
+  const settings = useMemo(() => flatten(stored), [stored, osTick]);
 
   // Load from file on mount
   useEffect(() => {
     loadFromFile().then((saved) => {
-      const initial = saved ?? systemPreset;
-      setSettingsState(initial);
-      applyThemeToDOM(initial);
+      const initial = saved ?? defaultStored;
+      setStored(initial);
+      applyThemeToDOM(flatten(initial));
       setLoaded(true);
     });
   }, []);
 
   // Apply CSS vars + save whenever settings change
   useEffect(() => {
-    applyThemeToDOM(settings);
-    if (loaded) saveToFile(settings);
-  }, [settings, loaded]);
+    applyThemeToDOM(flatten(stored));
+    if (loaded) saveToFile(stored);
+  }, [stored, loaded]);
 
+  // Follow the OS palette while System is selected
   useEffect(() => {
-    if (settings.preset !== "system") return;
+    if (stored.preset !== "system") return;
     const media = window.matchMedia?.("(prefers-color-scheme: dark)");
     if (!media) return;
-    const listener = () => applyThemeToDOM(settings);
+    const listener = () => { applyThemeToDOM(flatten(stored)); bumpOsTick((t) => t + 1); };
     media.addEventListener?.("change", listener);
     return () => media.removeEventListener?.("change", listener);
-  }, [settings]);
+  }, [stored]);
 
-  const setSettings = useCallback(
-    (patch: Partial<ThemeSettings>) => {
-      setSettingsState((prev) => ({ ...prev, ...patch }));
-    },
-    []
-  );
-
-  const applyPreset = useCallback((name: "dark" | "light" | "system") => {
-    setSettingsState((prev) => ({ ...presets[name], locale: prev.locale }));
+  // Colors land in the active palette's bucket; locale is top-level. Preset changes go
+  // through applyPreset, so a patch here only ever carries locale and/or color fields.
+  const setSettings = useCallback((patch: Partial<ThemeSettings>) => {
+    setStored((prev) => {
+      const next: StoredSettings = { ...prev };
+      if (patch.locale !== undefined) next.locale = patch.locale;
+      const colorPatch = pickColors(patch as Record<string, unknown>);
+      if (Object.keys(colorPatch).length > 0) {
+        const target = resolvedPreset(prev);
+        next[target] = { ...prev[target], ...colorPatch };
+      }
+      return next;
+    });
   }, []);
 
-  return { settings, setSettings, applyPreset, loaded };
+  const applyPreset = useCallback((name: "dark" | "light" | "system") => {
+    setStored((prev) => ({ ...prev, preset: name }));
+  }, []);
+
+  // Reset the active (Dark/Light) palette back to its stock defaults
+  const resetPreset = useCallback(() => {
+    setStored((prev) => {
+      if (prev.preset === "system") return prev;
+      const defaults = prev.preset === "light" ? lightColors : darkColors;
+      return { ...prev, [prev.preset]: { ...defaults } };
+    });
+  }, []);
+
+  return { settings, setSettings, applyPreset, resetPreset, loaded };
 }

@@ -10,6 +10,7 @@ describe('Settings', () => {
     settings: darkPreset,
     onChange: vi.fn(),
     onApplyPreset: vi.fn(),
+    onResetPreset: vi.fn(),
     onClose: vi.fn(),
   };
 
@@ -75,6 +76,18 @@ describe('Settings', () => {
     expect(
       screen.getByText("Colors follow your system's light/dark setting automatically. Choose Dark or Light to customize colors.")
     ).toBeInTheDocument();
+  });
+
+  it('shows a reset button for concrete presets and calls onResetPreset', async () => {
+    const onResetPreset = vi.fn();
+    renderWithLocale(<Settings {...defaultProps} settings={darkPreset} onResetPreset={onResetPreset} />);
+    await userEvent.click(screen.getByText('Reset to defaults'));
+    expect(onResetPreset).toHaveBeenCalledOnce();
+  });
+
+  it('hides the reset button while System is selected', () => {
+    renderWithLocale(<Settings {...defaultProps} settings={systemPreset} />);
+    expect(screen.queryByText('Reset to defaults')).not.toBeInTheDocument();
   });
 
   it('calls onClose when close button clicked', async () => {
