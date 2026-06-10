@@ -101,6 +101,7 @@ xdg-mime default Rendu.desktop text/markdown
 - **Document outline** — Heading list in the sidebar with click-to-jump navigation
 - **PDF export** — Export the current Markdown page as an A4 PDF
 - **Theme customization** — Change colors for background, text, code blocks, and more in real time
+- **Multi-language UI** — English, 日本語 (Japanese), and 简体中文 (Simplified Chinese)
 - **Resizable UI** — Drag the divider between file tree and outline to adjust panel sizes
 
 ## Tech Stack
