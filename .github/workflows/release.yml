@@ -7,7 +7,33 @@ permissions:
   contents: write
 
 jobs:
+  # リリースゲート: 脆弱性 (npm: high+ / cargo: vulnerabilities) があれば
+  # 全 OS のビルドを開始させない。
+  security-gate:
+    name: Security gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: npm audit (fail on high/critical)
+        run: npm audit --audit-level=high
+
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+
+      # unmaintained warning では落ちない (CI の security-audit と同方針)
+      - name: cargo audit (fail on vulnerabilities)
+        working-directory: src-tauri
+        run: cargo audit
+
   build:
+    needs: security-gate
     strategy:
       fail-fast: false
       matrix:
