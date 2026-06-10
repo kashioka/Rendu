@@ -35,8 +35,16 @@ sed -i '' "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" "$REPO_ROOT/src-taur
 # Cargo.lock. We intentionally let errors surface — a silent lockfile
 # regen failure would leave a stale lockfile alongside the bumped
 # manifests, which is exactly the drift this script is meant to prevent.
+#
+# `cargo update --workspace` updates ONLY the local package's version
+# entry in Cargo.lock, leaving every external dependency pinned. We must
+# NOT use `cargo generate-lockfile` here: it re-resolves the entire
+# graph, which silently minor-bumps the `tauri` crate (Cargo.toml pins it
+# with an implicit caret, e.g. 2.10.3 → 2.11.x). That desyncs the Rust
+# `tauri` crate from the JS `@tauri-apps/*` packages, and tauri-action
+# fails every release build on the mismatch (hit during v0.7.1).
 (cd "$REPO_ROOT" && npm install --package-lock-only --silent)
-(cd "$REPO_ROOT/src-tauri" && cargo generate-lockfile)
+(cd "$REPO_ROOT/src-tauri" && cargo update --workspace)
 
 echo "Bumped to v$VERSION:"
 echo "  - package.json"
