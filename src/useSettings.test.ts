@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/path', () => import('./test/mocks/tauri-path'));
 vi.mock('@tauri-apps/api/window', () => import('./test/mocks/tauri-window'));
 vi.mock('@tauri-apps/api/core', () => import('./test/mocks/tauri-core'));
 
-import { useSettings, darkPreset, lightPreset, systemPreset, presets } from './useSettings';
+import { useSettings, migrateStored, darkPreset, lightPreset, systemPreset, presets } from './useSettings';
 
 describe('useSettings', () => {
   it('has dark, light, and system presets', () => {
@@ -70,5 +70,64 @@ describe('useSettings', () => {
     expect(result.current.settings.appBg).toBe(lightPreset.appBg);
     // Locale should be preserved
     expect(result.current.settings.locale).toBe('ja');
+  });
+
+  it('keeps dark and light customizations independently across preset switches', async () => {
+    const { result } = renderHook(() => useSettings());
+    await act(async () => {});
+
+    // Customize dark
+    act(() => result.current.applyPreset('dark'));
+    act(() => result.current.setSettings({ appBg: '#111111' }));
+    expect(result.current.settings.appBg).toBe('#111111');
+
+    // Light starts untouched
+    act(() => result.current.applyPreset('light'));
+    expect(result.current.settings.appBg).toBe(lightPreset.appBg);
+    act(() => result.current.setSettings({ appBg: '#eeeeee' }));
+    expect(result.current.settings.appBg).toBe('#eeeeee');
+
+    // Switching back restores each bucket (no reset)
+    act(() => result.current.applyPreset('dark'));
+    expect(result.current.settings.appBg).toBe('#111111');
+    act(() => result.current.applyPreset('light'));
+    expect(result.current.settings.appBg).toBe('#eeeeee');
+  });
+
+  it('resetPreset restores the active palette to its defaults', async () => {
+    const { result } = renderHook(() => useSettings());
+    await act(async () => {});
+    act(() => result.current.applyPreset('dark'));
+    act(() => result.current.setSettings({ appBg: '#111111' }));
+    expect(result.current.settings.appBg).toBe('#111111');
+    act(() => result.current.resetPreset());
+    expect(result.current.settings.appBg).toBe(darkPreset.appBg);
+  });
+});
+
+describe('migrateStored', () => {
+  it('migrates a legacy flat dark config into the dark bucket', () => {
+    const s = migrateStored({ preset: 'dark', locale: 'ja', appBg: '#123456' });
+    expect(s?.preset).toBe('dark');
+    expect(s?.locale).toBe('ja');
+    expect(s?.dark.appBg).toBe('#123456');
+    // Other bucket stays at stock defaults
+    expect(s?.light.appBg).toBe(lightPreset.appBg);
+  });
+
+  it('reads the new bucketed schema as-is', () => {
+    const s = migrateStored({
+      preset: 'light',
+      locale: 'en',
+      dark: { appBg: '#111111' },
+      light: { appBg: '#eeeeee' },
+    });
+    expect(s?.dark.appBg).toBe('#111111');
+    expect(s?.light.appBg).toBe('#eeeeee');
+  });
+
+  it('falls back to system preset for invalid input', () => {
+    expect(migrateStored(null)).toBeNull();
+    expect(migrateStored({ preset: 'bogus' })?.preset).toBe('system');
   });
 });

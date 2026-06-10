@@ -19,7 +19,7 @@ import { RecentList } from "./components/RecentList";
 import { restoreOnStartup, saveSession } from "./sessionRestore";
 
 function App() {
-  const { settings, setSettings, applyPreset } = useSettings();
+  const { settings, setSettings, applyPreset, resetPreset } = useSettings();
 
   return (
     <LocaleProvider locale={settings.locale}>
@@ -27,6 +27,7 @@ function App() {
         settings={settings}
         setSettings={setSettings}
         applyPreset={applyPreset}
+        resetPreset={resetPreset}
       />
     </LocaleProvider>
   );
@@ -36,10 +37,12 @@ function AppInner({
   settings,
   setSettings,
   applyPreset,
+  resetPreset,
 }: {
   settings: ReturnType<typeof useSettings>["settings"];
   setSettings: ReturnType<typeof useSettings>["setSettings"];
   applyPreset: ReturnType<typeof useSettings>["applyPreset"];
+  resetPreset: ReturnType<typeof useSettings>["resetPreset"];
 }) {
   const [rootDir, setRootDir] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
@@ -529,6 +532,7 @@ function AppInner({
           settings={settings}
           onChange={setSettings}
           onApplyPreset={applyPreset}
+          onResetPreset={resetPreset}
           onClose={() => setShowSettings(false)}
         />
       )}
