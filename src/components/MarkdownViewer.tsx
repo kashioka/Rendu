@@ -5,9 +5,12 @@ import html2pdf from "html2pdf.js";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkFrontmatter from "remark-frontmatter";
+import remarkMath from "remark-math";
 import rehypeHighlight from "rehype-highlight";
+import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
+import "katex/dist/katex.min.css";
 import type { Components } from "react-markdown";
 import { MermaidBlock } from "./MermaidBlock";
 import { ImageWithOverlay } from "./ImageWithOverlay";
@@ -417,7 +420,9 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
       ...defaultSchema,
       attributes: {
         ...defaultSchema.attributes,
-        code: [...(defaultSchema.attributes?.code || []), ["className", /^language-/]],
+        // math-inline / math-display は remark-math が付与し rehype-katex が
+        // 変換対象を見つけるために必要 (sanitize はその後の katex 出力には触れない)
+        code: [...(defaultSchema.attributes?.code || []), ["className", /^language-/, "math-inline", "math-display"]],
       },
       protocols: otherProtocols,
     };
@@ -690,7 +695,9 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
               } : {}),
             }}
           >
-            <ReactMarkdown remarkPlugins={[remarkGfm, remarkFrontmatter]} rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeHighlight]} components={components}>
+            {/* singleDollarTextMath: false — $...$ を数式にすると "$5 and $10" のような
+                通常文書のドル金額が数式に化けるため、インライン数式は $$...$$ のみ */}
+            <ReactMarkdown remarkPlugins={[remarkGfm, remarkFrontmatter, [remarkMath, { singleDollarTextMath: false }]]} rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeKatex, rehypeHighlight]} components={components}>
               {content}
             </ReactMarkdown>
           </div>

@@ -350,4 +350,85 @@ describe('MarkdownViewer', () => {
     expect(screen.queryByText('marp: true')).not.toBeInTheDocument();
     expect(screen.queryByText('theme: default')).not.toBeInTheDocument();
   });
+
+  describe('KaTeX math rendering', () => {
+    it('renders inline math with $$...$$', async () => {
+      (readTextFile as Mock).mockResolvedValue('Euler: $$e^{i\\pi} + 1 = 0$$ inline.');
+      const { container } = renderWithLocale(
+        <MarkdownViewer filePath="/math.md" settings={darkPreset} />
+      );
+      await waitFor(() => {
+        expect(container.querySelector('.katex')).not.toBeNull();
+      });
+    });
+
+    it('does not treat single-dollar $...$ as math (singleDollarTextMath: false)', async () => {
+      (readTextFile as Mock).mockResolvedValue('Plain $x^2$ stays text.');
+      const { container } = renderWithLocale(
+        <MarkdownViewer filePath="/math.md" settings={darkPreset} />
+      );
+      await waitFor(() => {
+        expect(container.textContent).toContain('Plain $x^2$ stays text.');
+      });
+      expect(container.querySelector('.katex')).toBeNull();
+    });
+
+    it('renders display math with $$...$$', async () => {
+      (readTextFile as Mock).mockResolvedValue('$$\n\\frac{a}{b}\n$$');
+      const { container } = renderWithLocale(
+        <MarkdownViewer filePath="/math.md" settings={darkPreset} />
+      );
+      await waitFor(() => {
+        expect(container.querySelector('.katex-display')).not.toBeNull();
+      });
+    });
+
+    it('renders display math with ```math fence (GitHub style)', async () => {
+      (readTextFile as Mock).mockResolvedValue('```math\nx^2 + y^2 = z^2\n```');
+      const { container } = renderWithLocale(
+        <MarkdownViewer filePath="/math.md" settings={darkPreset} />
+      );
+      await waitFor(() => {
+        expect(container.querySelector('.katex')).not.toBeNull();
+      });
+    });
+
+    it('does not crash on invalid math and keeps surrounding content', async () => {
+      (readTextFile as Mock).mockResolvedValue(
+        'Before\n\n$$\\unknowncommand{x}$$\n\nAfter'
+      );
+      renderWithLocale(
+        <MarkdownViewer filePath="/math.md" settings={darkPreset} />
+      );
+      await waitFor(() => {
+        expect(screen.getByText('Before')).toBeInTheDocument();
+      });
+      expect(screen.getByText('After')).toBeInTheDocument();
+    });
+
+    it('does not treat dollar amounts as math', async () => {
+      (readTextFile as Mock).mockResolvedValue('It costs $5 and $10 in total.');
+      const { container } = renderWithLocale(
+        <MarkdownViewer filePath="/price.md" settings={darkPreset} />
+      );
+      await waitFor(() => {
+        expect(container.textContent).toContain('It costs $5 and $10 in total.');
+      });
+      expect(container.querySelector('.katex')).toBeNull();
+    });
+  });
+
+  it('renders GFM footnotes through the sanitize pipeline', async () => {
+    (readTextFile as Mock).mockResolvedValue(
+      'Body text with a footnote.[^1]\n\n[^1]: The footnote definition text.'
+    );
+    const { container } = renderWithLocale(
+      <MarkdownViewer filePath="/fn.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(container.textContent).toContain('The footnote definition text.');
+    });
+    // 参照リンク (sup > a) が sanitize に剥がされていないこと
+    expect(container.querySelector('sup a')).not.toBeNull();
+  });
 });
