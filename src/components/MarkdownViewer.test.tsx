@@ -125,6 +125,40 @@ describe('MarkdownViewer', () => {
     expect(headings[1].level).toBe(2);
   });
 
+  it('assigns non-empty, jumpable ids to Japanese (CJK) headings', async () => {
+    (readTextFile as Mock).mockResolvedValue('## 日本語版\n\n## English version');
+    const onHeadingsChange = vi.fn();
+    const { container } = renderWithLocale(
+      <MarkdownViewer filePath="/jp.md" settings={darkPreset} onHeadingsChange={onHeadingsChange} />
+    );
+    await waitFor(() => {
+      expect(onHeadingsChange).toHaveBeenCalled();
+    });
+    const headings = onHeadingsChange.mock.calls.at(-1)![0];
+    const jp = headings.find((h: { text: string }) => h.text === '日本語版');
+    // 旧実装では \w が CJK を落として id が空になり getElementById で飛べなかった
+    expect(jp.id).toBeTruthy();
+    expect(jp.id).toContain('日本語版');
+    // DOM 上の見出し要素にも同じ id が付いていて getElementById で取得できる
+    expect(container.ownerDocument.getElementById(jp.id)).not.toBeNull();
+    // 英語側は従来どおりスラグ化される
+    const en = headings.find((h: { text: string }) => h.text === 'English version');
+    expect(en.id).toBe('english-version');
+  });
+
+  it('keeps underscores in heading ids (slug stability)', async () => {
+    (readTextFile as Mock).mockResolvedValue('## API_Version');
+    const onHeadingsChange = vi.fn();
+    renderWithLocale(
+      <MarkdownViewer filePath="/u.md" settings={darkPreset} onHeadingsChange={onHeadingsChange} />
+    );
+    await waitFor(() => {
+      expect(onHeadingsChange).toHaveBeenCalled();
+    });
+    const headings = onHeadingsChange.mock.calls.at(-1)![0];
+    expect(headings[0].id).toBe('api_version');
+  });
+
   it('has a search input', async () => {
     (readTextFile as Mock).mockResolvedValue('# Test');
     renderWithLocale(
