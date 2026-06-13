@@ -174,7 +174,17 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
     const items: HeadingItem[] = [];
     els.forEach((el) => {
       const text = (el.textContent || "").trim();
-      const base = text.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-");
+      // \p{L}/\p{N} (with the u flag) keep letters/digits from ANY language.
+      // The old \w-based regex stripped CJK entirely, yielding empty ids so
+      // Japanese-only headings could not be jumped to. `_` is kept explicitly
+      // because \w used to preserve it (slug stability for e.g. API_Version).
+      // Fall back to "section" for headings made solely of symbols/emoji.
+      const base =
+        text
+          .toLowerCase()
+          .replace(/[^\p{L}\p{N}_\s-]/gu, "")
+          .replace(/\s+/g, "-")
+          .replace(/^-+|-+$/g, "") || "section";
       const count = seen.get(base) ?? 0;
       seen.set(base, count + 1);
       const id = count === 0 ? base : `${base}-${count}`;
