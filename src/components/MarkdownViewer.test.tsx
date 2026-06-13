@@ -216,6 +216,20 @@ describe('MarkdownViewer', () => {
     expect(input).toHaveValue('');
   });
 
+  it('matches half-width content with a full-width search query (NFKC)', async () => {
+    (readTextFile as Mock).mockResolvedValue('# Doc\n\nPrice is 5 dollars here.');
+    renderWithLocale(
+      <MarkdownViewer filePath="/test.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search...')).toBeInTheDocument();
+    });
+    const input = screen.getByPlaceholderText('Search...');
+    // full-width "５" should find half-width "5" after NFKC normalization
+    await userEvent.type(input, '５');
+    expect(await screen.findByText(/Price is 5 dollars here\./)).toBeInTheDocument();
+  });
+
   it('search area has role=search', async () => {
     (readTextFile as Mock).mockResolvedValue('# Test');
     renderWithLocale(

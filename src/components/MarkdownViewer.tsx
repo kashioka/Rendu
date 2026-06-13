@@ -20,6 +20,7 @@ import type { ThemeSettings } from "../useSettings";
 import type { HeadingItem } from "./OutlinePanel";
 import { useTranslation } from "../LocaleContext";
 import { svgToPng } from "../utils/svgToPng";
+import { normalizeForSearch, truncateChars } from "../utils/text";
 
 interface MarkdownViewerProps {
   filePath: string;
@@ -379,11 +380,11 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
       return;
     }
     const timer = setTimeout(() => {
-      const query = searchQuery.toLowerCase();
+      const query = normalizeForSearch(searchQuery);
       const lines = content.split("\n");
       const results: SearchResult[] = [];
       for (let i = 0; i < lines.length; i++) {
-        if (lines[i].toLowerCase().includes(query)) {
+        if (normalizeForSearch(lines[i]).includes(query)) {
           results.push({ lineNum: i + 1, text: lines[i] });
         }
       }
@@ -401,11 +402,11 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
       markdownBodyRef.current,
       NodeFilter.SHOW_TEXT,
     );
-    const query = searchQuery.toLowerCase();
+    const query = normalizeForSearch(searchQuery);
     const matches: HTMLElement[] = [];
     let node: Node | null;
     while ((node = walker.nextNode())) {
-      if (node.textContent?.toLowerCase().includes(query) && node.parentElement) {
+      if (node.textContent && normalizeForSearch(node.textContent).includes(query) && node.parentElement) {
         matches.push(node.parentElement);
       }
     }
@@ -657,7 +658,7 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                     >
                       <span className="text-muted mr-2" style={{ fontSize: 11 }}>L{r.lineNum}</span>
-                      <span>{r.text.length > 80 ? r.text.slice(0, 80) + "…" : r.text}</span>
+                      <span>{truncateChars(r.text, 80)}</span>
                     </div>
                   ))}
                 </>
