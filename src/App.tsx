@@ -446,7 +446,7 @@ function AppInner({
 
         {/* Outline pane */}
         <div className="overflow-y-auto" style={{ flex: `0 0 ${(1 - splitRatio) * 100}%` }}>
-          <OutlinePanel headings={headings} />
+          <OutlinePanel headings={headings} onJump={(id) => viewerRef.current?.scrollToHeading(id)} />
         </div>
       </div>
       )}

@@ -146,6 +146,28 @@ describe('MarkdownViewer', () => {
     expect(en.id).toBe('english-version');
   });
 
+  it('scrollToHeading scrolls the content container, never via scrollIntoView', async () => {
+    // Regression: jumping must scroll only the inner container. scrollIntoView
+    // walks up and scrolls ancestors (incl. #root), collapsing the toolbar.
+    (readTextFile as Mock).mockResolvedValue('# Title\n\n## Section A\n\nbody');
+    const handle = createRef<MarkdownViewerHandle>();
+    const scrollIntoViewSpy = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoViewSpy;
+    const scrollToSpy = vi
+      .spyOn(Element.prototype, 'scrollTo')
+      .mockImplementation(() => {});
+    renderWithLocale(
+      <MarkdownViewer ref={handle} filePath="/t.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Section A')).toBeInTheDocument();
+    });
+    act(() => handle.current?.scrollToHeading('section-a'));
+    expect(scrollToSpy).toHaveBeenCalled();
+    expect(scrollIntoViewSpy).not.toHaveBeenCalled();
+    scrollToSpy.mockRestore();
+  });
+
   it('keeps underscores in heading ids (slug stability)', async () => {
     (readTextFile as Mock).mockResolvedValue('## API_Version');
     const onHeadingsChange = vi.fn();

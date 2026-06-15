@@ -6,7 +6,7 @@ import { OutlinePanel, type HeadingItem } from './OutlinePanel';
 
 describe('OutlinePanel', () => {
   it('shows empty message when no headings', () => {
-    renderWithLocale(<OutlinePanel headings={[]} />);
+    renderWithLocale(<OutlinePanel headings={[]} onJump={() => {}} />);
     expect(screen.getByText('No headings')).toBeInTheDocument();
   });
 
@@ -15,13 +15,13 @@ describe('OutlinePanel', () => {
       { id: 'intro', text: 'Introduction', level: 1 },
       { id: 'setup', text: 'Setup', level: 2 },
     ];
-    renderWithLocale(<OutlinePanel headings={headings} />);
+    renderWithLocale(<OutlinePanel headings={headings} onJump={() => {}} />);
     expect(screen.getByText('Introduction')).toBeInTheDocument();
     expect(screen.getByText('Setup')).toBeInTheDocument();
   });
 
   it('shows Japanese empty message', () => {
-    renderWithLocale(<OutlinePanel headings={[]} />, { locale: 'ja' });
+    renderWithLocale(<OutlinePanel headings={[]} onJump={() => {}} />, { locale: 'ja' });
     expect(screen.getByText('見出しなし')).toBeInTheDocument();
   });
 
@@ -30,7 +30,7 @@ describe('OutlinePanel', () => {
       { id: 'h1', text: 'Level 1', level: 1 },
       { id: 'h2', text: 'Level 2', level: 2 },
     ];
-    renderWithLocale(<OutlinePanel headings={headings} />);
+    renderWithLocale(<OutlinePanel headings={headings} onJump={() => {}} />);
     const level1 = screen.getByText('Level 1').closest('.outline-item') as HTMLElement;
     const level2 = screen.getByText('Level 2').closest('.outline-item') as HTMLElement;
     expect(level1).toBeTruthy();
@@ -45,38 +45,46 @@ describe('OutlinePanel', () => {
     const headings: HeadingItem[] = [
       { id: 'intro', text: 'Introduction', level: 1 },
     ];
-    renderWithLocale(<OutlinePanel headings={headings} />);
+    renderWithLocale(<OutlinePanel headings={headings} onJump={() => {}} />);
     const nav = screen.getByRole('navigation');
     expect(nav).toHaveAttribute('aria-label', 'Outline');
   });
 
-  it('heading items are keyboard accessible with Enter', async () => {
+  it('calls onJump with the heading id on click', async () => {
+    const onJump = vi.fn();
+    const headings: HeadingItem[] = [
+      { id: 'intro', text: 'Introduction', level: 1 },
+    ];
+    renderWithLocale(<OutlinePanel headings={headings} onJump={onJump} />);
+    await userEvent.click(screen.getByText('Introduction'));
+    expect(onJump).toHaveBeenCalledWith('intro');
+  });
+
+  it('heading items are keyboard accessible with Enter (delegates to onJump, never scrollIntoView)', async () => {
+    // Regression: the outline must NOT call el.scrollIntoView() — that scrolled
+    // ancestors and collapsed the titlebar/toolbar. It must delegate to onJump,
+    // which scrolls only the viewer's content container.
     const scrollIntoViewMock = vi.fn();
-    // Mock scrollIntoView since jsdom doesn't support it
     Element.prototype.scrollIntoView = scrollIntoViewMock;
+    const onJump = vi.fn();
 
     const headings: HeadingItem[] = [
       { id: 'intro', text: 'Introduction', level: 1 },
     ];
-    renderWithLocale(<OutlinePanel headings={headings} />);
-    // Create target element in DOM for scrollIntoView
-    const target = document.createElement('div');
-    target.id = 'intro';
-    document.body.appendChild(target);
+    renderWithLocale(<OutlinePanel headings={headings} onJump={onJump} />);
 
     const item = screen.getByText('Introduction').closest('[role="link"]') as HTMLElement;
     item.focus();
     await userEvent.keyboard('{Enter}');
-    expect(scrollIntoViewMock).toHaveBeenCalled();
-
-    document.body.removeChild(target);
+    expect(onJump).toHaveBeenCalledWith('intro');
+    expect(scrollIntoViewMock).not.toHaveBeenCalled();
   });
 
   it('heading items have tabIndex=0', () => {
     const headings: HeadingItem[] = [
       { id: 'intro', text: 'Introduction', level: 1 },
     ];
-    renderWithLocale(<OutlinePanel headings={headings} />);
+    renderWithLocale(<OutlinePanel headings={headings} onJump={() => {}} />);
     const item = screen.getByText('Introduction').closest('[role="link"]') as HTMLElement;
     expect(item).toHaveAttribute('tabindex', '0');
   });
