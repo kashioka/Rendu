@@ -30,6 +30,7 @@ interface MarkdownViewerProps {
 
 export interface MarkdownViewerHandle {
   reload: () => void;
+  scrollToHeading: (id: string) => void;
 }
 
 interface SearchResult {
@@ -165,7 +166,24 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
     }
   }, [filePath]);
 
-  useImperativeHandle(ref, () => ({ reload: handleRefresh }), [handleRefresh]);
+  // Scroll a heading into view by scrolling ONLY the inner content container.
+  // Using el.scrollIntoView() here is a bug: it walks up and scrolls every
+  // scrollable ancestor — including #root (overflow:hidden is still
+  // programmatically scrollable in WebKit) — which pushes the titlebar/
+  // toolbar off the top of the window. Mirroring the search-jump approach
+  // (container.scrollTo) keeps the outer layout fixed.
+  const scrollToHeading = useCallback((id: string) => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const target = document.getElementById(id);
+    if (!target) return;
+    const targetRect = target.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const offsetTop = targetRect.top - containerRect.top + container.scrollTop;
+    container.scrollTo({ top: Math.max(0, offsetTop - 8), behavior: "smooth" });
+  }, []);
+
+  useImperativeHandle(ref, () => ({ reload: handleRefresh, scrollToHeading }), [handleRefresh, scrollToHeading]);
 
   // After markdown renders, scan the DOM for headings and assign IDs
   useEffect(() => {

@@ -8,15 +8,15 @@ export interface HeadingItem {
 
 interface OutlinePanelProps {
   headings: HeadingItem[];
+  // Jump is delegated to the viewer so it scrolls only the content container.
+  // (A local el.scrollIntoView() would scroll ancestors and collapse the toolbar.)
+  onJump: (id: string) => void;
 }
 
-export function OutlinePanel({ headings }: OutlinePanelProps) {
+export function OutlinePanel({ headings, onJump }: OutlinePanelProps) {
   const { t } = useTranslation();
 
-  const handleClick = (id: string) => {
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const handleClick = (id: string) => onJump(id);
 
   if (headings.length === 0) {
     return <div className="p-4 text-sm text-muted">{t("outline.noHeadings")}</div>;
