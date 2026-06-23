@@ -5,6 +5,7 @@ export interface UpdateInfo {
   latestVersion: string;
   currentVersion: string;
   releaseUrl: string;
+  downloadUrl: string;
 }
 
 interface UpdateCheckResult {
@@ -12,6 +13,7 @@ interface UpdateCheckResult {
   latest_version: string;
   current_version: string;
   release_url: string;
+  download_url: string;
 }
 
 export function useUpdateCheck(): {
@@ -33,6 +35,7 @@ export function useUpdateCheck(): {
             latestVersion: result.latest_version,
             currentVersion: result.current_version,
             releaseUrl: result.release_url,
+            downloadUrl: result.download_url,
           });
         } else {
           setIsLatest(true);
