@@ -103,6 +103,30 @@ function AppInner({
     navigatingRef.current = false;
   }, []);
 
+  // Back/forward affordances beyond the titlebar buttons: keyboard
+  // (Cmd/Ctrl + "[" or ← / "]" or →) and the mouse navigation buttons.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return;
+      // Don't hijack text-editing shortcuts (e.g. Cmd+← in the search field).
+      const el = document.activeElement as HTMLElement | null;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
+      if (e.key === "[" || e.key === "ArrowLeft") { e.preventDefault(); goBack(); }
+      else if (e.key === "]" || e.key === "ArrowRight") { e.preventDefault(); goForward(); }
+    };
+    const onMouseUp = (e: MouseEvent) => {
+      // 3 = mouse "back" button, 4 = mouse "forward" button.
+      if (e.button === 3) { e.preventDefault(); goBack(); }
+      else if (e.button === 4) { e.preventDefault(); goForward(); }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [goBack, goForward]);
+
   const sidebarRef = useRef<HTMLDivElement>(null);
   const pathRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
@@ -220,6 +244,19 @@ function AppInner({
 
   const handleDropFile = useCallback((file: string) => {
     const nextRootDir = getParentDir(file) ?? rootDir;
+    setRootDir(nextRootDir);
+    setSelectedFile(file);
+    pushHistory({ rootDir: nextRootDir, selectedFile: file });
+    addRecent(file, "file");
+  }, [rootDir, pushHistory, addRecent]);
+
+  // Navigate to a Markdown file from an internal link click. Keep the current
+  // folder root when the target is inside it (so the sidebar tree stays put);
+  // re-root to the target's parent only when the link escapes the open folder.
+  const handleNavigateFile = useCallback((file: string) => {
+    const sep = rootDir && rootDir.includes("\\") && !rootDir.includes("/") ? "\\" : "/";
+    const inTree = !!rootDir && file.startsWith(rootDir + sep);
+    const nextRootDir = inTree ? rootDir : (getParentDir(file) ?? rootDir);
     setRootDir(nextRootDir);
     setSelectedFile(file);
     pushHistory({ rootDir: nextRootDir, selectedFile: file });
@@ -459,7 +496,7 @@ function AppInner({
           </div>
         )}
         {selectedFile ? (
-          <MarkdownViewer ref={viewerRef} filePath={selectedFile} settings={settings} onHeadingsChange={setHeadings} />
+          <MarkdownViewer ref={viewerRef} filePath={selectedFile} settings={settings} onHeadingsChange={setHeadings} onNavigateFile={handleNavigateFile} />
         ) : rootDir ? (
           <div className="empty-state">
             <svg
