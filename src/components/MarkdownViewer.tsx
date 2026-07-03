@@ -8,10 +8,8 @@ import remarkGfm from "remark-gfm";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkMath from "remark-math";
 import rehypeHighlight from "rehype-highlight";
-import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
-import "katex/dist/katex.min.css";
 import type { Components } from "react-markdown";
 import { MermaidBlock } from "./MermaidBlock";
 import { ImageWithOverlay } from "./ImageWithOverlay";
@@ -30,6 +28,16 @@ import { classifyLink } from "../dropUtils";
 const CASE_INSENSITIVE_FS = /Macintosh|Windows/i.test(
   typeof navigator !== "undefined" ? navigator.userAgent : "",
 );
+
+/** Whether the document contains math syntax that needs KaTeX: $$...$$
+ *  (inline/display, singleDollarTextMath is off) or a ```math / ~~~math fence.
+ *  A `$$` inside a code block is a false positive, which only costs an
+ *  unnecessary load — never a missed formula. */
+export function hasMathSyntax(text: string): boolean {
+  return text.includes("$$") || /^ {0,3}(?:`{3,}|~{3,}) *math\b/m.test(text);
+}
+
+type RehypeKatex = typeof import("rehype-katex").default;
 
 interface MarkdownViewerProps {
   filePath: string;
@@ -77,7 +85,30 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
   // Anchor to scroll to after the NEXT file load completes, set when an
   // internal link like "./other.md#section" is clicked (cross-file jump).
   const pendingAnchorRef = useRef<string | null>(null);
+  // Loaded on demand (see the hasMathSyntax effect); null until then.
+  const [rehypeKatex, setRehypeKatex] = useState<RehypeKatex | null>(null);
   const { t } = useTranslation();
+
+  // KaTeX (~80 KB gz + fonts) loads only when the document actually contains
+  // math, mirroring the Mermaid lazy-load approach (#84). remarkMath is gated
+  // on the same state so math markers stay as authored text until the
+  // renderer is ready. Once loaded it stays for the session.
+  useEffect(() => {
+    if (rehypeKatex || !hasMathSyntax(content)) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [mod] = await Promise.all([
+          import("rehype-katex"),
+          import("katex/dist/katex.min.css"),
+        ]);
+        if (!cancelled) setRehypeKatex(() => mod.default);
+      } catch {
+        // Math stays as authored $$ text; the rest of the document is fine.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [content, rehypeKatex]);
 
   const zoomIn = useCallback(() => setZoomLevel((z) => Math.min(200, z + 10)), []);
   const zoomOut = useCallback(() => setZoomLevel((z) => Math.max(50, z - 10)), []);
@@ -785,7 +816,15 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
           >
             {/* singleDollarTextMath: false — $...$ を数式にすると "$5 and $10" のような
                 通常文書のドル金額が数式に化けるため、インライン数式は $$...$$ のみ */}
-            <ReactMarkdown remarkPlugins={[remarkGfm, remarkFrontmatter, [remarkMath, { singleDollarTextMath: false }]]} rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeKatex, rehypeHighlight]} components={components}>
+            <ReactMarkdown
+              remarkPlugins={rehypeKatex
+                ? [remarkGfm, remarkFrontmatter, [remarkMath, { singleDollarTextMath: false }]]
+                : [remarkGfm, remarkFrontmatter]}
+              rehypePlugins={rehypeKatex
+                ? [rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeKatex, rehypeHighlight]
+                : [rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeHighlight]}
+              components={components}
+            >
               {content}
             </ReactMarkdown>
           </div>
