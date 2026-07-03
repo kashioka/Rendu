@@ -19,8 +19,33 @@ vi.mock('../utils/svgToPng', () => ({
 }));
 
 import { readTextFile } from '@tauri-apps/plugin-fs';
-import { MarkdownViewer, type MarkdownViewerHandle } from './MarkdownViewer';
+import { MarkdownViewer, hasMathSyntax, type MarkdownViewerHandle } from './MarkdownViewer';
 import { darkPreset } from '../useSettings';
+
+describe('hasMathSyntax', () => {
+  it('detects $$ inline and display math', () => {
+    expect(hasMathSyntax('Euler: $$e^{i\\pi} + 1 = 0$$ inline.')).toBe(true);
+    expect(hasMathSyntax('$$\n\\frac{a}{b}\n$$')).toBe(true);
+  });
+
+  it('detects math code fences (``` and ~~~, with indent)', () => {
+    expect(hasMathSyntax('```math\nx^2\n```')).toBe(true);
+    expect(hasMathSyntax('~~~math\nx^2\n~~~')).toBe(true);
+    expect(hasMathSyntax('   ```math\nx^2\n```')).toBe(true);
+  });
+
+  it('returns false for plain documents (KaTeX must not load)', () => {
+    expect(hasMathSyntax('# Title\n\nJust prose with a [link](./a.md).')).toBe(false);
+    expect(hasMathSyntax('It costs $5 and $10 in total.')).toBe(false);
+    expect(hasMathSyntax('見出しと日本語本文だけの文書。価格は $5 です。')).toBe(false);
+    expect(hasMathSyntax('```mathematica\nx\n```')).toBe(false);
+    expect(hasMathSyntax('code fence ```js\nconst math = 1;\n```')).toBe(false);
+  });
+
+  it('detects math in CJK documents', () => {
+    expect(hasMathSyntax('日本語の数式: $$x^2$$ を含む。')).toBe(true);
+  });
+});
 
 describe('MarkdownViewer', () => {
   beforeEach(() => {
