@@ -8,6 +8,7 @@ export const { test, expect } = createTauriTest({
       latest_version: "0.5.0",
       current_version: "0.5.0",
       release_url: "",
+      download_url: "",
     }),
   },
 });

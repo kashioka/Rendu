@@ -401,7 +401,7 @@ function AppInner({
           <div className="update-banner-text">
             <span>{t("update.available", { version: updateInfo.latestVersion })}</span>
             <span>—</span>
-            <a href={updateInfo.releaseUrl} onClick={(e) => { e.preventDefault(); invoke("open_external_url", { url: updateInfo!.releaseUrl }); }}>{t("update.download")}</a>
+            <a href={updateInfo.downloadUrl} onClick={(e) => { e.preventDefault(); invoke("open_external_url", { url: updateInfo!.downloadUrl }); }}>{t("update.download")}</a>
             <span style={{ color: "var(--text-muted, #71717a)" }}>{t("update.homebrew")}</span>
           </div>
           <button className="update-banner-close" onClick={dismissUpdate} aria-label="Close">

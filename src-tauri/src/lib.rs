@@ -12,6 +12,26 @@ pub struct UpdateInfo {
   latest_version: String,
   current_version: String,
   release_url: String,
+  /// OS-specific direct download URL for the latest release's installer.
+  /// Falls back to the release page on platforms with multiple installer
+  /// formats (Linux). Empty when there is no update.
+  download_url: String,
+}
+
+/// Build the direct download URL for this OS's installer in the given release.
+/// Returns `None` for platforms that ship multiple installer formats (Linux:
+/// .deb / .rpm / .AppImage) where we can't pick one — callers fall back to the
+/// release page so the user chooses. `tag` is the git tag (e.g. "v0.9.0"),
+/// `version` is the tag without the leading "v" (e.g. "0.9.0").
+fn os_download_url(os: &str, tag: &str, version: &str) -> Option<String> {
+  let file = match os {
+    "macos" => format!("Rendu_{version}_aarch64.dmg"),
+    "windows" => format!("Rendu_{version}_x64-setup.exe"),
+    _ => return None,
+  };
+  Some(format!(
+    "https://github.com/kashioka/Rendu/releases/download/{tag}/{file}"
+  ))
 }
 
 #[tauri::command]
@@ -22,6 +42,7 @@ async fn check_for_updates() -> UpdateInfo {
     latest_version: current.to_string(),
     current_version: current.to_string(),
     release_url: String::new(),
+    download_url: String::new(),
   };
 
   let client = match reqwest::Client::builder()
@@ -57,11 +78,17 @@ async fn check_for_updates() -> UpdateInfo {
     .unwrap_or("https://github.com/kashioka/Rendu/releases/latest")
     .to_string();
 
+  // Prefer a direct OS-specific installer link; fall back to the release page
+  // on Linux (multiple formats) so the banner never sends users to a 404.
+  let download_url =
+    os_download_url(std::env::consts::OS, tag, latest).unwrap_or_else(|| release_url.clone());
+
   UpdateInfo {
     has_update: latest != current,
     latest_version: latest.to_string(),
     current_version: current.to_string(),
     release_url,
+    download_url,
   }
 }
 
@@ -541,6 +568,29 @@ mod tests {
   use std::fs;
   use std::io::Write;
   use tempfile::tempdir;
+
+  // ------------------------------------------------------------------
+  // os_download_url
+  // ------------------------------------------------------------------
+
+  #[test]
+  fn os_download_url_builds_direct_link_for_macos_and_windows() {
+    assert_eq!(
+      os_download_url("macos", "v0.9.0", "0.9.0"),
+      Some("https://github.com/kashioka/Rendu/releases/download/v0.9.0/Rendu_0.9.0_aarch64.dmg".to_string())
+    );
+    assert_eq!(
+      os_download_url("windows", "v0.9.0", "0.9.0"),
+      Some("https://github.com/kashioka/Rendu/releases/download/v0.9.0/Rendu_0.9.0_x64-setup.exe".to_string())
+    );
+  }
+
+  #[test]
+  fn os_download_url_returns_none_for_linux_and_unknown() {
+    // Linux ships .deb/.rpm/.AppImage — no single installer to link to.
+    assert_eq!(os_download_url("linux", "v0.9.0", "0.9.0"), None);
+    assert_eq!(os_download_url("freebsd", "v0.9.0", "0.9.0"), None);
+  }
 
   // ------------------------------------------------------------------
   // is_markdown_path
