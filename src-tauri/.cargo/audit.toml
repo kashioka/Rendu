@@ -1,0 +1,14 @@
+# cargo audit の設定 (CI の security-audit / security-gate / 週次スキャンは
+# いずれも working-directory: src-tauri で実行されるため、このファイルが適用される)
+
+[advisories]
+# quick-xml 0.39.4 の quadratic runtime DoS (修正は 0.41.0 以上)。
+# quick-xml は plist → tauri 経由の推移的依存で、plist の最新 1.9.0 が
+# ^0.39.2 を要求しているため semver 非互換の 0.41 系には上げられない。
+# Rendu が攻撃者制御の XML/plist をパースする経路はなく実質リスクなし。
+# plist が quick-xml >=0.41 対応版をリリースしたら ignore を外して更新する。
+# トラッキング: https://github.com/kashioka/Rendu/issues/99
+ignore = [
+    "RUSTSEC-2026-0194",
+    "RUSTSEC-2026-0195",
+]
