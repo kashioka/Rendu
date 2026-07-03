@@ -24,7 +24,9 @@ The manifests are kept in sync by `scripts/bump-version.sh` — never edit them 
 - `package-lock.json` (via `npm install --package-lock-only`)
 - `src-tauri/tauri.conf.json`
 - `src-tauri/Cargo.toml`
-- `src-tauri/Cargo.lock` (via `cargo generate-lockfile`)
+- `src-tauri/Cargo.lock` (via `cargo update --workspace` — updates only the
+  rendu version entry; `cargo generate-lockfile` must NOT be used here as it
+  re-resolves the whole tree and drifts external deps like tauri)
 
 **Manual update required (these are the gotchas):**
 - `docs/index.html` — DMG / EXE / MSI / .deb / .rpm / AppImage URLs (filename embeds the version)
