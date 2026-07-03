@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, useCallback, useMemo } from "react";
 import { readTextFile, writeFile, stat } from "@tauri-apps/plugin-fs";
 import { save } from "@tauri-apps/plugin-dialog";
+import { invoke } from "@tauri-apps/api/core";
 import html2pdf from "html2pdf.js";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -21,11 +22,22 @@ import type { HeadingItem } from "./OutlinePanel";
 import { useTranslation } from "../LocaleContext";
 import { svgToPng } from "../utils/svgToPng";
 import { normalizeForSearch, truncateChars } from "../utils/text";
+import { classifyLink } from "../dropUtils";
+
+// macOS (default) and Windows have case-insensitive filesystems; Linux is
+// case-sensitive. Decides whether a differently-cased internal link points at
+// the file currently open (in-page anchor) or a distinct file (navigation).
+const CASE_INSENSITIVE_FS = /Macintosh|Windows/i.test(
+  typeof navigator !== "undefined" ? navigator.userAgent : "",
+);
 
 interface MarkdownViewerProps {
   filePath: string;
   settings: ThemeSettings;
   onHeadingsChange?: (headings: HeadingItem[]) => void;
+  /** Navigate to another Markdown file (resolved absolute path) when an
+   *  internal link is clicked. The app routes this through its history. */
+  onNavigateFile?: (path: string) => void;
 }
 
 export interface MarkdownViewerHandle {
@@ -44,7 +56,7 @@ interface GutterEntry {
 }
 
 export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerProps>(function MarkdownViewer(
-  { filePath, settings, onHeadingsChange },
+  { filePath, settings, onHeadingsChange, onNavigateFile },
   ref,
 ) {
   const [content, setContent] = useState<string>("");
@@ -62,6 +74,9 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const lastMtimeRef = useRef<number | null>(null);
+  // Anchor to scroll to after the NEXT file load completes, set when an
+  // internal link like "./other.md#section" is clicked (cross-file jump).
+  const pendingAnchorRef = useRef<string | null>(null);
   const { t } = useTranslation();
 
   const zoomIn = useCallback(() => setZoomLevel((z) => Math.min(200, z + 10)), []);
@@ -212,6 +227,17 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
     });
     onHeadingsChange?.(items);
   }, [content, loading]);
+
+  // After a cross-file link navigation ("./other.md#section"), the heading IDs
+  // for the freshly loaded document are assigned by the effect above; scroll to
+  // the pending anchor once on the next paint, then clear it.
+  useEffect(() => {
+    if (loading) return;
+    const anchor = pendingAnchorRef.current;
+    if (!anchor) return;
+    pendingAnchorRef.current = null;
+    requestAnimationFrame(() => scrollToHeading(anchor));
+  }, [content, loading, scrollToHeading]);
 
   // After markdown renders, compute gutter data (every line number + positions)
   useEffect(() => {
@@ -475,8 +501,41 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
       }
       return <ImageWithOverlay src={src} alt={alt} {...props} />;
     },
+    a({ href, children, ...props }) {
+      return (
+        <a
+          href={href}
+          onClick={(e) => {
+            const target = href ? classifyLink(baseDir, href, filePath, CASE_INSENSITIVE_FS) : null;
+            if (!target) return; // no actionable href → leave default behavior
+            // Prevent the webview from following the href itself: relative
+            // links resolve against the app's base URL, not the file on disk.
+            e.preventDefault();
+            switch (target.kind) {
+              case "external":
+                invoke("open_external_url", { url: target.url });
+                break;
+              case "open":
+                // Non-Markdown local file (.pdf, image, …) → OS default app.
+                invoke("open_external_url", { url: target.path });
+                break;
+              case "anchor":
+                scrollToHeading(target.id);
+                break;
+              case "file":
+                pendingAnchorRef.current = target.anchor;
+                onNavigateFile?.(target.path);
+                break;
+            }
+          }}
+          {...props}
+        >
+          {children}
+        </a>
+      );
+    },
     pre: CodeBlockWrapper as Components["pre"],
-  }), [settings, baseDir]);
+  }), [settings, baseDir, filePath, scrollToHeading, onNavigateFile]);
 
   const handleExportPdf = async () => {
     if (!markdownBodyRef.current) return;

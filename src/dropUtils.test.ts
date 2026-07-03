@@ -6,6 +6,8 @@ import {
   looksLikeFolder,
   findDroppedTarget,
   extractDroppedPaths,
+  resolveRelativePath,
+  classifyLink,
 } from './dropUtils';
 
 describe('isMarkdownFile', () => {
@@ -210,5 +212,121 @@ describe('findDroppedTarget', () => {
     expect(findDroppedTarget({})).toBe(null);
     expect(findDroppedTarget({ paths: [] })).toBe(null);
     expect(findDroppedTarget({ paths: 'not-array' })).toBe(null);
+  });
+});
+
+describe('resolveRelativePath', () => {
+  it('resolves "./sibling" against the file directory', () => {
+    expect(resolveRelativePath('/docs/ja/detailed', './QR_Code_Specification.md'))
+      .toBe('/docs/ja/detailed/QR_Code_Specification.md');
+  });
+
+  it('resolves a bare relative path (no "./")', () => {
+    expect(resolveRelativePath('/docs', 'guide.md')).toBe('/docs/guide.md');
+  });
+
+  it('resolves "../" parent segments', () => {
+    expect(resolveRelativePath('/docs/ja/detailed', '../overview.md'))
+      .toBe('/docs/ja/overview.md');
+    expect(resolveRelativePath('/docs/ja/detailed', '../../top.md'))
+      .toBe('/docs/top.md');
+  });
+
+  it('does not pop past the root', () => {
+    expect(resolveRelativePath('/a', '../../../x.md')).toBe('/x.md');
+  });
+
+  it('preserves Windows separators and drive roots', () => {
+    expect(resolveRelativePath('C:\\Users\\me\\docs', './a.md'))
+      .toBe('C:\\Users\\me\\docs\\a.md');
+    expect(resolveRelativePath('C:\\Users\\me\\docs', '../b.md'))
+      .toBe('C:\\Users\\me\\b.md');
+  });
+
+  it('returns an already-absolute target unchanged', () => {
+    expect(resolveRelativePath('/docs', '/etc/passwd.md')).toBe('/etc/passwd.md');
+    expect(resolveRelativePath('/docs', 'C:\\x\\y.md')).toBe('C:\\x\\y.md');
+  });
+
+  it('decodes percent-encoding in the path (via classifyLink)', () => {
+    // resolveRelativePath itself does not decode; classifyLink does. Verified there.
+    expect(resolveRelativePath('/docs', 'My%20Doc.md')).toBe('/docs/My%20Doc.md');
+  });
+});
+
+describe('classifyLink', () => {
+  const base = '/docs/ja/detailed';
+
+  it('classifies http(s) and mailto as external', () => {
+    expect(classifyLink(base, 'https://example.com')).toEqual({ kind: 'external', url: 'https://example.com' });
+    expect(classifyLink(base, 'http://example.com/a')).toEqual({ kind: 'external', url: 'http://example.com/a' });
+    expect(classifyLink(base, 'mailto:a@b.com')).toEqual({ kind: 'external', url: 'mailto:a@b.com' });
+  });
+
+  it('classifies "#fragment" as an in-document anchor', () => {
+    expect(classifyLink(base, '#section-1')).toEqual({ kind: 'anchor', id: 'section-1' });
+  });
+
+  it('classifies a relative .md link as an in-app file navigation', () => {
+    expect(classifyLink(base, './QR_Code_Specification.md')).toEqual({
+      kind: 'file',
+      path: '/docs/ja/detailed/QR_Code_Specification.md',
+      anchor: null,
+    });
+  });
+
+  it('splits a path#anchor link into file + anchor', () => {
+    expect(classifyLink(base, '../overview.md#intro')).toEqual({
+      kind: 'file',
+      path: '/docs/ja/overview.md',
+      anchor: 'intro',
+    });
+  });
+
+  it('decodes percent-encoded paths and anchors', () => {
+    expect(classifyLink(base, './My%20Doc.md#%E8%A6%8B%E5%87%BA%E3%81%97')).toEqual({
+      kind: 'file',
+      path: '/docs/ja/detailed/My Doc.md',
+      anchor: '見出し',
+    });
+  });
+
+  it('classifies a non-Markdown local file as "open" (OS default app)', () => {
+    expect(classifyLink(base, './diagram.pdf')).toEqual({ kind: 'open', path: '/docs/ja/detailed/diagram.pdf' });
+    expect(classifyLink(base, '../img/photo.png')).toEqual({ kind: 'open', path: '/docs/ja/img/photo.png' });
+  });
+
+  it('returns null for an empty href', () => {
+    expect(classifyLink(base, '')).toBe(null);
+  });
+
+  it('treats a link to the current file as an in-document anchor', () => {
+    const current = '/docs/ja/detailed/current.md';
+    // "./current.md#bar" while viewing current.md → anchor, not a no-op navigation
+    expect(classifyLink(base, './current.md#bar', current)).toEqual({ kind: 'anchor', id: 'bar' });
+    // same file, no fragment → harmless empty-id anchor (no navigation)
+    expect(classifyLink(base, './current.md', current)).toEqual({ kind: 'anchor', id: '' });
+    // a DIFFERENT file in the same dir is still a navigation
+    expect(classifyLink(base, './other.md#bar', current)).toEqual({
+      kind: 'file',
+      path: '/docs/ja/detailed/other.md',
+      anchor: 'bar',
+    });
+  });
+
+  it('matches the current file case-insensitively when the FS is (macOS/Windows)', () => {
+    const current = '/docs/Readme.md';
+    // caseInsensitive=true: differently-cased link to the same file → anchor, no reload
+    expect(classifyLink('/docs', './README.md#top', current, true)).toEqual({ kind: 'anchor', id: 'top' });
+  });
+
+  it('keeps differently-cased links as distinct files on a case-sensitive FS (Linux)', () => {
+    const current = '/docs/Readme.md';
+    // caseInsensitive=false (default): README.md and Readme.md are different files → navigate
+    expect(classifyLink('/docs', './README.md#top', current)).toEqual({
+      kind: 'file',
+      path: '/docs/README.md',
+      anchor: 'top',
+    });
   });
 });
