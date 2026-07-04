@@ -19,7 +19,8 @@ vi.mock('../utils/svgToPng', () => ({
 }));
 
 import { readTextFile } from '@tauri-apps/plugin-fs';
-import { MarkdownViewer, hasMathSyntax, type MarkdownViewerHandle } from './MarkdownViewer';
+import { MarkdownViewer, type MarkdownViewerHandle } from './MarkdownViewer';
+import { hasMathSyntax } from '../utils/markdown';
 import { darkPreset } from '../useSettings';
 
 describe('hasMathSyntax', () => {

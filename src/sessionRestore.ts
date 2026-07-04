@@ -59,7 +59,7 @@ export async function restoreOnStartup(deps: {
   openFile: (path: string) => void;
   openFolder: (path: string) => void;
 }): Promise<void> {
-  let initial: string | null = null;
+  let initial: string | null;
   try {
     initial = await deps.getInitialFile();
   } catch {

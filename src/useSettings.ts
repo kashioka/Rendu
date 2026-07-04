@@ -239,6 +239,9 @@ export function useSettings() {
   const [loaded, setLoaded] = useState(false);
   const [osTick, bumpOsTick] = useState(0);
 
+  // osTick は OS の prefers-color-scheme 変化時に flatten() (内部で
+  // matchMedia を参照) を再実行させる意図的な追加依存。
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const settings = useMemo(() => flatten(stored), [stored, osTick]);
 
   // Load from file on mount

@@ -38,6 +38,8 @@ export function LocaleProvider({
   );
 }
 
+// context と対になる標準的なフックで、ファイル分割は import 側の複雑化に見合わない
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTranslation() {
   return useContext(LocaleContext);
 }

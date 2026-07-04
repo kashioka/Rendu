@@ -20,6 +20,7 @@ import type { HeadingItem } from "./OutlinePanel";
 import { useTranslation } from "../LocaleContext";
 import { svgToPng } from "../utils/svgToPng";
 import { normalizeForSearch, truncateChars } from "../utils/text";
+import { hasMathSyntax } from "../utils/markdown";
 import { classifyLink } from "../dropUtils";
 
 // macOS (default) and Windows have case-insensitive filesystems; Linux is
@@ -28,14 +29,6 @@ import { classifyLink } from "../dropUtils";
 const CASE_INSENSITIVE_FS = /Macintosh|Windows/i.test(
   typeof navigator !== "undefined" ? navigator.userAgent : "",
 );
-
-/** Whether the document contains math syntax that needs KaTeX: $$...$$
- *  (inline/display, singleDollarTextMath is off) or a ```math / ~~~math fence.
- *  A `$$` inside a code block is a false positive, which only costs an
- *  unnecessary load — never a missed formula. */
-export function hasMathSyntax(text: string): boolean {
-  return text.includes("$$") || /^ {0,3}(?:`{3,}|~{3,}) *math\b/m.test(text);
-}
 
 type RehypeKatex = typeof import("rehype-katex").default;
 
@@ -257,7 +250,7 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
       items.push({ id, text, level: parseInt(el.tagName[1]) });
     });
     onHeadingsChange?.(items);
-  }, [content, loading]);
+  }, [content, loading, onHeadingsChange]);
 
   // After a cross-file link navigation ("./other.md#section"), the heading IDs
   // for the freshly loaded document are assigned by the effect above; scroll to

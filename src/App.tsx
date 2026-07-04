@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
@@ -355,10 +355,16 @@ function AppInner({
     return () => { unlisten.then((fn) => fn()).catch(() => {}); };
   }, [handleDropFile, handleDropFolder]);
 
-  handleOpenFolderRef.current = handleOpenFolder;
-  handleOpenFileRef.current = handleOpenFile;
-  handleDropFileRef.current = handleDropFile;
-  handleDropFolderRef.current = handleDropFolder;
+  // Keep the "latest handler" refs in sync for the stable menu/file-open
+  // listeners above. useLayoutEffect (not render-time assignment, per
+  // react-hooks/refs; not passive useEffect) so the refs are updated before
+  // paint — an event arriving right after a commit never sees a stale handler.
+  useLayoutEffect(() => {
+    handleOpenFolderRef.current = handleOpenFolder;
+    handleOpenFileRef.current = handleOpenFile;
+    handleDropFileRef.current = handleDropFile;
+    handleDropFolderRef.current = handleDropFolder;
+  });
 
   return (
     <div className="flex flex-col h-full">

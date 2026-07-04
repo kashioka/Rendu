@@ -3,13 +3,9 @@ import type { ThemeSettings } from "../useSettings";
 import { useTranslation } from "../LocaleContext";
 import { svgToPng } from "../utils/svgToPng";
 import { Lightbox } from "./Lightbox";
+import { hasRenderableMermaidCode } from "../utils/markdown";
 
 let idCounter = 0;
-
-/** Whether a code block has any non-whitespace content worth rendering. */
-export function hasRenderableMermaidCode(code: string): boolean {
-  return code.trim().length > 0;
-}
 
 export function MermaidBlock({
   code,
@@ -25,6 +21,10 @@ export function MermaidBlock({
   const [zoom, setZoom] = useState(1);
   const { t } = useTranslation();
 
+  /* eslint-disable react-hooks/set-state-in-effect -- code/settings 変更時の
+     同期リセットは意図的: 描画成功パスは setError(null) を呼ばないため、ここで
+     クリアしないと古いエラーが残る。値が同じ場合 React は bail out するので
+     cascading render は起きない。 */
   useEffect(() => {
     // Skip the mermaid module load entirely when there's nothing to render,
     // but clear any prior diagram so a deleted code block doesn't leave a
@@ -130,6 +130,7 @@ export function MermaidBlock({
       cancelled = true;
     };
   }, [code, settings]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const getSvg = (): SVGSVGElement | null => {
     return ref.current?.querySelector("svg") ?? null;
