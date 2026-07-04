@@ -7,7 +7,33 @@ permissions:
   contents: write
 
 jobs:
+  # Same gate as the stable release: a beta must not ship with high/critical
+  # npm or cargo vulnerabilities. Betas go to real users.
+  security-gate:
+    name: Security gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: npm audit (fail on high/critical)
+        run: npm audit --audit-level=high
+
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+
+      # unmaintained warning では落ちない (CI の security-audit と同方針)
+      - name: cargo audit (fail on vulnerabilities)
+        working-directory: src-tauri
+        run: cargo audit
+
   build:
+    needs: security-gate
     strategy:
       fail-fast: false
       matrix:
