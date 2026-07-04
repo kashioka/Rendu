@@ -117,8 +117,12 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(function FileT
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    setError(null);
-    buildTree(rootDir).then(setNodes).catch((e) => setError(String(e)));
+    // Clear the error together with the result (not synchronously up front) so
+    // the mount effect below doesn't setState during the effect body; a stale
+    // error simply stays visible until the rescan resolves.
+    buildTree(rootDir)
+      .then((tree) => { setNodes(tree); setError(null); })
+      .catch((e) => setError(String(e)));
   }, [rootDir]);
 
   useEffect(() => {

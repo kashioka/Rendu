@@ -13,7 +13,8 @@ vi.mock('../utils/svgToPng', () => ({
 }));
 
 import mermaid from 'mermaid';
-import { MermaidBlock, hasRenderableMermaidCode } from './MermaidBlock';
+import { MermaidBlock } from './MermaidBlock';
+import { hasRenderableMermaidCode } from '../utils/markdown';
 import { darkPreset } from '../useSettings';
 
 describe('hasRenderableMermaidCode', () => {

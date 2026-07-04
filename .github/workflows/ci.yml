@@ -53,6 +53,9 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      - name: Lint
+        run: npm run lint
+
       - name: Run tests with coverage
         run: npm run test:coverage
 
