@@ -11,7 +11,7 @@ jobs:
     name: Security audit (npm + cargo)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v6
         with:
@@ -38,7 +38,7 @@ jobs:
     name: Frontend (TS / React)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v6
         with:
@@ -68,7 +68,7 @@ jobs:
     name: Backend (Rust / Tauri)
     runs-on: ubuntu-22.04  # 22.04 でも webkit2gtk-4.1 は利用可（release-beta.yml で実証済）
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Linux system dependencies
         run: |
