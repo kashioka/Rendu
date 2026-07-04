@@ -22,10 +22,6 @@
       "allow": [{ "path": "$APPCONFIG/**" }]
     },
     {
-      "identifier": "fs:allow-write-file",
-      "allow": [{ "path": "$HOME/**" }]
-    },
-    {
       "identifier": "fs:allow-mkdir",
       "allow": [{ "path": "$APPCONFIG" }, { "path": "$APPCONFIG/**" }]
     },

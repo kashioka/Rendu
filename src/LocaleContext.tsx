@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, useCallback, useContext, useMemo } from "react";
 import type { Locale, Translations } from "./i18n";
 import { getTranslations } from "./i18n";
 
@@ -19,20 +19,27 @@ export function LocaleProvider({
   locale: Locale;
   children: React.ReactNode;
 }) {
-  const translations = getTranslations(locale);
-
-  const t = (key: keyof Translations, vars?: Record<string, string | number>): string => {
-    let result: string = translations[key] ?? key;
-    if (vars) {
-      for (const [k, v] of Object.entries(vars)) {
-        result = result.replace(`{${k}}`, String(v));
+  // Stable per-locale identity so consumers memoizing on `t` (e.g. the markdown
+  // component map) don't rebuild on every unrelated re-render.
+  const t = useCallback(
+    (key: keyof Translations, vars?: Record<string, string | number>): string => {
+      let result: string = getTranslations(locale)[key] ?? key;
+      if (vars) {
+        for (const [k, v] of Object.entries(vars)) {
+          // split/join, not replace(): replaces every occurrence and treats the
+          // value as a literal (a `$` in a filename won't trigger $-patterns).
+          result = result.split(`{${k}}`).join(String(v));
+        }
       }
-    }
-    return result;
-  };
+      return result;
+    },
+    [locale],
+  );
+
+  const value = useMemo(() => ({ locale, t }), [locale, t]);
 
   return (
-    <LocaleContext.Provider value={{ locale, t }}>
+    <LocaleContext.Provider value={value}>
       {children}
     </LocaleContext.Provider>
   );

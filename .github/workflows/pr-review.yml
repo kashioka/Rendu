@@ -57,9 +57,13 @@ jobs:
                       break
           print('\n'.join(result))
           ")
-          echo "diff<<EOF" >> $GITHUB_OUTPUT
+          # Random delimiter: the diff is attacker-controlled, so a fixed "EOF"
+          # line inside it could close the heredoc early and inject arbitrary
+          # step outputs.
+          DELIM="EOF_$(openssl rand -hex 16)"
+          echo "diff<<$DELIM" >> $GITHUB_OUTPUT
           echo "$DIFF" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "$DELIM" >> $GITHUB_OUTPUT
 
       - name: Review by Claude
         env:
@@ -69,9 +73,13 @@ jobs:
           PR_AUTHOR: ${{ steps.pr.outputs.pr_author }}
         run: |
           REVIEW=$(python3 .github/scripts/pr_review.py)
-          echo "REVIEW<<EOF" >> $GITHUB_ENV
+          # Random delimiter: the review text derives from the attacker-controlled
+          # diff, so a literal "EOF" line must not be able to close the heredoc
+          # and inject environment variables into later steps.
+          DELIM="EOF_$(openssl rand -hex 16)"
+          echo "REVIEW<<$DELIM" >> $GITHUB_ENV
           echo "$REVIEW" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          echo "$DELIM" >> $GITHUB_ENV
 
       - name: Post review comment
         env:

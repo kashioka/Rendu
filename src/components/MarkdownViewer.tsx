@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, useCallback, useMemo } from "react";
-import { readTextFile, writeFile, stat } from "@tauri-apps/plugin-fs";
-import { save } from "@tauri-apps/plugin-dialog";
+import { readTextFile, stat } from "@tauri-apps/plugin-fs";
+import { ask } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import html2pdf from "html2pdf.js";
 import ReactMarkdown from "react-markdown";
@@ -21,7 +21,7 @@ import { useTranslation } from "../LocaleContext";
 import { svgToPng } from "../utils/svgToPng";
 import { normalizeForSearch, truncateChars } from "../utils/text";
 import { hasMathSyntax } from "../utils/markdown";
-import { classifyLink } from "../dropUtils";
+import { classifyLink, isPassiveOpenTarget } from "../dropUtils";
 
 // macOS (default) and Windows have case-insensitive filesystems; Linux is
 // case-sensitive. Decides whether a differently-cased internal link points at
@@ -31,6 +31,16 @@ const CASE_INSENSITIVE_FS = /Macintosh|Windows/i.test(
 );
 
 type RehypeKatex = typeof import("rehype-katex").default;
+
+/** Base64-encode bytes in chunks (btoa on a huge spread would blow the stack). */
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
 
 interface MarkdownViewerProps {
   filePath: string;
@@ -539,10 +549,23 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
               case "external":
                 invoke("open_external_url", { url: target.url });
                 break;
-              case "open":
+              case "open": {
                 // Non-Markdown local file (.pdf, image, …) → OS default app.
-                invoke("open_external_url", { url: target.path });
+                // Passive types open directly; anything else needs explicit
+                // confirmation so a malicious document can't open an unexpected
+                // (potentially executable) file on a single click.
+                const p = target.path;
+                if (isPassiveOpenTarget(p)) {
+                  invoke("open_path", { path: p });
+                } else {
+                  const name = p.replace(/[\\/]+$/, "").split(/[\\/]/).pop() || p;
+                  ask(t("viewer.openConfirm.message", { name }), {
+                    title: t("viewer.openConfirm.title"),
+                    kind: "warning",
+                  }).then((ok) => { if (ok) invoke("open_path", { path: p }); });
+                }
                 break;
+              }
               case "anchor":
                 scrollToHeading(target.id);
                 break;
@@ -559,7 +582,7 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
       );
     },
     pre: CodeBlockWrapper as Components["pre"],
-  }), [settings, baseDir, filePath, scrollToHeading, onNavigateFile]);
+  }), [settings, baseDir, filePath, scrollToHeading, onNavigateFile, t]);
 
   const handleExportPdf = async () => {
     if (!markdownBodyRef.current) return;
@@ -609,17 +632,19 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
       }
       replaced.length = 0;
 
-      // 4) Hide overlay, then show save dialog
+      // 4) Hide overlay, then hand the bytes to Rust, which shows the save
+      // dialog and writes the file. The destination is chosen by the user in a
+      // native dialog — the webview never gets a filesystem write primitive.
       setExporting(false);
 
-      const savePath = await save({
-        defaultPath: filePath.replace(/\.md$/i, ".pdf"),
-        filters: [{ name: "PDF", extensions: ["pdf"] }],
-      });
-      if (!savePath) return;
-
       const arrayBuffer = await pdfBlob.arrayBuffer();
-      await writeFile(savePath, new Uint8Array(arrayBuffer));
+      const defaultName =
+        (filePath.replace(/[\\/]+$/, "").split(/[\\/]/).pop() || "output")
+          .replace(/\.md$/i, "") + ".pdf";
+      await invoke("export_pdf", {
+        defaultName,
+        contentsBase64: bytesToBase64(new Uint8Array(arrayBuffer)),
+      });
     } catch (e) {
       console.error("PDF export failed:", e);
       el.classList.remove("pdf-export");

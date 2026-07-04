@@ -47,6 +47,8 @@ export interface Translations {
   "viewer.exportPdf.exporting": string;
   "viewer.exportPdf.overlay": string;
   "viewer.exportPdf.error": string;
+  "viewer.openConfirm.title": string;
+  "viewer.openConfirm.message": string;
   "viewer.zoom.in": string;
   "viewer.zoom.out": string;
   "viewer.zoom.reset": string;
@@ -174,6 +176,8 @@ const en: Translations = {
   "viewer.exportPdf.exporting": "Exporting...",
   "viewer.exportPdf.overlay": "Exporting PDF...",
   "viewer.exportPdf.error": "PDF export failed",
+  "viewer.openConfirm.title": "Open file",
+  "viewer.openConfirm.message": "Open “{name}” with the default app?",
   "viewer.zoom.in": "Zoom in",
   "viewer.zoom.out": "Zoom out",
   "viewer.zoom.reset": "Reset zoom",
@@ -294,6 +298,8 @@ const ja: Translations = {
   "viewer.exportPdf.exporting": "出力中...",
   "viewer.exportPdf.overlay": "PDF出力中...",
   "viewer.exportPdf.error": "PDF出力に失敗しました",
+  "viewer.openConfirm.title": "ファイルを開く",
+  "viewer.openConfirm.message": "「{name}」を既定のアプリで開きますか？",
   "viewer.zoom.in": "拡大",
   "viewer.zoom.out": "縮小",
   "viewer.zoom.reset": "ズームリセット",
@@ -414,6 +420,8 @@ const zhCN: Translations = {
   "viewer.exportPdf.exporting": "正在导出...",
   "viewer.exportPdf.overlay": "正在导出 PDF...",
   "viewer.exportPdf.error": "PDF 导出失败",
+  "viewer.openConfirm.title": "打开文件",
+  "viewer.openConfirm.message": "要用系统默认应用打开“{name}”吗？",
   "viewer.zoom.in": "放大",
   "viewer.zoom.out": "缩小",
   "viewer.zoom.reset": "重置缩放",
