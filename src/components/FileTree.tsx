@@ -1,5 +1,6 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
 import { readDir, type DirEntry } from "@tauri-apps/plugin-fs";
+import { isMarkdownFile } from "../dropUtils";
 
 interface FileTreeProps {
   rootDir: string;
@@ -47,7 +48,9 @@ function TreeItem({
   const [children, setChildren] = useState<TreeNode[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const isMd = node.name.endsWith(".md") || node.name.endsWith(".markdown");
+  // Case-insensitive (README.MD, Notes.Markdown) and consistent with the
+  // drag-drop / link-navigation classifier.
+  const isMd = isMarkdownFile(node.name);
   const isSelected = selectedFile === node.path;
   const isClickable = node.isDir || isMd;
 

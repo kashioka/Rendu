@@ -536,45 +536,50 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
       return <ImageWithOverlay src={src} alt={alt} {...props} />;
     },
     a({ href, children, ...props }) {
+      const activate = (e: React.MouseEvent) => {
+        const target = href ? classifyLink(baseDir, href, filePath, CASE_INSENSITIVE_FS) : null;
+        if (!target) return; // no actionable href → leave default behavior
+        // Prevent the webview from following the href itself: relative links
+        // resolve against the app's base URL, not the file on disk.
+        e.preventDefault();
+        switch (target.kind) {
+          case "external":
+            invoke("open_external_url", { url: target.url });
+            break;
+          case "open": {
+            // Non-Markdown local file (.pdf, image, …) → OS default app.
+            // Passive types open directly; anything else needs explicit
+            // confirmation so a malicious document can't open an unexpected
+            // (potentially executable) file on a single click.
+            const p = target.path;
+            if (isPassiveOpenTarget(p)) {
+              invoke("open_path", { path: p });
+            } else {
+              const name = p.replace(/[\\/]+$/, "").split(/[\\/]/).pop() || p;
+              ask(t("viewer.openConfirm.message", { name }), {
+                title: t("viewer.openConfirm.title"),
+                kind: "warning",
+              }).then((ok) => { if (ok) invoke("open_path", { path: p }); });
+            }
+            break;
+          }
+          case "anchor":
+            scrollToHeading(target.id);
+            break;
+          case "file":
+            pendingAnchorRef.current = target.anchor;
+            onNavigateFile?.(target.path);
+            break;
+        }
+      };
       return (
         <a
           href={href}
-          onClick={(e) => {
-            const target = href ? classifyLink(baseDir, href, filePath, CASE_INSENSITIVE_FS) : null;
-            if (!target) return; // no actionable href → leave default behavior
-            // Prevent the webview from following the href itself: relative
-            // links resolve against the app's base URL, not the file on disk.
-            e.preventDefault();
-            switch (target.kind) {
-              case "external":
-                invoke("open_external_url", { url: target.url });
-                break;
-              case "open": {
-                // Non-Markdown local file (.pdf, image, …) → OS default app.
-                // Passive types open directly; anything else needs explicit
-                // confirmation so a malicious document can't open an unexpected
-                // (potentially executable) file on a single click.
-                const p = target.path;
-                if (isPassiveOpenTarget(p)) {
-                  invoke("open_path", { path: p });
-                } else {
-                  const name = p.replace(/[\\/]+$/, "").split(/[\\/]/).pop() || p;
-                  ask(t("viewer.openConfirm.message", { name }), {
-                    title: t("viewer.openConfirm.title"),
-                    kind: "warning",
-                  }).then((ok) => { if (ok) invoke("open_path", { path: p }); });
-                }
-                break;
-              }
-              case "anchor":
-                scrollToHeading(target.id);
-                break;
-              case "file":
-                pendingAnchorRef.current = target.anchor;
-                onNavigateFile?.(target.path);
-                break;
-            }
-          }}
+          onClick={activate}
+          // Middle-click otherwise triggers native webview navigation to the
+          // resolved href (e.g. http://localhost/other.md), tearing down the
+          // whole app. Route it through the same handler instead.
+          onAuxClick={(e) => { if (e.button === 1) activate(e); }}
           {...props}
         >
           {children}
@@ -583,6 +588,27 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
     },
     pre: CodeBlockWrapper as Components["pre"],
   }), [settings, baseDir, filePath, scrollToHeading, onNavigateFile, t]);
+
+  // react-markdown v10 re-runs the whole remark/rehype pipeline on every render.
+  // Memoize the rendered tree so typing in search, zooming, or toggling the
+  // gutter doesn't re-parse the entire document. Recomputes only when the
+  // content, component map, sanitize schema, or lazy-loaded KaTeX changes —
+  // exactly the inputs that actually affect the output.
+  // singleDollarTextMath: false — $...$ を数式にすると "$5 and $10" のような
+  // 通常文書のドル金額が数式に化けるため、インライン数式は $$...$$ のみ。
+  const renderedMarkdown = useMemo(() => (
+    <ReactMarkdown
+      remarkPlugins={rehypeKatex
+        ? [remarkGfm, remarkFrontmatter, [remarkMath, { singleDollarTextMath: false }]]
+        : [remarkGfm, remarkFrontmatter]}
+      rehypePlugins={rehypeKatex
+        ? [rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeKatex, rehypeHighlight]
+        : [rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeHighlight]}
+      components={components}
+    >
+      {content}
+    </ReactMarkdown>
+  ), [content, components, rehypeKatex, sanitizeSchema]);
 
   const handleExportPdf = async () => {
     if (!markdownBodyRef.current) return;
@@ -832,19 +858,7 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
               } : {}),
             }}
           >
-            {/* singleDollarTextMath: false — $...$ を数式にすると "$5 and $10" のような
-                通常文書のドル金額が数式に化けるため、インライン数式は $$...$$ のみ */}
-            <ReactMarkdown
-              remarkPlugins={rehypeKatex
-                ? [remarkGfm, remarkFrontmatter, [remarkMath, { singleDollarTextMath: false }]]
-                : [remarkGfm, remarkFrontmatter]}
-              rehypePlugins={rehypeKatex
-                ? [rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeKatex, rehypeHighlight]
-                : [rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeHighlight]}
-              components={components}
-            >
-              {content}
-            </ReactMarkdown>
+            {renderedMarkdown}
           </div>
         </div>
       </div>
