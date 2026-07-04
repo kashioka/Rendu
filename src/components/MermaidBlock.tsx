@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ThemeSettings } from "../useSettings";
 import { useTranslation } from "../LocaleContext";
 import { svgToPng } from "../utils/svgToPng";
+import { parseSvgMarkup } from "../utils/svgParse";
 import { Lightbox } from "./Lightbox";
 import { hasRenderableMermaidCode } from "../utils/markdown";
 
@@ -109,10 +110,10 @@ export function MermaidBlock({
         const { svg } = await mermaid.render(id, code);
         if (cancelled) return;
         if (ref.current) {
-          // Use DOMParser instead of innerHTML to prevent XSS
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(svg, "image/svg+xml");
-          const svgEl = doc.querySelector("svg");
+          // Parse via DOMParser (never executes scripts) instead of innerHTML.
+          // Uses the HTML parser, not image/svg+xml, so Mermaid's <br> line
+          // breaks in labels don't abort the parse and drop half the diagram.
+          const svgEl = parseSvgMarkup(svg);
           if (svgEl) {
             svgEl.style.maxWidth = "100%";
             svgEl.style.height = "auto";
