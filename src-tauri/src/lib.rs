@@ -155,8 +155,13 @@ fn open_path(path: String) -> Result<(), String> {
 /// Write an exported PDF to a user-chosen location. The save dialog is shown
 /// from Rust so the destination is picked by the user, never supplied by the
 /// webview — this lets the fs plugin drop its blanket `$HOME/**` write grant.
+///
+/// `async` + `spawn_blocking` is required: a synchronous command runs on the
+/// main thread, and `blocking_save_file` there deadlocks (the native dialog it
+/// dispatches also needs the main thread). Running it on a blocking pool thread
+/// leaves the main thread free to drive the dialog.
 #[tauri::command]
-fn export_pdf(
+async fn export_pdf(
   app: tauri::AppHandle,
   default_name: String,
   contents_base64: String,
@@ -168,19 +173,23 @@ fn export_pdf(
     .decode(contents_base64.as_bytes())
     .map_err(|e| format!("Invalid PDF data: {}", e))?;
 
-  let picked = app
-    .dialog()
-    .file()
-    .add_filter("PDF", &["pdf"])
-    .set_file_name(&default_name)
-    .blocking_save_file();
+  tauri::async_runtime::spawn_blocking(move || {
+    let picked = app
+      .dialog()
+      .file()
+      .add_filter("PDF", &["pdf"])
+      .set_file_name(&default_name)
+      .blocking_save_file();
 
-  let Some(file_path) = picked else {
-    return Ok(false); // user cancelled
-  };
-  let path = file_path.into_path().map_err(|e| e.to_string())?;
-  std::fs::write(&path, &bytes).map_err(|e| format!("Failed to write PDF: {}", e))?;
-  Ok(true)
+    let Some(file_path) = picked else {
+      return Ok(false); // user cancelled
+    };
+    let path = file_path.into_path().map_err(|e| e.to_string())?;
+    std::fs::write(&path, &bytes).map_err(|e| format!("Failed to write PDF: {}", e))?;
+    Ok(true)
+  })
+  .await
+  .map_err(|e| e.to_string())?
 }
 
 /// Resolve, validate, and read an image file atomically.
