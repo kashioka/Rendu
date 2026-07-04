@@ -6,6 +6,11 @@ on:
   push:
     branches: [main]
 
+# Least privilege: CI runs untrusted dependency code (npm ci, build scripts) and
+# needs only read access. Without this the GITHUB_TOKEN gets the repo default.
+permissions:
+  contents: read
+
 jobs:
   security-audit:
     name: Security audit (npm + cargo)

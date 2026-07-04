@@ -192,15 +192,23 @@ async fn export_pdf(
   .map_err(|e| e.to_string())?
 }
 
-/// Resolve, validate, and read an image file atomically.
-/// Returns base64-encoded file contents if the path is within the base directory.
-#[tauri::command]
-fn read_safe_image(base_dir: String, src: String) -> Result<String, String> {
-  let base = std::path::Path::new(&base_dir);
-  let candidate = if std::path::Path::new(&src).is_absolute() {
-    std::path::PathBuf::from(&src)
+/// Resolve, validate, and read an image referenced from a document, enforcing
+/// two boundaries: the file must sit within `base_dir` (the document's own
+/// directory) AND within `allowed_root`. The second boundary matters because
+/// `base_dir` is supplied by the webview — a compromised renderer could pass
+/// `base_dir = "/"` to read `/etc/passwd`, other users' homes, SSH keys, etc.
+/// `allowed_root` is derived by the command wrapper from the OS home directory,
+/// which the webview cannot influence. Returns base64-encoded file contents.
+fn read_image_within(
+  base_dir: &str,
+  src: &str,
+  allowed_root: &std::path::Path,
+) -> Result<String, String> {
+  let base = std::path::Path::new(base_dir);
+  let candidate = if std::path::Path::new(src).is_absolute() {
+    std::path::PathBuf::from(src)
   } else {
-    base.join(&src)
+    base.join(src)
   };
 
   let canonical = candidate
@@ -212,6 +220,13 @@ fn read_safe_image(base_dir: String, src: String) -> Result<String, String> {
 
   if !canonical.starts_with(&canonical_base) {
     return Err("Path is outside the document directory".to_string());
+  }
+
+  let canonical_root = allowed_root
+    .canonicalize()
+    .unwrap_or_else(|_| allowed_root.to_path_buf());
+  if !canonical.starts_with(&canonical_root) {
+    return Err("Path is outside the allowed directory".to_string());
   }
 
   // Open without following symlinks to prevent TOCTOU after canonicalize.
@@ -246,6 +261,23 @@ fn read_safe_image(base_dir: String, src: String) -> Result<String, String> {
   file.read_to_end(&mut bytes)
     .map_err(|e| format!("Cannot read file: {}", e))?;
   Ok(base64::engine::general_purpose::STANDARD.encode(&bytes))
+}
+
+/// Read a document-referenced image, sandboxed to the user's home directory.
+/// See `read_image_within` for why the home boundary is enforced on top of the
+/// webview-supplied `base_dir`.
+#[tauri::command]
+fn read_safe_image(
+  app: tauri::AppHandle,
+  base_dir: String,
+  src: String,
+) -> Result<String, String> {
+  use tauri::Manager;
+  let home = app
+    .path()
+    .home_dir()
+    .map_err(|e| format!("Cannot resolve home directory: {}", e))?;
+  read_image_within(&base_dir, &src, &home)
 }
 
 /// Check if a path looks like a markdown file (by extension).
@@ -875,15 +907,20 @@ mod tests {
     f.write_all(contents).unwrap();
   }
 
+  // `read_image_within` is the testable core; the command wrapper only injects
+  // the OS home dir as `allowed_root`. Tests pass the tempdir root as the
+  // allowed root so the home boundary is satisfied for the in-bounds cases.
+
   #[test]
   fn read_safe_image_reads_file_within_base_dir() {
     let dir = tempdir().unwrap();
     let img = dir.path().join("img.png");
     write_file(&img, b"PNG_BYTES_HERE");
 
-    let result = read_safe_image(
-      dir.path().to_string_lossy().to_string(),
-      "img.png".to_string(),
+    let result = read_image_within(
+      &dir.path().to_string_lossy(),
+      "img.png",
+      dir.path(),
     );
     assert!(result.is_ok(), "expected Ok, got {:?}", result);
     let encoded = result.unwrap();
@@ -900,9 +937,10 @@ mod tests {
     let img = dir.path().join("assets").join("nested.png");
     write_file(&img, b"NESTED_PNG");
 
-    let result = read_safe_image(
-      dir.path().to_string_lossy().to_string(),
-      "assets/nested.png".to_string(),
+    let result = read_image_within(
+      &dir.path().to_string_lossy(),
+      "assets/nested.png",
+      dir.path(),
     );
     assert!(result.is_ok());
   }
@@ -916,10 +954,7 @@ mod tests {
     let outside = dir.path().join("outside.png");
     write_file(&outside, b"SHOULD_NOT_READ");
 
-    let result = read_safe_image(
-      inner.to_string_lossy().to_string(),
-      "../outside.png".to_string(),
-    );
+    let result = read_image_within(&inner.to_string_lossy(), "../outside.png", dir.path());
     assert!(result.is_err(), "expected Err for path traversal");
     assert!(result.unwrap_err().contains("outside the document directory"));
   }
@@ -931,31 +966,46 @@ mod tests {
     let outside = elsewhere.path().join("secret.png");
     write_file(&outside, b"SECRET");
 
-    let result = read_safe_image(
-      base.path().to_string_lossy().to_string(),
-      outside.to_string_lossy().to_string(),
+    let result = read_image_within(
+      &base.path().to_string_lossy(),
+      &outside.to_string_lossy(),
+      base.path(),
     );
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("outside the document directory"));
   }
 
   #[test]
+  fn read_safe_image_rejects_path_outside_allowed_root() {
+    // The image IS within its base_dir, but base_dir is outside the allowed
+    // root (home). A compromised webview passing base_dir="/some/other/dir"
+    // must not be able to read files there. Simulates that with two tempdirs.
+    let home = tempdir().unwrap();
+    let outside = tempdir().unwrap();
+    let img = outside.path().join("secret.png");
+    write_file(&img, b"SECRET");
+
+    let result = read_image_within(
+      &outside.path().to_string_lossy(),
+      "secret.png",
+      home.path(),
+    );
+    assert!(result.is_err(), "expected Err, got {:?}", result);
+    assert!(result.unwrap_err().contains("outside the allowed directory"));
+  }
+
+  #[test]
   fn read_safe_image_returns_error_for_missing_file() {
     let dir = tempdir().unwrap();
-    let result = read_safe_image(
-      dir.path().to_string_lossy().to_string(),
-      "does-not-exist.png".to_string(),
-    );
+    let result = read_image_within(&dir.path().to_string_lossy(), "does-not-exist.png", dir.path());
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("Cannot resolve path"));
   }
 
   #[test]
   fn read_safe_image_returns_error_for_missing_base_dir() {
-    let result = read_safe_image(
-      "/nonexistent/base/dir".to_string(),
-      "img.png".to_string(),
-    );
+    let dir = tempdir().unwrap();
+    let result = read_image_within("/nonexistent/base/dir", "img.png", dir.path());
     assert!(result.is_err());
   }
 
@@ -1071,10 +1121,7 @@ mod tests {
     let link = base.path().join("link.png");
     symlink(&target, &link).unwrap();
 
-    let result = read_safe_image(
-      base.path().to_string_lossy().to_string(),
-      "link.png".to_string(),
-    );
+    let result = read_image_within(&base.path().to_string_lossy(), "link.png", base.path());
     // canonicalize() resolves symlinks, so the canonical path will be outside base_dir
     // and the starts_with() check should reject it.
     assert!(result.is_err(), "symlink to outside should be rejected, got {:?}", result);
