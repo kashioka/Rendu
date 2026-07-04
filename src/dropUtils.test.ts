@@ -8,7 +8,22 @@ import {
   extractDroppedPaths,
   resolveRelativePath,
   classifyLink,
+  isPassiveOpenTarget,
 } from './dropUtils';
+
+describe('isPassiveOpenTarget', () => {
+  it('accepts known passive document/media types', () => {
+    for (const p of ['/x/report.pdf', '/x/IMG.PNG', '/x/data.csv', '/x/slides.pptx', '/x/a.txt']) {
+      expect(isPassiveOpenTarget(p)).toBe(true);
+    }
+  });
+
+  it('rejects executables, unknown types, and extensionless files (→ confirm)', () => {
+    for (const p of ['/x/evil.command', '/x/Foo.app', 'C:/x/run.exe', '/x/archive.zip', '/x/Makefile', '/x/.bashrc']) {
+      expect(isPassiveOpenTarget(p)).toBe(false);
+    }
+  });
+});
 
 describe('isMarkdownFile', () => {
   it('accepts .md extension', () => {
@@ -298,6 +313,19 @@ describe('classifyLink', () => {
 
   it('returns null for an empty href', () => {
     expect(classifyLink(base, '')).toBe(null);
+  });
+
+  it('returns null for non-web URL schemes instead of resolving them as paths', () => {
+    // Security: file:/data:/javascript:/custom schemes must not fall through to
+    // relative-path resolution and reach the OS opener as a bogus "open" target.
+    expect(classifyLink(base, 'file:///etc/passwd')).toBe(null);
+    expect(classifyLink(base, 'javascript:alert(1)')).toBe(null);
+    expect(classifyLink(base, 'data:text/html,<script>')).toBe(null);
+    expect(classifyLink(base, 'vscode://file/x')).toBe(null);
+  });
+
+  it('still treats a Windows drive-letter path as a local file, not a scheme', () => {
+    expect(classifyLink('C:\\docs', 'notes.pdf')).toEqual({ kind: 'open', path: 'C:\\docs\\notes.pdf' });
   });
 
   it('treats a link to the current file as an in-document anchor', () => {

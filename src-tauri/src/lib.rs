@@ -102,9 +102,94 @@ fn get_initial_file(state: tauri::State<'_, InitialFile>) -> Option<String> {
   state.0.lock().take()
 }
 
+/// Only web and mail links may be handed to the OS. A compromised webview must
+/// not be able to launch `file://` (local executables), `smb://` (NTLM
+/// credential leak on Windows), or custom app schemes through this command.
+fn is_allowed_external_url(url: &str) -> bool {
+  let lower = url.trim_start().to_ascii_lowercase();
+  lower.starts_with("http://") || lower.starts_with("https://") || lower.starts_with("mailto:")
+}
+
 #[tauri::command]
-fn open_external_url(url: String) {
-  let _ = open::that(&url);
+fn open_external_url(url: String) -> Result<(), String> {
+  if !is_allowed_external_url(&url) {
+    return Err("Refusing to open a non-web URL".into());
+  }
+  open::that(&url).map_err(|e| e.to_string())
+}
+
+/// File extensions the OS default handler would *execute* rather than display.
+/// Handing any of these to `open` is arbitrary code execution, so `open_path`
+/// refuses them outright even though the frontend also gates the call — this is
+/// the backstop against a compromised webview invoking the command directly.
+const EXECUTABLE_EXTENSIONS: &[&str] = &[
+  // macOS (executables, scripts, and installer bundles)
+  "app", "command", "tool", "terminal", "workflow", "action", "scpt", "scptd",
+  "applescript", "osascript", "prefpane", "pkg", "mpkg",
+  // Windows (executables, scripts, and installer formats)
+  "exe", "bat", "cmd", "com", "scr", "msi", "msp", "ps1", "vbs", "vbe", "wsf",
+  "wsh", "hta", "jar", "lnk", "reg", "cpl", "pif", "msc",
+  "appinstaller", "msix", "msixbundle", "appx", "appxbundle", "msu",
+  "application", "appref-ms",
+];
+
+fn is_executable_extension(path: &str) -> bool {
+  std::path::Path::new(path)
+    .extension()
+    .and_then(|e| e.to_str())
+    .map(|e| EXECUTABLE_EXTENSIONS.contains(&e.to_ascii_lowercase().as_str()))
+    .unwrap_or(false)
+}
+
+/// Open a local (non-Markdown) file referenced from a document with the OS
+/// default app. Executable types are rejected — a document viewer must never
+/// turn a link click into code execution.
+#[tauri::command]
+fn open_path(path: String) -> Result<(), String> {
+  if is_executable_extension(&path) {
+    return Err("Refusing to open an executable file".into());
+  }
+  open::that(&path).map_err(|e| e.to_string())
+}
+
+/// Write an exported PDF to a user-chosen location. The save dialog is shown
+/// from Rust so the destination is picked by the user, never supplied by the
+/// webview — this lets the fs plugin drop its blanket `$HOME/**` write grant.
+///
+/// `async` + `spawn_blocking` is required: a synchronous command runs on the
+/// main thread, and `blocking_save_file` there deadlocks (the native dialog it
+/// dispatches also needs the main thread). Running it on a blocking pool thread
+/// leaves the main thread free to drive the dialog.
+#[tauri::command]
+async fn export_pdf(
+  app: tauri::AppHandle,
+  default_name: String,
+  contents_base64: String,
+) -> Result<bool, String> {
+  use base64::Engine;
+  use tauri_plugin_dialog::DialogExt;
+
+  let bytes = base64::engine::general_purpose::STANDARD
+    .decode(contents_base64.as_bytes())
+    .map_err(|e| format!("Invalid PDF data: {}", e))?;
+
+  tauri::async_runtime::spawn_blocking(move || {
+    let picked = app
+      .dialog()
+      .file()
+      .add_filter("PDF", &["pdf"])
+      .set_file_name(&default_name)
+      .blocking_save_file();
+
+    let Some(file_path) = picked else {
+      return Ok(false); // user cancelled
+    };
+    let path = file_path.into_path().map_err(|e| e.to_string())?;
+    std::fs::write(&path, &bytes).map_err(|e| format!("Failed to write PDF: {}", e))?;
+    Ok(true)
+  })
+  .await
+  .map_err(|e| e.to_string())?
 }
 
 /// Resolve, validate, and read an image file atomically.
@@ -425,7 +510,7 @@ pub fn run() {
     .plugin(tauri_plugin_dialog::init())
     .manage(InitialFile::default())
     .manage(WatchState::default())
-    .invoke_handler(tauri::generate_handler![check_for_updates, get_initial_file, open_external_url, read_safe_image, atomic_write, start_watching, stop_watching]);
+    .invoke_handler(tauri::generate_handler![check_for_updates, get_initial_file, open_external_url, open_path, export_pdf, read_safe_image, atomic_write, start_watching, stop_watching]);
 
   #[cfg(feature = "e2e-testing")]
   {
@@ -590,6 +675,51 @@ mod tests {
     // Linux ships .deb/.rpm/.AppImage — no single installer to link to.
     assert_eq!(os_download_url("linux", "v0.9.0", "0.9.0"), None);
     assert_eq!(os_download_url("freebsd", "v0.9.0", "0.9.0"), None);
+  }
+
+  // ------------------------------------------------------------------
+  // is_allowed_external_url
+  // ------------------------------------------------------------------
+
+  #[test]
+  fn external_url_allows_only_web_and_mail() {
+    assert!(is_allowed_external_url("https://example.com"));
+    assert!(is_allowed_external_url("http://example.com/path"));
+    assert!(is_allowed_external_url("HTTPS://Example.com")); // case-insensitive
+    assert!(is_allowed_external_url("mailto:a@b.com"));
+    assert!(is_allowed_external_url("  https://example.com")); // leading space
+  }
+
+  #[test]
+  fn external_url_rejects_dangerous_schemes() {
+    assert!(!is_allowed_external_url("file:///etc/passwd"));
+    assert!(!is_allowed_external_url("smb://attacker/share"));
+    assert!(!is_allowed_external_url("javascript:alert(1)"));
+    assert!(!is_allowed_external_url("vscode://x"));
+    assert!(!is_allowed_external_url("/Applications/Calculator.app"));
+    assert!(!is_allowed_external_url(""));
+  }
+
+  // ------------------------------------------------------------------
+  // is_executable_extension
+  // ------------------------------------------------------------------
+
+  #[test]
+  fn executable_extension_flags_os_executable_types() {
+    for p in [
+      "/x/evil.command", "/x/Foo.app", "C:/x/evil.exe", "C:/x/evil.bat",
+      "/x/script.scpt", "/x/thing.workflow", "/x/EVIL.EXE",
+      "/x/installer.pkg", "C:/x/setup.msix", "C:/x/app.appinstaller",
+    ] {
+      assert!(is_executable_extension(p), "should flag {p}");
+    }
+  }
+
+  #[test]
+  fn executable_extension_allows_passive_documents() {
+    for p in ["/x/report.pdf", "/x/img.png", "/x/notes.txt", "/x/data.csv", "/x/no_ext"] {
+      assert!(!is_executable_extension(p), "should allow {p}");
+    }
   }
 
   // ------------------------------------------------------------------
