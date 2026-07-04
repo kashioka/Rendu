@@ -53,8 +53,15 @@ export function MermaidBlock({
       }
       if (cancelled) return;
 
-      // Skip redundant mermaid.initialize when only code changed
-      const settingsKey = `${settings.mermaidTheme}|${settings.mermaidBg}|${settings.mermaidPrimaryColor}|${settings.mermaidLineColor}`;
+      // Skip redundant mermaid.initialize when only code changed. Must cover
+      // EVERY mermaid* field the themeVariables below read — keying on just a
+      // few meant editing e.g. Note/Actor colors left the diagram on the stale
+      // theme until an unrelated color was also touched.
+      const settingsKey = Object.keys(settings)
+        .filter((k) => k.startsWith("mermaid"))
+        .sort()
+        .map((k) => `${k}:${settings[k as keyof ThemeSettings]}`)
+        .join("|");
       if (settingsKey !== prevSettingsKeyRef.current) {
         prevSettingsKeyRef.current = settingsKey;
         mermaid.initialize({

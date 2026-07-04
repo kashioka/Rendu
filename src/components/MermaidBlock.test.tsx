@@ -74,6 +74,25 @@ describe('MermaidBlock', () => {
     expect(initArg.theme).toBe(darkPreset.mermaidTheme);
   });
 
+  it('re-initializes when a theme color outside the old key changes (e.g. note bg)', async () => {
+    // Regression: settingsKey used to hash only 4 of the ~11 mermaid* fields,
+    // so editing Note/Actor colors left the diagram on the stale theme.
+    (mermaid.render as ReturnType<typeof vi.fn>).mockResolvedValue({ svg: '<svg></svg>' });
+    const Wrapper = ({ settings }: { settings: typeof darkPreset }) => (
+      <LocaleProvider locale="en">
+        <MermaidBlock code="graph TD; A-->B;" settings={settings} />
+      </LocaleProvider>
+    );
+    const { rerender } = render(<Wrapper settings={darkPreset} />);
+    await waitFor(() => {
+      expect(mermaid.initialize).toHaveBeenCalledTimes(1);
+    });
+    rerender(<Wrapper settings={{ ...darkPreset, mermaidNoteBg: '#123456' }} />);
+    await waitFor(() => {
+      expect(mermaid.initialize).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it('clears the diagram when code transitions from non-empty to empty', async () => {
     (mermaid.render as ReturnType<typeof vi.fn>).mockResolvedValue({
       svg: '<svg xmlns="http://www.w3.org/2000/svg" class="rendered"><text>X</text></svg>',
