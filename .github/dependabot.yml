@@ -11,8 +11,15 @@ updates:
       timezone: Asia/Tokyo
     open-pull-requests-limit: 5
     groups:
-      # パッチ更新はまとめて 1 PR にしてレビュー負荷を下げる
-      npm-patch:
+      # dev 依存(ビルドツール/lint/テスト系)は minor+patch をまとめて 1 PR に。
+      # 本体に載らないためリスクが低く、CI green なら丸ごとマージできる。
+      npm-dev:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+      # 本番依存(mermaid/react-markdown 等)は patch のみグループ化。
+      # minor/major は個別 PR にして目視レビュー対象を絞る。
+      npm-prod-patch:
+        dependency-type: "production"
         update-types: ["patch"]
     ignore:
       # @tauri-apps/* は src-tauri 側の tauri crate とバージョン同期が必要
@@ -30,8 +37,9 @@ updates:
       timezone: Asia/Tokyo
     open-pull-requests-limit: 5
     groups:
-      cargo-patch:
-        update-types: ["patch"]
+      # cargo は minor+patch をまとめて 1 PR に(tauri 本体は下の ignore で除外済)。
+      cargo-minor-patch:
+        update-types: ["minor", "patch"]
     ignore:
       # tauri 本体の minor/major は JS 側 @tauri-apps/* との同期が必要なため手動
       - dependency-name: "tauri"
@@ -47,3 +55,8 @@ updates:
       time: "09:00"
       timezone: Asia/Tokyo
     open-pull-requests-limit: 3
+    groups:
+      # Actions の minor+patch はまとめる。major(checkout v6→v7, tauri-action v0→v1 等)は
+      # 個別 PR のまま残し、リリースへの影響を1件ずつ確認する。
+      actions-minor-patch:
+        update-types: ["minor", "patch"]
