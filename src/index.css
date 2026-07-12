@@ -77,9 +77,49 @@ html, body, #root {
   color: var(--text-color, #e4e4e7);
 }
 
-.sidebar {
-  background-color: var(--sidebar-bg, #18181b);
+/* Wrapper animates width for open/close; border-right lives here (not on
+   .sidebar) so it isn't clipped at the overflow boundary. */
+.sidebar-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+  visibility: visible;
   border-right: 1px solid var(--border-color, #3f3f46);
+  transition: width 0.18s ease;
+}
+/* When collapsed: drop the border, and take the subtree out of tab/AX order.
+   `inert` covers browsers that support it; `visibility: hidden` is the robust
+   fallback (honored everywhere, incl. older WebKitGTK where `inert` is ignored).
+   Visibility is delayed until the width animation ends so the collapse still animates. */
+.sidebar-wrapper[inert] {
+  visibility: hidden;
+  border-right-width: 0;
+  transition: width 0.18s ease, visibility 0s 0.18s;
+}
+/* No transition while dragging so the width tracks the cursor without lag
+   (declared last so it wins over the [inert] transition during a drag-collapse). */
+.sidebar-wrapper.dragging {
+  transition: none;
+}
+
+.sidebar {
+  height: 100%;
+  flex-shrink: 0;
+  background-color: var(--sidebar-bg, #18181b);
+}
+
+/* Horizontal drag handle between sidebar and main content. */
+.sidebar-resize-handle {
+  width: 5px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  background: transparent;
+  transition: background 0.12s;
+}
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle.dragging {
+  background: var(--md-link, #6366f1);
 }
 
 .sidebar-header {

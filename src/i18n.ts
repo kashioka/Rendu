@@ -11,6 +11,7 @@ export interface Translations {
   "sidebar.settings.title": string;
   "sidebar.emptyFolder": string;
   "sidebar.outline": string;
+  "sidebar.resize": string;
 
   // Navigation
   "nav.back": string;
@@ -145,6 +146,7 @@ const en: Translations = {
   "sidebar.settings.title": "Settings",
   "sidebar.emptyFolder": "Select a folder to get started",
   "sidebar.outline": "Outline",
+  "sidebar.resize": "Drag to resize",
 
   "nav.back": "Back",
   "nav.forward": "Forward",
@@ -267,6 +269,7 @@ const ja: Translations = {
   "sidebar.settings.title": "設定",
   "sidebar.emptyFolder": "フォルダを選択してください",
   "sidebar.outline": "Outline",
+  "sidebar.resize": "ドラッグで幅を調整",
 
   "nav.back": "戻る",
   "nav.forward": "進む",
@@ -389,6 +392,7 @@ const zhCN: Translations = {
   "sidebar.settings.title": "设置",
   "sidebar.emptyFolder": "请选择一个文件夹开始",
   "sidebar.outline": "大纲",
+  "sidebar.resize": "拖动调整宽度",
 
   "nav.back": "后退",
   "nav.forward": "前进",

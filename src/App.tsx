@@ -18,6 +18,13 @@ import { useRecentFiles } from "./useRecentFiles";
 import { RecentList } from "./components/RecentList";
 import { restoreOnStartup, saveSession } from "./sessionRestore";
 
+// Sidebar width bounds (px). Not persisted — resets to default each launch.
+const SIDEBAR_MIN = 120;
+const SIDEBAR_MAX = 480;
+const SIDEBAR_DEFAULT = 288;
+// Dragging narrower than this snaps the sidebar closed (VS Code-style).
+const SIDEBAR_COLLAPSE = 90;
+
 function App() {
   const { settings, setSettings, applyPreset, resetPreset } = useSettings();
 
@@ -49,6 +56,8 @@ function AppInner({
   const [showSettings, setShowSettings] = useState(false);
   const [showSyntaxHelp, setShowSyntaxHelp] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT);
+  const [isResizing, setIsResizing] = useState(false);
   const [headings, setHeadings] = useState<HeadingItem[]>([]);
   const [splitRatio, setSplitRatio] = useState(0.5);
   const [showDropHint, setShowDropHint] = useState(false);
@@ -130,6 +139,9 @@ function AppInner({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const pathRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
+  // Container of the sidebar + main horizontal flex row; used as the origin
+  // for computing the dragged sidebar width.
+  const bodyRowRef = useRef<HTMLDivElement>(null);
 
   // Scroll folder path to the right end so the folder name is visible
   useEffect(() => {
@@ -158,6 +170,52 @@ function AppInner({
     };
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
+  }, []);
+
+  // Horizontal drag to resize the sidebar width. Distinct from the vertical
+  // split above (which resizes FileTree vs Outline heights inside the sidebar).
+  const handleHorizontalResize = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    const prevCursor = document.body.style.cursor;
+    const prevSelect = document.body.style.userSelect;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    const onMouseMove = (ev: MouseEvent) => {
+      const row = bodyRowRef.current;
+      if (!row) return;
+      const left = row.getBoundingClientRect().left;
+      const raw = ev.clientX - left;
+      if (raw < SIDEBAR_COLLAPSE) {
+        // Dragged too narrow → snap closed. Keep the last width so reopening restores it.
+        setSidebarVisible(false);
+        return;
+      }
+      setSidebarVisible(true);
+      setSidebarWidth(Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, raw)));
+    };
+    const onMouseUp = () => {
+      setIsResizing(false);
+      document.body.style.cursor = prevCursor;
+      document.body.style.userSelect = prevSelect;
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  }, []);
+
+  // Cmd/Ctrl+B toggles the sidebar. Global on purpose (works while typing in
+  // the search field), so no INPUT/TEXTAREA guard like the nav shortcuts above.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        setSidebarVisible((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
   // Listen for native menu events & file open requests
@@ -431,10 +489,14 @@ function AppInner({
         </div>
       )}
 
-      <div className="flex flex-1 min-h-0">
-      {/* Sidebar */}
-      {sidebarVisible && (
-      <div ref={sidebarRef} className="sidebar w-72 flex-shrink-0 flex flex-col">
+      <div ref={bodyRowRef} className="flex flex-1 min-h-0">
+      {/* Sidebar (always mounted so open/close can animate; inert + width 0 when hidden) */}
+      <div
+        className={`sidebar-wrapper${isResizing ? " dragging" : ""}`}
+        style={{ width: sidebarVisible ? sidebarWidth : 0 }}
+        inert={!sidebarVisible}
+      >
+      <div ref={sidebarRef} className="sidebar flex flex-col" style={{ width: sidebarWidth }}>
         <div className="sidebar-header p-3 flex gap-1.5">
           <button onClick={handleOpenFolder} className="btn flex-1 px-2 py-1.5 rounded text-xs" title={t("sidebar.folder.title")}>
             {t("sidebar.folder")}
@@ -492,6 +554,15 @@ function AppInner({
           <OutlinePanel headings={headings} onJump={(id) => viewerRef.current?.scrollToHeading(id)} />
         </div>
       </div>
+      </div>
+
+      {/* Horizontal resize handle (drag to change sidebar width) */}
+      {sidebarVisible && (
+        <div
+          className={`sidebar-resize-handle${isResizing ? " dragging" : ""}`}
+          onMouseDown={handleHorizontalResize}
+          title={t("sidebar.resize")}
+        />
       )}
 
       {/* Main content */}
