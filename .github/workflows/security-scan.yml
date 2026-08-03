@@ -32,7 +32,7 @@ jobs:
           npm audit --audit-level=moderate 2>&1 | tee npm-audit.txt
 
       - name: Install cargo-audit
-        uses: taiki-e/install-action@v2
+        uses: taiki-e/install-action@v2.85.5
         with:
           tool: cargo-audit
 
