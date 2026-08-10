@@ -11,4 +11,14 @@
 ignore = [
     "RUSTSEC-2026-0194",
     "RUSTSEC-2026-0195",
+
+    # rkyv 0.7.46 の archive 検証不足による out-of-bounds read (修正は 0.8.17 以上)。
+    # rkyv は rust_decimal の optional feature で、byte-unit → tauri-plugin-log の
+    # 経路では有効化されていない (`cargo tree -i rkyv --target all` は nothing を返す)
+    # = バイナリに一切コンパイルされないため実リスクなし。
+    # cargo audit は Cargo.lock を走査するので feature off の optional dep も拾う。
+    # rust_decimal 1.42.1 は rkyv 0.8 系を追加済みだが legacy 用の 0.7 optional dep を
+    # 残しているため lock からは消えない。0.7 が完全に外れたら ignore を削除する。
+    # トラッキング: https://github.com/kashioka/Rendu/issues/138
+    "RUSTSEC-2026-0235",
 ]
