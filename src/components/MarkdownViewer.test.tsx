@@ -185,8 +185,12 @@ describe('MarkdownViewer', () => {
     renderWithLocale(
       <MarkdownViewer ref={handle} filePath="/t.md" settings={darkPreset} />
     );
+    // Wait for the id, not just the text: the heading ids are assigned in an
+    // effect that runs after the markdown paints, and scrollToHeading is a
+    // no-op until then. Waiting on the text alone let a slow CI runner call it
+    // too early, so this test failed intermittently.
     await waitFor(() => {
-      expect(screen.getByText('Section A')).toBeInTheDocument();
+      expect(document.getElementById('section-a')).not.toBeNull();
     });
     act(() => handle.current?.scrollToHeading('section-a'));
     expect(scrollToSpy).toHaveBeenCalled();
