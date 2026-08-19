@@ -568,6 +568,21 @@ describe('MarkdownViewer search jump (#128)', () => {
     expect(flashed?.textContent).toContain('discount_amount');
   });
 
+  it('flashes the first body row alone, not the whole tbody', async () => {
+    // tbody starts on the same line as its first row, so picking the outermost
+    // element on a tie lit up every row of the table.
+    (readTextFile as Mock).mockResolvedValue(TABLE_DOC);
+    const { container } = renderWithLocale(
+      <MarkdownViewer filePath="/t.md" settings={darkPreset} />
+    );
+    const options = await search('Number');
+    await userEvent.click(options[0]);
+    const flashed = container.querySelector('.search-hit-flash');
+    expect(flashed?.tagName).toBe('TR');
+    expect(flashed?.getAttribute('data-source-line')).toBe('5');
+    expect(flashed?.textContent).not.toContain('discount_amount');
+  });
+
   it('flashes only one hit when results are clicked in succession', async () => {
     (readTextFile as Mock).mockResolvedValue(TABLE_DOC);
     const { container } = renderWithLocale(
