@@ -1023,3 +1023,12 @@ button, a, input, select, textarea {
   color: var(--text-muted, #71717a);
   border-bottom: 1px solid var(--border-color, #3f3f46);
 }
+
+/* Search hit flash. Rows need the cells painted too: td/th carry their own
+   background, which would otherwise hide the highlight on the tr. */
+.search-hit-flash,
+.search-hit-flash > td,
+.search-hit-flash > th {
+  background-color: rgba(250, 204, 21, 0.4);
+  transition: background-color 0.2s ease;
+}

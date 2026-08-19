@@ -528,3 +528,91 @@ describe('MarkdownViewer', () => {
     expect(container.querySelector('sup a')).not.toBeNull();
   });
 });
+
+describe('MarkdownViewer search jump (#128)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const TABLE_DOC = [
+    '# Doc',              // L1
+    '',                   // L2
+    '| name | type |',    // L3
+    '| --- | --- |',      // L4
+    '| total_order_amount | Number |',   // L5
+    '| discount_amount | Number |',      // L6
+    '| final_payment_amount | Number |', // L7
+  ].join('\n');
+
+  async function search(query: string) {
+    const input = await screen.findByPlaceholderText('Search...');
+    await userEvent.type(input, query);
+    return screen.findAllByRole('option');
+  }
+
+  it('jumps to the clicked row, not the first match, on adjacent table rows', async () => {
+    (readTextFile as Mock).mockResolvedValue(TABLE_DOC);
+    const { container } = renderWithLocale(
+      <MarkdownViewer filePath="/t.md" settings={darkPreset} />
+    );
+    const options = await search('Number');
+    expect(options).toHaveLength(3);
+
+    // Second result = L6 (discount_amount). The old ordinal matching sent this
+    // to the first DOM match instead.
+    await userEvent.click(options[1]);
+    const flashed = container.querySelector('.search-hit-flash');
+    expect(flashed).not.toBeNull();
+    expect(flashed?.tagName).toBe('TR');
+    expect(flashed?.getAttribute('data-source-line')).toBe('6');
+    expect(flashed?.textContent).toContain('discount_amount');
+  });
+
+  it('flashes the first body row alone, not the whole tbody', async () => {
+    // tbody starts on the same line as its first row, so picking the outermost
+    // element on a tie lit up every row of the table.
+    (readTextFile as Mock).mockResolvedValue(TABLE_DOC);
+    const { container } = renderWithLocale(
+      <MarkdownViewer filePath="/t.md" settings={darkPreset} />
+    );
+    const options = await search('Number');
+    await userEvent.click(options[0]);
+    const flashed = container.querySelector('.search-hit-flash');
+    expect(flashed?.tagName).toBe('TR');
+    expect(flashed?.getAttribute('data-source-line')).toBe('5');
+    expect(flashed?.textContent).not.toContain('discount_amount');
+  });
+
+  it('flashes only one hit when results are clicked in succession', async () => {
+    (readTextFile as Mock).mockResolvedValue(TABLE_DOC);
+    const { container } = renderWithLocale(
+      <MarkdownViewer filePath="/t.md" settings={darkPreset} />
+    );
+    const options = await search('Number');
+    await userEvent.click(options[0]);
+    // Selecting a result closes the list; refocusing reopens it.
+    await userEvent.click(screen.getByPlaceholderText('Search...'));
+    const reopened = await screen.findAllByRole('option');
+    await userEvent.click(reopened[2]);
+    const flashed = container.querySelectorAll('.search-hit-flash');
+    expect(flashed).toHaveLength(1);
+    expect(flashed[0].getAttribute('data-source-line')).toBe('7');
+  });
+
+  it('falls back to the enclosing block for a line inside a paragraph', async () => {
+    (readTextFile as Mock).mockResolvedValue(
+      '# Doc\n\nfirst prose line\nsecond prose line with needle here\n'
+    );
+    const { container } = renderWithLocale(
+      <MarkdownViewer filePath="/t.md" settings={darkPreset} />
+    );
+    const options = await search('needle');
+    expect(options).toHaveLength(1);
+    await userEvent.click(options[0]);
+    // The paragraph starts on L3 but the hit is on L4: the whole <p> is the
+    // closest rendered block.
+    const flashed = container.querySelector('.search-hit-flash');
+    expect(flashed?.tagName).toBe('P');
+    expect(flashed?.getAttribute('data-source-line')).toBe('3');
+  });
+});
