@@ -175,6 +175,8 @@ function AppInner({
   // Horizontal drag to resize the sidebar width. Distinct from the vertical
   // split above (which resizes FileTree vs Outline heights inside the sidebar).
   const handleHorizontalResize = useCallback((e: React.MouseEvent) => {
+    // Primary button only; right/middle drags must not start a resize.
+    if (e.button !== 0) return;
     e.preventDefault();
     setIsResizing(true);
     const prevCursor = document.body.style.cursor;
@@ -561,6 +563,9 @@ function AppInner({
         <div
           className={`sidebar-resize-handle${isResizing ? " dragging" : ""}`}
           onMouseDown={handleHorizontalResize}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label={t("sidebar.resize")}
           title={t("sidebar.resize")}
         />
       )}

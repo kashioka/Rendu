@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 vi.mock('@tauri-apps/api/core', () => import('./test/mocks/tauri-core'));
@@ -179,5 +179,39 @@ describe('App fs-watch integration', () => {
     await waitFor(() => {
       expect((readDir as Mock).mock.calls.length).toBeGreaterThan(initialReadDirs);
     });
+  });
+});
+
+describe('sidebar resize handle', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (invoke as Mock).mockResolvedValue(null);
+    (listen as Mock).mockResolvedValue(() => {});
+    (readDir as Mock).mockResolvedValue([]);
+    (readTextFile as Mock).mockResolvedValue('# Initial content');
+    document.body.style.cursor = '';
+  });
+
+  function getHandle() {
+    return screen.getByRole('separator');
+  }
+
+  it('exposes a vertical separator role', () => {
+    render(<App />);
+    expect(getHandle()).toHaveAttribute('aria-orientation', 'vertical');
+  });
+
+  it('starts resizing on primary button drag', () => {
+    render(<App />);
+    fireEvent.mouseDown(getHandle(), { button: 0 });
+    expect(document.body.style.cursor).toBe('col-resize');
+    fireEvent.mouseUp(document);
+    expect(document.body.style.cursor).toBe('');
+  });
+
+  it('ignores non-primary button drag', () => {
+    render(<App />);
+    fireEvent.mouseDown(getHandle(), { button: 2 });
+    expect(document.body.style.cursor).toBe('');
   });
 });
