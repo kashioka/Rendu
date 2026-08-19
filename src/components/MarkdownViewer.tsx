@@ -10,6 +10,7 @@ import remarkMath from "remark-math";
 import rehypeHighlight from "rehype-highlight";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
+import rehypeSourceLine, { findElementForLine } from "../utils/rehypeSourceLine";
 import type { Components } from "react-markdown";
 import { MermaidBlock } from "./MermaidBlock";
 import { ImageWithOverlay } from "./ImageWithOverlay";
@@ -85,6 +86,9 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const lastMtimeRef = useRef<number | null>(null);
+  // Element currently flashed as the search hit, so a rapid second click
+  // clears the previous highlight instead of leaving two lit up.
+  const flashRef = useRef<{ el: HTMLElement; timer: ReturnType<typeof setTimeout> } | null>(null);
   // Anchor to scroll to after the NEXT file load completes, set when an
   // internal link like "./other.md#section" is clicked (cross-file jump).
   const pendingAnchorRef = useRef<string | null>(null);
@@ -471,36 +475,52 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
     return () => clearTimeout(timer);
   }, [searchQuery, content]);
 
-  const handleSelectResult = (_result: SearchResult, resultIndex: number) => {
+  // Jump to the element rendering the clicked result's source line. Keyed by
+  // line number via data-source-line, never by result ordinal: matching the Nth
+  // source line against the Nth DOM text node drifted apart on adjacent table
+  // rows and sent the top results to the wrong place (#128).
+  const handleSelectResult = (result: SearchResult) => {
     setShowResults(false);
-    if (!markdownBodyRef.current) return;
+    const body = markdownBodyRef.current;
+    const container = scrollContainerRef.current;
+    if (!body || !container) return;
 
-    // Find all matching text nodes in the rendered DOM
-    const walker = document.createTreeWalker(
-      markdownBodyRef.current,
-      NodeFilter.SHOW_TEXT,
-    );
-    const query = normalizeForSearch(searchQuery);
-    const matches: HTMLElement[] = [];
-    let node: Node | null;
-    while ((node = walker.nextNode())) {
-      if (node.textContent && normalizeForSearch(node.textContent).includes(query) && node.parentElement) {
-        matches.push(node.parentElement);
-      }
+    const target = findElementForLine(body, result.lineNum);
+    if (!target) return;
+
+    // Scroll only as far as needed. Centering every hit moved barely at all
+    // between neighbouring rows, and the Math.max(0, ...) clamp pinned hits
+    // near the top of the document to the very top (#128).
+    const targetRect = target.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const top = targetRect.top - containerRect.top + container.scrollTop;
+    const bottom = top + targetRect.height;
+    const margin = 24;
+    const viewTop = container.scrollTop;
+    const viewBottom = viewTop + container.clientHeight;
+    if (top < viewTop + margin) {
+      container.scrollTo({ top: Math.max(0, top - margin), behavior: "smooth" });
+    } else if (bottom > viewBottom - margin) {
+      // min(): for an element taller than the viewport, align its top instead
+      // of scrolling past it.
+      const next = Math.min(top - margin, bottom - container.clientHeight + margin);
+      container.scrollTo({ top: Math.max(0, next), behavior: "smooth" });
     }
 
-    // Jump to the Nth match corresponding to the clicked result
-    const target = matches[resultIndex] ?? matches[0];
-    if (target && scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      const targetRect = target.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-      const offsetTop = targetRect.top - containerRect.top + container.scrollTop;
-      container.scrollTo({ top: Math.max(0, offsetTop - container.clientHeight / 2), behavior: "smooth" });
-      const prev = target.style.backgroundColor;
-      target.style.backgroundColor = "rgba(250, 204, 21, 0.4)";
-      setTimeout(() => { target.style.backgroundColor = prev; }, 2000);
+    // Flash the hit even when no scrolling was needed — that is the only cue
+    // for a result already on screen.
+    if (flashRef.current) {
+      clearTimeout(flashRef.current.timer);
+      flashRef.current.el.classList.remove("search-hit-flash");
     }
+    target.classList.add("search-hit-flash");
+    flashRef.current = {
+      el: target,
+      timer: setTimeout(() => {
+        target.classList.remove("search-hit-flash");
+        flashRef.current = null;
+      }, 2000),
+    };
   };
 
   const sanitizeSchema = useMemo(() => {
@@ -602,8 +622,8 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
         ? [remarkGfm, remarkFrontmatter, [remarkMath, { singleDollarTextMath: false }]]
         : [remarkGfm, remarkFrontmatter]}
       rehypePlugins={rehypeKatex
-        ? [rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeKatex, rehypeHighlight]
-        : [rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeHighlight]}
+        ? [rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeKatex, rehypeHighlight, rehypeSourceLine]
+        : [rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeHighlight, rehypeSourceLine]}
       components={components}
     >
       {content}
@@ -802,8 +822,8 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
                       role="option"
                       tabIndex={0}
                       aria-selected={false}
-                      onClick={() => handleSelectResult(r, i)}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelectResult(r, i); } }}
+                      onClick={() => handleSelectResult(r)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelectResult(r); } }}
                       className="px-3 py-1.5 text-sm cursor-pointer truncate hover:opacity-80"
                       style={{ borderBottom: "1px solid var(--border-color, #3f3f46)" }}
                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--hover-bg, #3f3f4680)")}
