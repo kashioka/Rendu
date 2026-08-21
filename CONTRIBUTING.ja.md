@@ -6,7 +6,7 @@
 
 ## 前提条件
 
-- Node.js 20 以上
+- Node.js 22 以上
 - Rust（最新 stable）— Tauri のビルドに必要: https://www.rust-lang.org/tools/install
 
 ## 開発環境

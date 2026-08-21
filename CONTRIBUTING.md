@@ -6,7 +6,7 @@ We welcome contributions! Please read this guide before submitting a PR or Issue
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 22+
 - Rust (latest stable) — required for Tauri: https://www.rust-lang.org/tools/install
 
 ## Development Setup

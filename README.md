@@ -153,7 +153,7 @@ For contributors or anyone who wants to build Rendu from source.
 
 **Prerequisites**
 
-- [Node.js](https://nodejs.org/) 18+
+- [Node.js](https://nodejs.org/) 22+
 - [Rust](https://rustup.rs/)
 - Xcode Command Line Tools (`xcode-select --install`)
 
