@@ -153,7 +153,7 @@ Rendu をローカルで開発・ビルドしたい開発者・コントリビ�
 
 **前提条件**
 
-- [Node.js](https://nodejs.org/) 18+
+- [Node.js](https://nodejs.org/) 22+
 - [Rust](https://rustup.rs/)
 - Xcode Command Line Tools (`xcode-select --install`)
 

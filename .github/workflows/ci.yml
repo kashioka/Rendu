@@ -20,7 +20,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 22
 
       # package-lock.json があれば node_modules 不要で audit できる
       - name: npm audit (fail on high/critical)
@@ -47,7 +47,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Check version sync (package.json / tauri.conf.json / Cargo.toml)
