@@ -1,0 +1,50 @@
+name: Dependabot monthly triage
+
+# Dependabot (monthly) が毎月 1 日に出す PR を、3〜7 日の毎朝 10:00 JST に Jev (typesafe.ai) へ判断させる。
+# 「Jev が merge_now を確率 0.9 以上」かつ「patch/minor のみ」かつ「CI 全 green」の PR だけマージし、
+# 全 PR の判定を Issue「Dependabot 月次判断 YYYY-MM」に残す。複数日走らせるのは、1 件マージすると
+# 他の PR が lockfile 競合 → Dependabot の自動 rebase → CI やり直し、となるのを翌日に拾うため。
+#
+# 安全境界は dependabot-security.yml と同じ。Jev に渡す事実はスクリプトが API から機械的に集める。
+on:
+  schedule:
+    - cron: "0 1 3-7 * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "マージも Issue 作成もせず判定だけ表示する"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependabot-automation
+
+jobs:
+  triage:
+    name: Ask Jev and merge approved updates
+    if: github.event_name == 'workflow_dispatch' || vars.DEPENDABOT_AUTOMATION == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: scripts/dependabot
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          client-id: ${{ vars.AUTOMERGE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AUTOMERGE_APP_PRIVATE_KEY }}
+
+      - name: Judge and merge
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: node scripts/dependabot/run.mjs monthly
