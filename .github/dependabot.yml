@@ -1,12 +1,13 @@
-# Dependabot: 依存関係の脆弱性・更新を週次でチェックして PR を自動作成する。
+# Dependabot: 依存関係の更新を月次 (毎月 1 日) でチェックして PR を自動作成する。
+# 脆弱性を直すセキュリティ更新はこのスケジュールと無関係に随時 PR が来る。
+# PR の処理は .github/workflows/dependabot-{security,monthly}.yml が無人で行う。
 # 監視対象: npm (ルート) / cargo (src-tauri) / GitHub Actions
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
       time: "09:00"
       timezone: Asia/Tokyo
     open-pull-requests-limit: 5
@@ -31,8 +32,7 @@ updates:
   - package-ecosystem: cargo
     directory: /src-tauri
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
       time: "09:00"
       timezone: Asia/Tokyo
     open-pull-requests-limit: 5
@@ -50,8 +50,7 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
       time: "09:00"
       timezone: Asia/Tokyo
     open-pull-requests-limit: 3

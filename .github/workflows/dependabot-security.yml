@@ -1,0 +1,50 @@
+name: Dependabot security auto-merge
+
+# open な Dependabot alert を解消する patch/minor 更新を、CI が全 green なら無人でマージする。
+# 判定はルールのみ (scripts/dependabot/lib.mjs)。1 回の実行でマージは最大 1 件、main の CI が赤なら停止。
+#
+# 安全境界: schedule / 手動実行のみで、PR のコードは checkout も実行もしない。
+# マージは ruleset「main protection」の bypass に登録した専用 GitHub App のトークンで行う。
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "マージせず判定だけ表示する"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+# 月次ジョブと同時に走って二重マージしないよう直列化する
+concurrency:
+  group: dependabot-automation
+
+jobs:
+  automerge:
+    name: Auto-merge security updates
+    # App とシークレットの準備が済むまで schedule では動かさない (リポジトリ変数で有効化)
+    if: github.event_name == 'workflow_dispatch' || vars.DEPENDABOT_AUTOMATION == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: scripts/dependabot
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          client-id: ${{ vars.AUTOMERGE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AUTOMERGE_APP_PRIVATE_KEY }}
+
+      - name: Judge and merge
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: node scripts/dependabot/run.mjs security
