@@ -6,7 +6,7 @@ Only the latest stable release of Rendu receives security updates.
 
 | Version | Supported |
 | ------- | --------- |
-| Latest stable (currently 0.8.x) | ✅ |
+| Latest stable (currently 0.11.x) | ✅ |
 | Older versions | ❌ |
 
 ## Reporting a Vulnerability
@@ -18,6 +18,9 @@ Instead, use GitHub's private vulnerability reporting:
 1. Go to the [Security tab](https://github.com/kashioka/Rendu/security) of this repository
 2. Click **"Report a vulnerability"**
 3. Fill in the details (affected version, reproduction steps, impact)
+
+Alternatively, you can report by email to
+[kashioka@alleyoop.jp](mailto:kashioka@alleyoop.jp).
 
 You can expect an initial response within **7 days**. Once the issue is
 confirmed, we will work on a fix and credit you in the release notes
