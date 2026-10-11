@@ -19,6 +19,9 @@ Instead, use GitHub's private vulnerability reporting:
 2. Click **"Report a vulnerability"**
 3. Fill in the details (affected version, reproduction steps, impact)
 
+Alternatively, you can report by email to
+[kashioka@alleyoop.jp](mailto:kashioka@alleyoop.jp).
+
 You can expect an initial response within **7 days**. Once the issue is
 confirmed, we will work on a fix and credit you in the release notes
 (unless you prefer to remain anonymous).
