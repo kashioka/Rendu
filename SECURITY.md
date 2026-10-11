@@ -6,7 +6,7 @@ Only the latest stable release of Rendu receives security updates.
 
 | Version | Supported |
 | ------- | --------- |
-| Latest stable (currently 0.8.x) | ✅ |
+| Latest stable (currently 0.11.x) | ✅ |
 | Older versions | ❌ |
 
 ## Reporting a Vulnerability
