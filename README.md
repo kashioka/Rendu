@@ -42,7 +42,7 @@ No config, no account — ready in seconds.
 
 ### macOS
 
-**[Download Rendu.dmg](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.11.1_aarch64.dmg)** — open and drag to Applications.
+**[Download Rendu.dmg](https://github.com/kashioka/Rendu/releases/download/v0.11.1/Rendu_0.11.1_aarch64.dmg)** — open and drag to Applications.
 
 > Rendu is code-signed and notarized by Apple. Just open the DMG, drag to Applications, and launch — no extra steps needed.
 
@@ -55,23 +55,23 @@ Other install methods:
 
 ### Windows
 
-**[Download Rendu installer (.exe)](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.11.1_x64-setup.exe)** — run the installer.
+**[Download Rendu installer (.exe)](https://github.com/kashioka/Rendu/releases/download/v0.11.1/Rendu_0.11.1_x64-setup.exe)** — run the installer.
 
 ### Linux
 
-**[Download .deb](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.11.1_amd64.deb)** — install on Debian/Ubuntu/Mint with:
+**[Download .deb](https://github.com/kashioka/Rendu/releases/download/v0.11.1/Rendu_0.11.1_amd64.deb)** — install on Debian/Ubuntu/Mint with:
 
 ```bash
 sudo apt install ./Rendu_0.11.1_amd64.deb
 ```
 
-For Fedora/RHEL: **[Download .rpm](https://github.com/kashioka/Rendu/releases/latest/download/Rendu-0.11.1-1.x86_64.rpm)** —
+For Fedora/RHEL: **[Download .rpm](https://github.com/kashioka/Rendu/releases/download/v0.11.1/Rendu-0.11.1-1.x86_64.rpm)** —
 
 ```bash
 sudo dnf install ./Rendu-0.11.1-1.x86_64.rpm
 ```
 
-For other distributions (openSUSE, Arch, NixOS, etc.): **[Download AppImage](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.11.1_amd64.AppImage)** — make it executable and run:
+For other distributions (openSUSE, Arch, NixOS, etc.): **[Download AppImage](https://github.com/kashioka/Rendu/releases/download/v0.11.1/Rendu_0.11.1_amd64.AppImage)** — make it executable and run:
 
 ```bash
 chmod +x Rendu_0.11.1_amd64.AppImage
@@ -139,8 +139,8 @@ rendu README.md
 Download and install manually:
 
 ```bash
-curl -LO https://github.com/kashioka/Rendu/releases/latest/download/Rendu-macos-aarch64.tar.gz
-tar xzf Rendu-macos-aarch64.tar.gz
+curl -LO https://github.com/kashioka/Rendu/releases/download/v0.11.1/Rendu_0.11.1_aarch64.app.tar.gz
+tar xzf Rendu_0.11.1_aarch64.app.tar.gz
 mv Rendu.app /Applications/
 open /Applications/Rendu.app
 ```

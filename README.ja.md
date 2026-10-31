@@ -42,7 +42,7 @@
 
 ### macOS
 
-**[Rendu.dmg をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.11.1_aarch64.dmg)** — 開いて Applications にドラッグしてください。
+**[Rendu.dmg をダウンロード](https://github.com/kashioka/Rendu/releases/download/v0.11.1/Rendu_0.11.1_aarch64.dmg)** — 開いて Applications にドラッグしてください。
 
 > Rendu はAppleによるコード署名・公証済みです。DMGを開いてApplicationsにドラッグするだけで、すぐに使えます。
 
@@ -55,23 +55,23 @@
 
 ### Windows
 
-**[Rendu インストーラ (.exe) をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.11.1_x64-setup.exe)** — インストーラを実行してください。
+**[Rendu インストーラ (.exe) をダウンロード](https://github.com/kashioka/Rendu/releases/download/v0.11.1/Rendu_0.11.1_x64-setup.exe)** — インストーラを実行してください。
 
 ### Linux
 
-**[.deb をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.11.1_amd64.deb)** — Debian/Ubuntu/Mint では以下でインストール:
+**[.deb をダウンロード](https://github.com/kashioka/Rendu/releases/download/v0.11.1/Rendu_0.11.1_amd64.deb)** — Debian/Ubuntu/Mint では以下でインストール:
 
 ```bash
 sudo apt install ./Rendu_0.11.1_amd64.deb
 ```
 
-Fedora/RHEL の場合: **[.rpm をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu-0.11.1-1.x86_64.rpm)** —
+Fedora/RHEL の場合: **[.rpm をダウンロード](https://github.com/kashioka/Rendu/releases/download/v0.11.1/Rendu-0.11.1-1.x86_64.rpm)** —
 
 ```bash
 sudo dnf install ./Rendu-0.11.1-1.x86_64.rpm
 ```
 
-その他のディストロ（openSUSE / Arch / NixOS 等）の場合: **[AppImage をダウンロード](https://github.com/kashioka/Rendu/releases/latest/download/Rendu_0.11.1_amd64.AppImage)** — 実行権限を付けて起動:
+その他のディストロ（openSUSE / Arch / NixOS 等）の場合: **[AppImage をダウンロード](https://github.com/kashioka/Rendu/releases/download/v0.11.1/Rendu_0.11.1_amd64.AppImage)** — 実行権限を付けて起動:
 
 ```bash
 chmod +x Rendu_0.11.1_amd64.AppImage
@@ -139,8 +139,8 @@ rendu README.md
 手動でダウンロード・インストールする手順:
 
 ```bash
-curl -LO https://github.com/kashioka/Rendu/releases/latest/download/Rendu-macos-aarch64.tar.gz
-tar xzf Rendu-macos-aarch64.tar.gz
+curl -LO https://github.com/kashioka/Rendu/releases/download/v0.11.1/Rendu_0.11.1_aarch64.app.tar.gz
+tar xzf Rendu_0.11.1_aarch64.app.tar.gz
 mv Rendu.app /Applications/
 open /Applications/Rendu.app
 ```
