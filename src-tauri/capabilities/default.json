@@ -30,6 +30,28 @@
       "allow": [
         { "path": "$HOME/**" },
         { "path": "$APPCONFIG/**" }
+      ],
+      "deny": [
+        { "path": "$HOME/.ssh" },
+        { "path": "$HOME/.ssh/**" },
+        { "path": "$HOME/.gnupg" },
+        { "path": "$HOME/.gnupg/**" },
+        { "path": "$HOME/.aws" },
+        { "path": "$HOME/.aws/**" },
+        { "path": "$HOME/.azure" },
+        { "path": "$HOME/.azure/**" },
+        { "path": "$HOME/.kube" },
+        { "path": "$HOME/.kube/**" },
+        { "path": "$HOME/.docker" },
+        { "path": "$HOME/.docker/**" },
+        { "path": "$HOME/.config/gcloud" },
+        { "path": "$HOME/.config/gcloud/**" },
+        { "path": "$HOME/.config/gh" },
+        { "path": "$HOME/.config/gh/**" },
+        { "path": "$HOME/.netrc" },
+        { "path": "$HOME/.npmrc" },
+        { "path": "$HOME/.pypirc" },
+        { "path": "$HOME/.git-credentials" }
       ]
     }
   ]
