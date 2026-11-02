@@ -26,6 +26,11 @@
       "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: asset: https:; font-src 'self' data:"
     }
   },
+  "plugins": {
+    "fs": {
+      "requireLiteralLeadingDot": false
+    }
+  },
   "bundle": {
     "active": true,
     "targets": ["app", "dmg", "msi", "nsis", "deb", "rpm", "appimage"],

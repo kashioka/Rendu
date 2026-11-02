@@ -1247,4 +1247,64 @@ mod tests {
     }
     assert!(state.0.lock().is_some());
   }
+
+  // ------------------------------------------------------------------
+  // fs scope configuration (issue #178)
+  // ------------------------------------------------------------------
+
+  /// Dot-directories (`.notes/`, `.github/`) must be readable under `$HOME`,
+  /// so `requireLiteralLeadingDot` is turned off. In exchange, well-known
+  /// credential stores are explicitly denied. This test pins both halves so
+  /// neither can be dropped silently.
+  #[test]
+  fn fs_scope_allows_dot_dirs_but_denies_credential_stores() {
+    let conf: serde_json::Value =
+      serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
+    assert_eq!(
+      conf["plugins"]["fs"]["requireLiteralLeadingDot"],
+      serde_json::Value::Bool(false),
+      "requireLiteralLeadingDot must be false so $HOME/** matches dot-directories (issue #178)"
+    );
+
+    let cap: serde_json::Value =
+      serde_json::from_str(include_str!("../capabilities/default.json")).unwrap();
+    let scope = cap["permissions"]
+      .as_array()
+      .unwrap()
+      .iter()
+      .find(|p| p["identifier"] == "fs:scope")
+      .expect("fs:scope permission present");
+    let paths = |key: &str| -> Vec<String> {
+      scope[key]
+        .as_array()
+        .map(|a| a.as_slice())
+        .unwrap_or(&[])
+        .iter()
+        .map(|e| e["path"].as_str().unwrap().to_string())
+        .collect()
+    };
+    let allow = paths("allow");
+    let deny = paths("deny");
+
+    assert!(allow.iter().any(|p| p == "$HOME/**"));
+
+    for dir in [
+      ".ssh",
+      ".gnupg",
+      ".aws",
+      ".azure",
+      ".kube",
+      ".docker",
+      ".config/gcloud",
+      ".config/gh",
+    ] {
+      // `X/**` does not match `X` itself in the glob crate, so both forms are
+      // needed to block listing the directory as well as reading its files.
+      assert!(deny.iter().any(|p| p == &format!("$HOME/{dir}")), "deny missing $HOME/{dir}");
+      assert!(deny.iter().any(|p| p == &format!("$HOME/{dir}/**")), "deny missing $HOME/{dir}/**");
+    }
+    for file in [".netrc", ".npmrc", ".pypirc", ".git-credentials"] {
+      assert!(deny.iter().any(|p| p == &format!("$HOME/{file}")), "deny missing $HOME/{file}");
+    }
+  }
 }
