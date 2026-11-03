@@ -2,6 +2,7 @@ name: Weekly Security Scan
 
 # 毎週月曜 09:00 JST (00:00 UTC) に依存関係の脆弱性をスキャンし、
 # 検出時は GitHub Issue を自動作成する (既存の open issue があれば重複作成しない)。
+# 両 audit が通ったら open のスキャン issue を自動クローズする。
 # CI の security-audit (high で block) より早期警戒寄りに moderate で検出する。
 on:
   schedule:
@@ -79,4 +80,17 @@ jobs:
               --title "Weekly security scan: vulnerabilities detected ($(date -u +%Y-%m-%d))" \
               --label security-scan \
               --body-file issue-body.md
+          fi
+
+      - name: Close scan issue if clean
+        if: steps.npm_audit.outcome == 'success' && steps.cargo_audit.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 検出なしなら open のスキャン issue を閉じる (次回検出時は新規作成される)
+          EXISTING=$(gh issue list --repo "${{ github.repository }}" \
+            --label security-scan --state open --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh issue close "$EXISTING" --repo "${{ github.repository }}" \
+              --comment "週次スキャン ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} で npm audit (moderate+) / cargo audit ともに検出なし。自動クローズ。"
           fi
