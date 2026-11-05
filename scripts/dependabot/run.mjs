@@ -166,14 +166,23 @@ async function merge(pr) {
   });
 }
 
-// 月内 2 回目以降の実行は、新たにマージがあったときだけ追記する (同じ表を毎日積まない)
+// 月内 2 回目以降の実行は、新たにマージがあったときだけ追記する (同じ表を毎日積まない)。
+// 同月の issue が closed でも作り直さない (「読んだら閉じる」運用で翌日また立つのを防ぐ)。
+// closed 後に新たなマージがあれば追記して reopen し、見落とさないようにする。
 async function publishReport(markdown, merged) {
-  const title = `Dependabot 月次判断 ${new Date().toISOString().slice(0, 7)}`;
-  const open = await gh(`/repos/${repo}/issues?state=open&labels=dependencies&per_page=100`);
-  const existing = open.find((i) => i.title === title && !i.pull_request);
+  const month = new Date().toISOString().slice(0, 7);
+  const title = `Dependabot 月次判断 ${month}`;
+  // since (= updated_at) を月初で絞り、closed 済みの古い Dependabot PR で 100 件が埋まらないようにする
+  const issues = await gh(
+    `/repos/${repo}/issues?state=all&labels=dependencies&since=${month}-01T00:00:00Z&per_page=100`,
+  );
+  const existing = issues.find((i) => i.title === title && !i.pull_request);
   if (existing && merged === 0) return;
   if (existing) {
     await gh(`/repos/${repo}/issues/${existing.number}/comments`, { method: 'POST', body: { body: markdown } });
+    if (existing.state === 'closed') {
+      await gh(`/repos/${repo}/issues/${existing.number}`, { method: 'PATCH', body: { state: 'open' } });
+    }
   } else {
     await gh(`/repos/${repo}/issues`, { method: 'POST', body: { title, body: markdown, labels: ['dependencies'] } });
   }
