@@ -3,6 +3,7 @@ import { createRef } from 'react';
 import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithLocale } from '../test/helpers';
+import { LocaleProvider } from '../LocaleContext';
 
 vi.mock('@tauri-apps/plugin-fs', () => import('../test/mocks/tauri-fs'));
 vi.mock('@tauri-apps/plugin-dialog', () => import('../test/mocks/tauri-dialog'));
@@ -415,6 +416,74 @@ describe('MarkdownViewer', () => {
       expect(screen.getByText('Recovered')).toBeInTheDocument();
     });
     expect(screen.queryByText('Failed to load file')).toBeNull();
+  });
+
+  it('discards a reload() of the previous file that finishes after switching files', async () => {
+    // fs-changed fires for a.md, the read is slow, and the user switches to
+    // b.md before it completes. The late result must not replace b.md.
+    let resolveStaleRead!: (text: string) => void;
+    let aReads = 0;
+    (readTextFile as Mock).mockImplementation((p: string) => {
+      if (p === '/a.md') {
+        aReads += 1;
+        return aReads === 1
+          ? Promise.resolve('# A body')
+          : new Promise<string>((res) => { resolveStaleRead = res; });
+      }
+      return Promise.resolve('# B body');
+    });
+    const handle = createRef<MarkdownViewerHandle>();
+    const { rerender } = renderWithLocale(
+      <MarkdownViewer ref={handle} filePath="/a.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(screen.getByText('A body')).toBeInTheDocument();
+    });
+
+    let reloadDone: Promise<void> | undefined;
+    act(() => { reloadDone = handle.current?.reload(); });
+    rerender(
+      <LocaleProvider locale="en">
+        <MarkdownViewer ref={handle} filePath="/b.md" settings={darkPreset} />
+      </LocaleProvider>
+    );
+    await waitFor(() => {
+      expect(screen.getByText('B body')).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      resolveStaleRead('# A stale');
+      await reloadDone;
+    });
+    // Same viewer instance: a.md read twice (initial + reload), b.md once.
+    expect((readTextFile as Mock).mock.calls.map((c) => c[0])).toEqual(['/a.md', '/a.md', '/b.md']);
+    expect(screen.queryByText('A stale')).toBeNull();
+    expect(screen.getByText('B body')).toBeInTheDocument();
+  });
+
+  it('clears the outline when switching to a file that fails to load', async () => {
+    (readTextFile as Mock).mockImplementation((p: string) =>
+      p === '/a.md' ? Promise.resolve('# A heading') : Promise.reject(new Error('forbidden path'))
+    );
+    const onHeadingsChange = vi.fn();
+    const { rerender } = renderWithLocale(
+      <MarkdownViewer filePath="/a.md" settings={darkPreset} onHeadingsChange={onHeadingsChange} />
+    );
+    await waitFor(() => {
+      expect(onHeadingsChange).toHaveBeenCalled();
+    });
+    expect(onHeadingsChange.mock.calls.at(-1)![0].map((h: { text: string }) => h.text)).toEqual(['A heading']);
+
+    onHeadingsChange.mockClear();
+    rerender(
+      <LocaleProvider locale="en">
+        <MarkdownViewer filePath="/b.md" settings={darkPreset} onHeadingsChange={onHeadingsChange} />
+      </LocaleProvider>
+    );
+    await waitFor(() => {
+      expect(screen.getByText(/forbidden path/)).toBeInTheDocument();
+    });
+    expect(onHeadingsChange).toHaveBeenLastCalledWith([]);
   });
 
   it('reload() updates content on successful re-read', async () => {

@@ -86,6 +86,10 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const lastMtimeRef = useRef<number | null>(null);
+  // The file this viewer currently owns. handleRefresh compares against it
+  // after its await so a reload of the previous file that finishes late
+  // cannot overwrite the newly selected file's content.
+  const activeFileRef = useRef(filePath);
   // Element currently flashed as the search hit, so a rapid second click
   // clears the previous highlight instead of leaving two lit up.
   const flashRef = useRef<{ el: HTMLElement; timer: ReturnType<typeof setTimeout> } | null>(null);
@@ -137,6 +141,7 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
   // Initial load (shows loading state, resets scroll).
   useEffect(() => {
     let cancelled = false;
+    activeFileRef.current = filePath;
     setError(null);
     setLoading(true);
     setSearchQuery("");
@@ -161,11 +166,15 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
         if (cancelled) return;
         setError(String(e));
         setLoading(false);
+        // The error view renders no headings, so the DOM-scan effect below
+        // never runs; tell the parent explicitly or the outline keeps
+        // showing the previous file's headings.
+        onHeadingsChange?.([]);
       }
     })();
 
     return () => { cancelled = true; };
-  }, [filePath]);
+  }, [filePath, onHeadingsChange]);
 
   // Poll for external file changes (auto-reload, preserves scroll).
   useEffect(() => {
@@ -203,13 +212,16 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
   const handleRefresh = useCallback(async () => {
     try {
       const text = await readTextFile(filePath);
+      // The user may have switched files while the read was in flight; the
+      // initial-load effect for the new file owns the content now.
+      if (activeFileRef.current !== filePath) return;
       setContent(text);
       // Clear any prior error (e.g. initial load failed because the file did
       // not exist yet, then it was created and the watcher fired).
       setError(null);
       try {
         const info = await stat(filePath);
-        lastMtimeRef.current = extractMtime(info);
+        if (activeFileRef.current === filePath) lastMtimeRef.current = extractMtime(info);
       } catch {
         // ignore
       }
