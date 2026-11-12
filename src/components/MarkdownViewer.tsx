@@ -53,7 +53,7 @@ interface MarkdownViewerProps {
 }
 
 export interface MarkdownViewerHandle {
-  reload: () => void;
+  reload: () => Promise<void>;
   scrollToHeading: (id: string) => void;
 }
 

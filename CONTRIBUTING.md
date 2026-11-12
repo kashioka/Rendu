@@ -16,7 +16,7 @@ npm ci
 npm run dev          # Vite dev server (frontend only)
 npm run tauri dev    # Full app with native features
 npm run test:run     # Vitest
-npx tsc --noEmit     # Type checking
+npx tsc -b           # Type checking
 ```
 
 ## Branch Naming
@@ -51,7 +51,7 @@ All PRs must include tests. Run the test suite before submitting:
 
 ```bash
 npm run test:run   # Vitest
-npx tsc --noEmit   # Type checking
+npx tsc -b         # Type checking
 ```
 
 - **New features**: Add unit tests covering the main behavior
@@ -67,7 +67,7 @@ npx tsc --noEmit   # Type checking
 
 ```bash
 npm run test:run   # Vitest
-npx tsc --noEmit   # Type checking
+npx tsc -b         # Type checking
 ```
 
 ## Merge Policy

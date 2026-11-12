@@ -9,5 +9,5 @@
 ## Checklist
 
 - [ ] `npm run test:run` passes
-- [ ] `npx tsc --noEmit` passes
+- [ ] `npx tsc -b` passes
 - [ ] Tests added for new features / bug fixes

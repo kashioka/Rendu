@@ -13,7 +13,7 @@ This skill exists because two release audits revealed recurring misses:
 The checklist below is the single source of truth. The two structural fixes from v0.11.1 are baked in:
 
 1. **Download links are pinned** to `releases/download/v<version>/<file>` and are updated **after** publishing with `scripts/update-download-links.sh`. Pinned links never break, so there is no window in which README / landing 404.
-2. **`scripts/release-preflight.sh`** runs the same `cargo audit` / `npm audit` as the Security gate, plus version alignment and a link check. Run it before merging the prep PR and again right before dispatching.
+2. **`scripts/release-preflight.sh`** runs the same `cargo audit` / `npm audit` as the Security gate, plus version alignment, the same `tsc -b` type check the build runs, and a link check. Run it before merging the prep PR and again right before dispatching.
 
 ## Environmental facts (stable, no need to verify)
 
@@ -42,7 +42,7 @@ The checklist below is the single source of truth. The two structural fixes from
    ```bash
    npm run test:run
    (cd src-tauri && cargo test --lib)
-   npx tsc --noEmit
+   npx tsc -b
    ```
 2. **Pick the version per semver** — patch: fixes / deps only; minor: features, platforms, behavior; major: breaking.
 3. **Bump the manifests**

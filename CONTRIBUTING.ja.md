@@ -16,7 +16,7 @@ npm ci
 npm run dev          # Vite dev server（フロントのみ）
 npm run tauri dev    # Tauri ネイティブ機能を含む起動
 npm run test:run     # Vitest
-npx tsc --noEmit     # 型チェック
+npx tsc -b           # 型チェック
 ```
 
 ## ブランチ命名規則
@@ -51,7 +51,7 @@ chore: ビルド・依存関係の変更
 
 ```bash
 npm run test:run   # Vitest
-npx tsc --noEmit   # 型チェック
+npx tsc -b         # 型チェック
 ```
 
 - **新機能**: 主要な動作をカバーするユニットテストを追加する
@@ -67,7 +67,7 @@ npx tsc --noEmit   # 型チェック
 
 ```bash
 npm run test:run   # Vitest
-npx tsc --noEmit   # 型チェック
+npx tsc -b         # 型チェック
 ```
 
 ## マージポリシー

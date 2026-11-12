@@ -162,7 +162,7 @@ it("renders the component", () => {
 Before creating a commit, verify ALL of the following pass:
 
 ```bash
-npx tsc --noEmit       # Type check
+npx tsc -b             # Type check
 npm run test:run       # All tests pass
 npm run lint           # ESLint
 ```
