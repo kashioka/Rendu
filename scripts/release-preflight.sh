@@ -6,6 +6,11 @@
 # at dispatch time, so a release can be blocked by an advisory published after
 # the prep PR's CI went green (v0.11.1 was stopped three times this way).
 # Running the same audits locally first turns that into a fix-before-dispatch.
+#
+# It also runs `tsc -b`, the type check the build itself runs (vite:build).
+# Plain `tsc --noEmit` checks nothing here (root tsconfig is `files: []` +
+# references), so v0.11.3's first dispatch failed on all 3 platforms on a
+# test-file type error that CI had not caught.
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -13,10 +18,10 @@ status=0
 
 step() { printf '\n== %s\n' "$1"; }
 
-step "1/4 version alignment"
+step "1/5 version alignment"
 bash "$REPO_ROOT/scripts/check-versions.sh" || status=1
 
-step "2/4 cargo audit"
+step "2/5 cargo audit"
 if command -v cargo-audit >/dev/null 2>&1; then
   (cd "$REPO_ROOT/src-tauri" && cargo audit) || status=1
 else
@@ -24,10 +29,13 @@ else
   status=1
 fi
 
-step "3/4 npm audit (high / critical)"
+step "3/5 npm audit (high / critical)"
 (cd "$REPO_ROOT" && npm audit --audit-level=high) || status=1
 
-step "4/4 published download links"
+step "4/5 type check (tsc -b, same as the build)"
+(cd "$REPO_ROOT" && npx tsc -b) || status=1
+
+step "5/5 published download links"
 bash "$REPO_ROOT/scripts/update-download-links.sh" --check || status=1
 
 printf '\n== manual: Apple Developer agreement\n'

@@ -18,7 +18,7 @@ npm run dev
 npm run build
 
 # 型チェック
-npx tsc --noEmit
+npx tsc -b
 
 # テスト実行
 npm run test:run
