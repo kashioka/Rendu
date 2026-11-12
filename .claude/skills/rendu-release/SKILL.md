@@ -141,10 +141,10 @@ Per project rule: **every push needs Codex review**, including docs-only and lin
 
 ```bash
 git diff > <scratchpad>/review.diff
-/opt/homebrew/bin/codex exec -m gpt-5.1 --skip-git-repo-check "<prompt + diff>"
+/opt/homebrew/bin/codex exec --skip-git-repo-check "<prompt + diff>" < /dev/null
 ```
 
-`-m gpt-5.1` is required: the default `gpt-5-codex` model 404s with the current API-key auth. If Codex flags issues, fix them and **run Codex again** before pushing. Repeat until it returns LGTM.
+Use the default model (no `-m`). Codex is installed as the Homebrew **cask** (`brew install --cask codex`); the old `codex` formula is frozen at 0.46.0, which can no longer call the default model (`requires a newer version of Codex`), and `-m gpt-5.1` is rejected under ChatGPT-account auth. If `codex exec` fails with a model error, run `brew upgrade --cask codex` first. If Codex flags issues, fix them and **run Codex again** before pushing. Repeat until it returns LGTM.
 
 ## Critical anti-patterns
 
