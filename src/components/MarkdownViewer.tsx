@@ -71,9 +71,20 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
   { filePath, settings, onHeadingsChange, onNavigateFile },
   ref,
 ) {
-  const [content, setContent] = useState<string>("");
-  const [loading, setLoading] = useState(true);
+  // The text on screen, tagged with the file it was read from. A read for the
+  // previous file can land in the same render as a file switch (before the
+  // load effect below has run), so `content` alone cannot tell whether it
+  // belongs to the selected file.
+  const [doc, setDoc] = useState<{ path: string | null; text: string }>({ path: null, text: "" });
+  const content = doc.text;
+  const [reading, setReading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Treat content from any file other than the selected one as "not loaded":
+  // every render branch and effect gated on `loading` then never shows the
+  // previous file's body or error, or reports its headings to the outline.
+  // A failed read also records its path (with empty text) so the error view
+  // for the selected file is still reachable.
+  const loading = reading || doc.path !== filePath;
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -143,19 +154,24 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
     let cancelled = false;
     activeFileRef.current = filePath;
     setError(null);
-    setLoading(true);
+    setReading(true);
     setSearchQuery("");
     setSearchResults([]);
     setShowResults(false);
     scrollContainerRef.current?.scrollTo({ top: 0 });
     lastMtimeRef.current = null;
+    // The parent's outline still holds the previous file's headings, and the
+    // DOM-scan effect below only reports once the new file has rendered (it
+    // never does if the read fails). Clear it now so the outline never shows
+    // or jumps to headings from a file other than the one selected.
+    onHeadingsChange?.([]);
 
     (async () => {
       try {
         const text = await readTextFile(filePath);
         if (cancelled) return;
-        setContent(text);
-        setLoading(false);
+        setDoc({ path: filePath, text });
+        setReading(false);
         try {
           const info = await stat(filePath);
           if (!cancelled) lastMtimeRef.current = extractMtime(info);
@@ -164,12 +180,9 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
         }
       } catch (e) {
         if (cancelled) return;
+        setDoc({ path: filePath, text: "" });
         setError(String(e));
-        setLoading(false);
-        // The error view renders no headings, so the DOM-scan effect below
-        // never runs; tell the parent explicitly or the outline keeps
-        // showing the previous file's headings.
-        onHeadingsChange?.([]);
+        setReading(false);
       }
     })();
 
@@ -192,7 +205,7 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
         ) {
           lastMtimeRef.current = currentMtime;
           const text = await readTextFile(filePath);
-          if (!cancelled) setContent(text);
+          if (!cancelled) setDoc({ path: filePath, text });
         }
       } catch {
         // Ignore transient stat errors (file temporarily missing during save, etc.)
@@ -215,7 +228,7 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
       // The user may have switched files while the read was in flight; the
       // initial-load effect for the new file owns the content now.
       if (activeFileRef.current !== filePath) return;
-      setContent(text);
+      setDoc({ path: filePath, text });
       // Clear any prior error (e.g. initial load failed because the file did
       // not exist yet, then it was created and the watcher fired).
       setError(null);
