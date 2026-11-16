@@ -30,11 +30,15 @@ sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" "$REPO_ROOT/src
 # 3. Cargo.toml
 sed -i '' "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" "$REPO_ROOT/src-tauri/Cargo.toml"
 
-# 4. Re-resolve lockfiles so name/version fields propagate. Both calls
-# are required: npm refreshes package-lock.json, cargo refreshes
-# Cargo.lock. We intentionally let errors surface — a silent lockfile
-# regen failure would leave a stale lockfile alongside the bumped
+# 4. Propagate the version into both lockfiles. Errors are left to surface —
+# a silent lockfile failure would leave a stale lockfile alongside the bumped
 # manifests, which is exactly the drift this script is meant to prevent.
+#
+# package-lock.json: rewrite only the root `version` and `packages[""].version`
+# instead of `npm install --package-lock-only`. A version bump needs no
+# re-resolution, and npm 10.9.x drops the `libc` field from the optional
+# `@tailwindcss/oxide-linux-*` entries when it rewrites the lockfile (hit at
+# v0.11.3; the prep PR had to restore the lockfile by hand).
 #
 # `cargo update --workspace` updates ONLY the local package's version
 # entry in Cargo.lock, leaving every external dependency pinned. We must
@@ -43,7 +47,18 @@ sed -i '' "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" "$REPO_ROOT/src-taur
 # with an implicit caret, e.g. 2.10.3 → 2.11.x). That desyncs the Rust
 # `tauri` crate from the JS `@tauri-apps/*` packages, and tauri-action
 # fails every release build on the mismatch (hit during v0.7.1).
-(cd "$REPO_ROOT" && npm install --package-lock-only --silent)
+VERSION="$VERSION" LOCK="$REPO_ROOT/package-lock.json" node -e '
+const fs = require("fs");
+const { VERSION, LOCK } = process.env;
+const lock = JSON.parse(fs.readFileSync(LOCK, "utf8"));
+if (!lock.packages || !lock.packages[""]) {
+  console.error("package-lock.json has no packages[\"\"] entry");
+  process.exit(1);
+}
+lock.version = VERSION;
+lock.packages[""].version = VERSION;
+fs.writeFileSync(LOCK, JSON.stringify(lock, null, 2) + "\n");
+'
 (cd "$REPO_ROOT/src-tauri" && cargo update --workspace)
 
 echo "Bumped to v$VERSION:"
