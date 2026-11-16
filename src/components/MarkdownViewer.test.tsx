@@ -141,8 +141,10 @@ describe('MarkdownViewer', () => {
     renderWithLocale(
       <MarkdownViewer filePath="/test.md" settings={darkPreset} onHeadingsChange={onHeadingsChange} />
     );
+    // The first call is the reset to [] when loading starts; wait for the
+    // call made after the document rendered.
     await waitFor(() => {
-      expect(onHeadingsChange).toHaveBeenCalled();
+      expect(onHeadingsChange.mock.calls.at(-1)?.[0].length).toBeGreaterThan(0);
     });
     const headings = onHeadingsChange.mock.calls[onHeadingsChange.mock.calls.length - 1][0];
     expect(headings).toHaveLength(2);
@@ -158,8 +160,10 @@ describe('MarkdownViewer', () => {
     const { container } = renderWithLocale(
       <MarkdownViewer filePath="/jp.md" settings={darkPreset} onHeadingsChange={onHeadingsChange} />
     );
+    // The first call is the reset to [] when loading starts; wait for the
+    // call made after the document rendered.
     await waitFor(() => {
-      expect(onHeadingsChange).toHaveBeenCalled();
+      expect(onHeadingsChange.mock.calls.at(-1)?.[0].length).toBeGreaterThan(0);
     });
     const headings = onHeadingsChange.mock.calls.at(-1)![0];
     const jp = headings.find((h: { text: string }) => h.text === '日本語版');
@@ -205,8 +209,10 @@ describe('MarkdownViewer', () => {
     renderWithLocale(
       <MarkdownViewer filePath="/u.md" settings={darkPreset} onHeadingsChange={onHeadingsChange} />
     );
+    // The first call is the reset to [] when loading starts; wait for the
+    // call made after the document rendered.
     await waitFor(() => {
-      expect(onHeadingsChange).toHaveBeenCalled();
+      expect(onHeadingsChange.mock.calls.at(-1)?.[0].length).toBeGreaterThan(0);
     });
     const headings = onHeadingsChange.mock.calls.at(-1)![0];
     expect(headings[0].id).toBe('api_version');
@@ -469,8 +475,10 @@ describe('MarkdownViewer', () => {
     const { rerender } = renderWithLocale(
       <MarkdownViewer filePath="/a.md" settings={darkPreset} onHeadingsChange={onHeadingsChange} />
     );
+    // The first call is the reset to [] when loading starts; wait for the
+    // call made after the document rendered.
     await waitFor(() => {
-      expect(onHeadingsChange).toHaveBeenCalled();
+      expect(onHeadingsChange.mock.calls.at(-1)?.[0].length).toBeGreaterThan(0);
     });
     expect(onHeadingsChange.mock.calls.at(-1)![0].map((h: { text: string }) => h.text)).toEqual(['A heading']);
 
@@ -484,6 +492,77 @@ describe('MarkdownViewer', () => {
       expect(screen.getByText(/forbidden path/)).toBeInTheDocument();
     });
     expect(onHeadingsChange).toHaveBeenLastCalledWith([]);
+  });
+
+  it('clears the outline while the newly selected file is still loading', async () => {
+    let resolveB: (text: string) => void = () => {};
+    (readTextFile as Mock).mockImplementation((p: string) =>
+      p === '/a.md'
+        ? Promise.resolve('# A heading')
+        : new Promise<string>((res) => { resolveB = res; })
+    );
+    const onHeadingsChange = vi.fn();
+    const { rerender } = renderWithLocale(
+      <MarkdownViewer filePath="/a.md" settings={darkPreset} onHeadingsChange={onHeadingsChange} />
+    );
+    await waitFor(() => {
+      expect(onHeadingsChange.mock.calls.at(-1)?.[0].map((h: { text: string }) => h.text)).toEqual(['A heading']);
+    });
+
+    onHeadingsChange.mockClear();
+    rerender(
+      <LocaleProvider locale="en">
+        <MarkdownViewer filePath="/b.md" settings={darkPreset} onHeadingsChange={onHeadingsChange} />
+      </LocaleProvider>
+    );
+    // /b.md has not resolved yet: the outline must not keep A's headings,
+    // otherwise clicking one would try to jump inside a different file.
+    await waitFor(() => {
+      expect(onHeadingsChange).toHaveBeenLastCalledWith([]);
+    });
+
+    await act(async () => { resolveB('# B heading'); });
+    await waitFor(() => {
+      expect(onHeadingsChange.mock.calls.at(-1)![0].map((h: { text: string }) => h.text)).toEqual(['B heading']);
+    });
+  });
+
+  it('never reports the previous file\'s headings when its reload lands in the same render as a switch', async () => {
+    let resolveReload: (text: string) => void = () => {};
+    let aReads = 0;
+    (readTextFile as Mock).mockImplementation((p: string) => {
+      if (p === '/a.md') {
+        aReads += 1;
+        return aReads === 1
+          ? Promise.resolve('# A heading')
+          : new Promise<string>((res) => { resolveReload = res; });
+      }
+      return new Promise<string>(() => {}); // /b.md stays loading
+    });
+    const onHeadingsChange = vi.fn();
+    const handle = createRef<MarkdownViewerHandle>();
+    const { rerender } = renderWithLocale(
+      <MarkdownViewer ref={handle} filePath="/a.md" settings={darkPreset} onHeadingsChange={onHeadingsChange} />
+    );
+    await waitFor(() => {
+      expect(onHeadingsChange.mock.calls.at(-1)?.[0].length).toBeGreaterThan(0);
+    });
+    act(() => { void handle.current?.reload(); });
+
+    // The reload of /a.md resolves and the switch to /b.md happen in one
+    // batch, so both updates are rendered together.
+    await act(async () => {
+      resolveReload('# A updated');
+      rerender(
+        <LocaleProvider locale="en">
+          <MarkdownViewer ref={handle} filePath="/b.md" settings={darkPreset} onHeadingsChange={onHeadingsChange} />
+        </LocaleProvider>
+      );
+    });
+
+    expect(onHeadingsChange).toHaveBeenLastCalledWith([]);
+    expect(screen.queryByText('A updated')).toBeNull();
+    expect(screen.queryByText('A heading')).toBeNull();
   });
 
   it('reload() updates content on successful re-read', async () => {
