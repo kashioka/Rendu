@@ -268,7 +268,10 @@ function AppInner({
   }, [rootDir, selectedFile]);
 
   const handleOpenFolder = async () => {
-    const dir = await open({ directory: true });
+    // recursive: the dialog grants the folder to the fs scope; without it only
+    // direct children are readable, so subfolders outside $HOME failed with
+    // `forbidden path` (issue #221).
+    const dir = await open({ directory: true, recursive: true });
     if (!dir) return;
     // Re-opening the same folder is a no-op for setRootDir (React skips
     // state updates when the value is unchanged), so the dependent

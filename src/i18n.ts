@@ -39,6 +39,7 @@ export interface Translations {
   "viewer.loading": string;
   "viewer.error.title": string;
   "viewer.error.path": string;
+  "error.forbiddenPath.hint": string;
   "viewer.search.placeholder": string;
   "viewer.search.noResults": string;
   "viewer.matchCount": string;
@@ -169,6 +170,7 @@ const en: Translations = {
   "viewer.loading": "Loading...",
   "viewer.error.title": "Failed to load file",
   "viewer.error.path": "Path: {path}",
+  "error.forbiddenPath.hint": "Rendu can read your home folder (except credential stores such as ~/.ssh) and any file or folder you open yourself. Open this one again with Open File / Open Folder, or drag it onto the window.",
   "viewer.search.placeholder": "Search...",
   "viewer.search.noResults": "No results",
   "viewer.matchCount": "{count} match(es)",
@@ -292,6 +294,7 @@ const ja: Translations = {
   "viewer.loading": "読み込み中...",
   "viewer.error.title": "ファイルの読み込みに失敗しました",
   "viewer.error.path": "パス: {path}",
+  "error.forbiddenPath.hint": "Rendu が読めるのは、ホームフォルダ（~/.ssh などの認証情報の置き場所を除く）と、自分で開いたファイル・フォルダです。「ファイルを開く」「フォルダを開く」で開き直すか、ウィンドウにドラッグしてください。",
   "viewer.search.placeholder": "検索...",
   "viewer.search.noResults": "結果なし",
   "viewer.matchCount": "{count}件の一致",
@@ -415,6 +418,7 @@ const zhCN: Translations = {
   "viewer.loading": "正在加载...",
   "viewer.error.title": "文件加载失败",
   "viewer.error.path": "路径：{path}",
+  "error.forbiddenPath.hint": "Rendu 可以读取主文件夹（~/.ssh 等凭据存放位置除外），以及你自己打开的文件或文件夹。请通过“打开文件”/“打开文件夹”重新打开，或将其拖到窗口中。",
   "viewer.search.placeholder": "搜索...",
   "viewer.search.noResults": "无结果",
   "viewer.matchCount": "{count} 个匹配项",

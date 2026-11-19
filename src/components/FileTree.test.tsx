@@ -3,6 +3,7 @@ import { createRef } from 'react';
 import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { render } from '@testing-library/react';
+import { renderWithLocale } from '../test/helpers';
 
 vi.mock('@tauri-apps/plugin-fs', () => import('../test/mocks/tauri-fs'));
 
@@ -21,6 +22,16 @@ describe('FileTree', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (readDir as Mock).mockResolvedValue(mockEntries);
+  });
+
+  // Issue #221: the sidebar showed only "forbidden path: R:/TEMP".
+  it('explains how to regain access when the folder is outside the fs scope', async () => {
+    (readDir as Mock).mockRejectedValue('forbidden path: R:/TEMP');
+    renderWithLocale(<FileTree rootDir="R:/TEMP" selectedFile={null} onSelectFile={vi.fn()} />);
+    await waitFor(() => {
+      expect(screen.getByText('forbidden path: R:/TEMP')).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Open this one again with Open File \/ Open Folder/)).toBeInTheDocument();
   });
 
   it('renders files from readDir', async () => {

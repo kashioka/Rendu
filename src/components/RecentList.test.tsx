@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, fireEvent, act } from "@testing-library/react";
 import { renderWithLocale } from "../test/helpers";
+import { stat } from "@tauri-apps/plugin-fs";
+import type { Mock } from "vitest";
 import { RecentList } from "./RecentList";
 
 vi.mock("@tauri-apps/plugin-fs", () => ({
@@ -49,6 +51,43 @@ describe("RecentList", () => {
     });
 
     expect(mockOnOpenFile).toHaveBeenCalledWith("/home/user/readme.md");
+  });
+
+  it("removes the entry when the path no longer exists", async () => {
+    (stat as Mock).mockRejectedValueOnce(new Error("No such file or directory (os error 2)"));
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+    const entries = [{ path: "/home/user/gone.md", type: "file" as const, timestamp: 1000 }];
+    renderWithLocale(
+      <RecentList entries={entries} onOpenFile={mockOnOpenFile} onOpenFolder={mockOnOpenFolder} onRemove={mockOnRemove} />
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("gone.md"));
+    });
+
+    expect(mockOnRemove).toHaveBeenCalledWith("/home/user/gone.md");
+    expect(alertSpy).toHaveBeenCalledWith("This file or folder no longer exists.");
+    alertSpy.mockRestore();
+  });
+
+  // Issue #221: v0.11.3 reported a forbidden path as "no longer exists" and
+  // dropped it from Recent.
+  it("keeps the entry and explains access when the path is outside the fs scope", async () => {
+    (stat as Mock).mockRejectedValueOnce("forbidden path: /Volumes/USB/notes.md");
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+    const entries = [{ path: "/Volumes/USB/notes.md", type: "file" as const, timestamp: 1000 }];
+    renderWithLocale(
+      <RecentList entries={entries} onOpenFile={mockOnOpenFile} onOpenFolder={mockOnOpenFolder} onRemove={mockOnRemove} />
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("notes.md"));
+    });
+
+    expect(mockOnRemove).not.toHaveBeenCalled();
+    expect(mockOnOpenFile).not.toHaveBeenCalled();
+    expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining("Open this one again"));
+    alertSpy.mockRestore();
   });
 
   it("calls onRemove when remove button is clicked", () => {

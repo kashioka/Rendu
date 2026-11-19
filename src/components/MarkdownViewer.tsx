@@ -23,6 +23,7 @@ import { svgToPng } from "../utils/svgToPng";
 import { normalizeForSearch, truncateChars } from "../utils/text";
 import { hasMathSyntax } from "../utils/markdown";
 import { classifyLink, isPassiveOpenTarget } from "../dropUtils";
+import { isForbiddenPathError } from "../fsErrors";
 
 // macOS (default) and Windows have case-insensitive filesystems; Linux is
 // case-sensitive. Decides whether a differently-cased internal link points at
@@ -742,6 +743,9 @@ export const MarkdownViewer = forwardRef<MarkdownViewerHandle, MarkdownViewerPro
       <div className="p-8">
         <div style={{ color: "#f87171", fontWeight: 600, marginBottom: 8 }}>{t("viewer.error.title")}</div>
         <div style={{ color: "#fca5a5", fontSize: 14 }}>{error}</div>
+        {isForbiddenPathError(error) && (
+          <div style={{ fontSize: 14, marginTop: 8 }}>{t("error.forbiddenPath.hint")}</div>
+        )}
         <div className="text-muted" style={{ fontSize: 14, marginTop: 8 }}>{t("viewer.error.path", { path: filePath })}</div>
       </div>
     );

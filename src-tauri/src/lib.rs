@@ -4,6 +4,7 @@ use parking_lot::Mutex;
 use std::time::Duration;
 use tauri::menu::{AboutMetadataBuilder, MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::{Emitter, Manager, RunEvent};
+use tauri_plugin_fs::FsExt;
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -146,10 +147,63 @@ fn is_executable_extension(path: &str) -> bool {
 /// turn a link click into code execution.
 #[tauri::command]
 fn open_path(path: String) -> Result<(), String> {
-  if is_executable_extension(&path) {
-    return Err("Refusing to open an executable file".into());
-  }
+  check_open_path(std::path::Path::new(&path))?;
   open::that(&path).map_err(|e| e.to_string())
+}
+
+/// Shortcut files: the OS opens whatever they point at, which may be a `.md`
+/// (`file:///…/notes.md` in a `.url`) or an executable. Their target is not
+/// visible from the path, so `open_path` refuses them like executables.
+const SHORTCUT_EXTENSIONS: &[&str] = &["url", "website", "webloc", "inetloc", "fileloc", "desktop"];
+
+fn has_extension_in(path: &str, list: &[&str]) -> bool {
+  std::path::Path::new(path)
+    .extension()
+    .and_then(|e| e.to_str())
+    .is_some_and(|e| list.contains(&e.to_ascii_lowercase().as_str()))
+}
+
+/// What `open_path` may hand to the OS: an existing local file or folder named
+/// by an absolute path, that is not executable, a shortcut, or Markdown —
+/// judged by the name given and by what it resolves to.
+///
+/// Markdown links open inside Rendu, never through the OS. Rendu is usually
+/// the OS default for .md, so opening one externally comes straight back as a
+/// file-association open, which grants that file and its folder: a
+/// compromised webview could widen its own scope (issue #221 review). Hence:
+/// - absolute paths only, so URLs (`file:///x%2Emd`, which the OS decodes to
+///   `x.md`) and other schemes never reach the opener;
+/// - no network paths (`\\host\share`, `//host/share`): resolving one already
+///   connects over SMB, which can leak NTLM credentials, so they are refused
+///   before touching the filesystem, as are names refused outright;
+/// - the resolved path is checked too, since symlinks and, on Windows,
+///   `x.md.` / `x.md ` / 8.3 names resolve to a real `.md` file.
+fn check_open_path(path: &std::path::Path) -> Result<(), String> {
+  let raw = path.to_string_lossy();
+  // Windows treats any two leading separators, in any mix (`\\`, `//`, `/\`,
+  // `\/`), as a UNC or device prefix (`\\?\UNC\…`, `\\.\…` included).
+  let mut lead = raw.chars();
+  let is_sep = |c: Option<char>| matches!(c, Some('/') | Some('\\'));
+  if is_sep(lead.next()) && is_sep(lead.next()) {
+    return Err("Refusing to open a network path".into());
+  }
+  if !path.is_absolute() {
+    return Err("Refusing to open a non-absolute path".into());
+  }
+  let check_name = |name: &str| -> Result<(), String> {
+    if is_executable_extension(name) || has_extension_in(name, SHORTCUT_EXTENSIONS) {
+      return Err("Refusing to open an executable or shortcut file".into());
+    }
+    if is_markdown_path(name) {
+      return Err("Refusing to open a Markdown file externally".into());
+    }
+    Ok(())
+  };
+  check_name(&raw)?;
+  let resolved = path
+    .canonicalize()
+    .map_err(|e| format!("Cannot resolve path: {}", e))?;
+  check_name(&resolved.to_string_lossy())
 }
 
 /// Write an exported PDF to a user-chosen location. The save dialog is shown
@@ -192,17 +246,51 @@ async fn export_pdf(
   .map_err(|e| e.to_string())?
 }
 
+/// Credential stores under `$HOME`, denied to the webview. Must equal the
+/// `fs:scope` deny list in capabilities/default.json (a test pins this): the
+/// capability covers plugin-fs commands, this list covers Rust commands that
+/// read files themselves (`read_safe_image`), which plugin-fs never checks.
+const CREDENTIAL_DIRS: &[&str] = &[
+  ".ssh",
+  ".gnupg",
+  ".aws",
+  ".azure",
+  ".kube",
+  ".docker",
+  ".config/gcloud",
+  ".config/gh",
+];
+const CREDENTIAL_FILES: &[&str] = &[".netrc", ".npmrc", ".pypirc", ".git-credentials"];
+
+/// Whether `canonical` is (inside) one of the credential stores. Each store is
+/// compared both as written and resolved, so `~/.ssh` symlinked to another
+/// volume is still caught when that volume is opened (issue #221 review).
+fn is_credential_store(canonical: &std::path::Path, home: &std::path::Path) -> bool {
+  let canonical_home = home.canonicalize().unwrap_or_else(|_| home.to_path_buf());
+  CREDENTIAL_DIRS.iter().chain(CREDENTIAL_FILES).any(|entry| {
+    let store = home.join(entry);
+    canonical.starts_with(canonical_home.join(entry))
+      || store.canonicalize().is_ok_and(|resolved| canonical.starts_with(resolved))
+  })
+}
+
 /// Resolve, validate, and read an image referenced from a document, enforcing
 /// two boundaries: the file must sit within `base_dir` (the document's own
 /// directory) AND within `allowed_root`. The second boundary matters because
 /// `base_dir` is supplied by the webview — a compromised renderer could pass
 /// `base_dir = "/"` to read `/etc/passwd`, other users' homes, SSH keys, etc.
 /// `allowed_root` is derived by the command wrapper from the OS home directory,
-/// which the webview cannot influence. Returns base64-encoded file contents.
+/// which the webview cannot influence. `also_allowed` admits paths outside
+/// `allowed_root` that the user granted through the OS (open dialog, drag &
+/// drop, file association) — the command wrapper backs it with the runtime fs
+/// scope, which the webview cannot widen either (issue #221: documents on
+/// D:\, R:\ or /Volumes need their images too). Returns base64-encoded file
+/// contents.
 fn read_image_within(
   base_dir: &str,
   src: &str,
   allowed_root: &std::path::Path,
+  also_allowed: &dyn Fn(&std::path::Path) -> bool,
 ) -> Result<String, String> {
   let base = std::path::Path::new(base_dir);
   let candidate = if std::path::Path::new(src).is_absolute() {
@@ -222,10 +310,13 @@ fn read_image_within(
     return Err("Path is outside the document directory".to_string());
   }
 
+  if is_credential_store(&canonical, allowed_root) {
+    return Err("Path is a credential store".to_string());
+  }
   let canonical_root = allowed_root
     .canonicalize()
     .unwrap_or_else(|_| allowed_root.to_path_buf());
-  if !canonical.starts_with(&canonical_root) {
+  if !canonical.starts_with(&canonical_root) && !also_allowed(&canonical) {
     return Err("Path is outside the allowed directory".to_string());
   }
 
@@ -263,9 +354,9 @@ fn read_image_within(
   Ok(base64::engine::general_purpose::STANDARD.encode(&bytes))
 }
 
-/// Read a document-referenced image, sandboxed to the user's home directory.
-/// See `read_image_within` for why the home boundary is enforced on top of the
-/// webview-supplied `base_dir`.
+/// Read a document-referenced image, sandboxed to the user's home directory
+/// plus whatever the user granted at runtime. See `read_image_within` for why
+/// this boundary is enforced on top of the webview-supplied `base_dir`.
 #[tauri::command]
 fn read_safe_image(
   app: tauri::AppHandle,
@@ -277,7 +368,43 @@ fn read_safe_image(
     .path()
     .home_dir()
     .map_err(|e| format!("Cannot resolve home directory: {}", e))?;
-  read_image_within(&base_dir, &src, &home)
+  let scope = app.fs_scope();
+  read_image_within(&base_dir, &src, &home, &|p| scope.is_allowed(p))
+}
+
+/// Grant the webview read access to a file the OS handed us (file
+/// association, CLI argument, second-instance argv, macOS "Open With").
+/// Unlike the open dialog and drag & drop, these paths reach Rendu without
+/// tauri-plugin-fs seeing them, so nothing else adds them to the runtime scope
+/// and files outside `$HOME` failed with `forbidden path` (issue #221).
+fn grant_opened_file<R: tauri::Runtime>(app: &tauri::AppHandle<R>, path: &std::path::Path) {
+  let scope = app.fs_scope();
+  if let Err(e) = scope.allow_file(path) {
+    log::warn!("failed to allow {} in fs scope: {}", path.display(), e);
+  }
+  // Also granted here, not only by the scope listener: when another thread is
+  // emitting a scope event, tauri queues ours and `allow_file` returns before
+  // the listener runs, so the frontend could list the folder too early.
+  if let Some(dir) = folder_to_grant(path) {
+    if let Err(e) = scope.allow_directory(dir, true) {
+      log::warn!("failed to allow {} in fs scope: {}", dir.display(), e);
+    }
+  }
+}
+
+/// Rendu shows an opened Markdown file's folder in the sidebar (the frontend
+/// re-roots to the parent and lists it), so a file-only grant leaves the
+/// sidebar at `forbidden path` outside `$HOME` (issue #221). The open dialog
+/// and drag & drop grant just the file, so this is applied to every file that
+/// enters the runtime scope. Recursive so subfolders expand and relative
+/// images resolve; for a file at a drive root that means the whole drive,
+/// which is the same reach as opening that folder. Non-Markdown grants (the
+/// PDF save dialog) don't widen anything.
+fn folder_to_grant(granted: &std::path::Path) -> Option<&std::path::Path> {
+  if !is_markdown_path(&granted.to_string_lossy()) || !granted.is_file() {
+    return None;
+  }
+  granted.parent().filter(|p| !p.as_os_str().is_empty())
 }
 
 /// Check if a path looks like a markdown file (by extension).
@@ -367,21 +494,36 @@ fn atomic_write_inner(
   Ok(())
 }
 
-/// Atomically write `contents` to `path` via a sibling tmp file + rename.
-/// Guarantees the target is either the prior version or the new version —
-/// never a half-written file. The webview can only write under the app
-/// config directory; any other path is rejected.
+/// The only files the webview may write. On macOS and Windows the app config
+/// dir is also the app data dir, which holds tauri-plugin-persisted-scope's
+/// `.persisted-scope`; writing that file would let a compromised webview
+/// grant itself any folder on the next launch. So the webview names one of
+/// these files and Rust picks the path (issue #221 review).
+const WRITABLE_CONFIG_FILES: &[&str] = &["settings.json", "recent.json"];
+
+fn config_file_target(config_dir: &std::path::Path, name: &str) -> Result<std::path::PathBuf, String> {
+  if !WRITABLE_CONFIG_FILES.contains(&name) {
+    return Err(format!("Not a writable config file: {}", name));
+  }
+  Ok(config_dir.join(name))
+}
+
+/// Atomically write one of `WRITABLE_CONFIG_FILES` in the app config dir via
+/// a sibling tmp file + rename. Guarantees the target is either the prior
+/// version or the new version — never a half-written file. This is the
+/// webview's only write path: fs:allow-write-text-file is not granted, because
+/// plugin-fs ORs a command's scope with the runtime scope, which would make
+/// every folder the user opens writable.
 #[tauri::command]
-fn atomic_write(app: tauri::AppHandle, path: String, contents: String) -> Result<(), String> {
-  let allowed_base = app
+fn atomic_write(app: tauri::AppHandle, name: String, contents: String) -> Result<(), String> {
+  let config_dir = app
     .path()
     .app_config_dir()
     .map_err(|e| format!("Cannot resolve app config dir: {}", e))?;
-  atomic_write_inner(
-    &allowed_base,
-    std::path::Path::new(&path),
-    contents.as_bytes(),
-  )
+  let target = config_file_target(&config_dir, &name)?;
+  std::fs::create_dir_all(&config_dir)
+    .map_err(|e| format!("Cannot create app config dir: {}", e))?;
+  atomic_write_inner(&config_dir, &target, contents.as_bytes())
 }
 
 /// Holds at most one active filesystem watcher. Starting a new watch
@@ -525,6 +667,7 @@ pub fn run() {
       }
 
       if let Some(path) = file {
+        grant_opened_file(app, std::path::Path::new(&path));
         // Stash into InitialFile so the frontend can pick it up via
         // get_initial_file if the React listener hasn't mounted yet
         // (race on cold start). The listener also handles the live case.
@@ -539,6 +682,10 @@ pub fn run() {
 
   builder = builder
     .plugin(tauri_plugin_fs::init())
+    // Must come after the fs plugin: it restores grants into the fs scope so
+    // folders/files opened from outside $HOME still open from Recent after a
+    // restart (issue #221).
+    .plugin(tauri_plugin_persisted_scope::init())
     .plugin(tauri_plugin_dialog::init())
     .manage(InitialFile::default())
     .manage(WatchState::default())
@@ -641,12 +788,42 @@ pub fn run() {
         )?;
       }
 
+      // Registered before any grant below so the folder of every opened file
+      // follows its file into the scope (see `folder_to_grant`). Grants made
+      // inside the listener are queued by the scope and re-emitted, so the
+      // persisted-scope plugin saves them too.
+      //
+      // Known limitation: for open-dialog and drag & drop grants (made inside
+      // the plugins, so `grant_opened_file` can't run), the listener is the
+      // only folder grant. If another thread is emitting a scope event at that
+      // instant, the event is queued and the frontend may list the folder
+      // before it is granted; the sidebar and relative images then show
+      // `forbidden path` and are not retried. Recovery: Open Folder on the
+      // parent, then pick the document again. Needs two opens at once.
+      let scope = app.fs_scope();
+      let listener_scope = scope.clone();
+      scope.listen(move |event| {
+        if let tauri::scope::fs::Event::PathAllowed(path) = event {
+          if let Some(dir) = folder_to_grant(path) {
+            if let Err(e) = listener_scope.allow_directory(dir, true) {
+              log::warn!("failed to allow {} in fs scope: {}", dir.display(), e);
+            }
+          }
+        }
+      });
+
       // Parse CLI arguments for file association (Windows / Linux / macOS open-with)
       let args: Vec<String> = std::env::args().collect();
       if let Some(file_path) = args.get(1) {
         if is_markdown_path(file_path) && std::path::Path::new(file_path).exists() {
+          // Absolute so the scope pattern matches what plugin-fs resolves.
+          let file_path = std::path::absolute(file_path)
+            .ok()
+            .and_then(|p| p.to_str().map(String::from))
+            .unwrap_or_else(|| file_path.clone());
+          grant_opened_file(app.handle(), std::path::Path::new(&file_path));
           let state = app.state::<InitialFile>();
-          *state.0.lock() = Some(file_path.clone());
+          *state.0.lock() = Some(file_path);
         }
       }
 
@@ -667,6 +844,7 @@ pub fn run() {
         };
         if let Some(p) = path {
           if is_markdown_path(&p) {
+            grant_opened_file(_app_handle, std::path::Path::new(&p));
             // Store in InitialFile so the frontend can pick it up on cold start
             let state = _app_handle.state::<InitialFile>();
             *state.0.lock() = Some(p.clone());
@@ -685,6 +863,9 @@ mod tests {
   use std::fs;
   use std::io::Write;
   use tempfile::tempdir;
+
+  /// `also_allowed` for tests that exercise only the home boundary.
+  const DENY_ALL: fn(&std::path::Path) -> bool = |_| false;
 
   // ------------------------------------------------------------------
   // os_download_url
@@ -921,6 +1102,7 @@ mod tests {
       &dir.path().to_string_lossy(),
       "img.png",
       dir.path(),
+      &DENY_ALL,
     );
     assert!(result.is_ok(), "expected Ok, got {:?}", result);
     let encoded = result.unwrap();
@@ -941,6 +1123,7 @@ mod tests {
       &dir.path().to_string_lossy(),
       "assets/nested.png",
       dir.path(),
+      &DENY_ALL,
     );
     assert!(result.is_ok());
   }
@@ -954,7 +1137,7 @@ mod tests {
     let outside = dir.path().join("outside.png");
     write_file(&outside, b"SHOULD_NOT_READ");
 
-    let result = read_image_within(&inner.to_string_lossy(), "../outside.png", dir.path());
+    let result = read_image_within(&inner.to_string_lossy(), "../outside.png", dir.path(), &DENY_ALL);
     assert!(result.is_err(), "expected Err for path traversal");
     assert!(result.unwrap_err().contains("outside the document directory"));
   }
@@ -970,6 +1153,7 @@ mod tests {
       &base.path().to_string_lossy(),
       &outside.to_string_lossy(),
       base.path(),
+      &DENY_ALL,
     );
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("outside the document directory"));
@@ -989,6 +1173,7 @@ mod tests {
       &outside.path().to_string_lossy(),
       "secret.png",
       home.path(),
+      &DENY_ALL,
     );
     assert!(result.is_err(), "expected Err, got {:?}", result);
     assert!(result.unwrap_err().contains("outside the allowed directory"));
@@ -997,7 +1182,7 @@ mod tests {
   #[test]
   fn read_safe_image_returns_error_for_missing_file() {
     let dir = tempdir().unwrap();
-    let result = read_image_within(&dir.path().to_string_lossy(), "does-not-exist.png", dir.path());
+    let result = read_image_within(&dir.path().to_string_lossy(), "does-not-exist.png", dir.path(), &DENY_ALL);
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("Cannot resolve path"));
   }
@@ -1005,13 +1190,226 @@ mod tests {
   #[test]
   fn read_safe_image_returns_error_for_missing_base_dir() {
     let dir = tempdir().unwrap();
-    let result = read_image_within("/nonexistent/base/dir", "img.png", dir.path());
+    let result = read_image_within("/nonexistent/base/dir", "img.png", dir.path(), &DENY_ALL);
     assert!(result.is_err());
+  }
+
+  // Issue #221: a document on another drive (D:\, R:\, /Volumes) lives
+  // outside home, but the user granted it through the OS. The runtime-scope
+  // check admits it; the document-directory boundary still applies.
+  #[test]
+  fn read_safe_image_allows_path_granted_outside_allowed_root() {
+    let home = tempdir().unwrap();
+    let other_drive = tempdir().unwrap();
+    write_file(&other_drive.path().join("img.png"), b"PNG");
+    let granted = other_drive.path().canonicalize().unwrap();
+
+    let result = read_image_within(
+      &other_drive.path().to_string_lossy(),
+      "img.png",
+      home.path(),
+      &|p| p.starts_with(&granted),
+    );
+    assert!(result.is_ok(), "expected Ok, got {:?}", result);
+  }
+
+  #[test]
+  fn read_safe_image_grant_does_not_bypass_document_directory() {
+    let home = tempdir().unwrap();
+    let other_drive = tempdir().unwrap();
+    let doc_dir = other_drive.path().join("docs");
+    fs::create_dir_all(&doc_dir).unwrap();
+    write_file(&other_drive.path().join("secret.png"), b"SECRET");
+
+    let result = read_image_within(
+      &doc_dir.to_string_lossy(),
+      "../secret.png",
+      home.path(),
+      &|_| true,
+    );
+    assert!(result.unwrap_err().contains("outside the document directory"));
+  }
+
+  // Credential stores stay unreadable through the image command, which reads
+  // files itself and so never hits plugin-fs's capability deny list.
+  #[test]
+  fn read_safe_image_rejects_credential_store_in_home() {
+    let home = tempdir().unwrap();
+    let ssh = home.path().join(".ssh");
+    write_file(&ssh.join("id_ed25519"), b"KEY");
+
+    let result = read_image_within(&ssh.to_string_lossy(), "id_ed25519", home.path(), &DENY_ALL);
+    assert!(result.unwrap_err().contains("credential store"));
+  }
+
+  // Issue #221 review: `~/.ssh` symlinked onto another volume must stay denied
+  // when the user opens a document on that volume.
+  #[cfg(unix)]
+  #[test]
+  fn read_safe_image_rejects_symlinked_credential_store_outside_home() {
+    use std::os::unix::fs::symlink;
+    let home = tempdir().unwrap();
+    let volume = tempdir().unwrap();
+    let real_ssh = volume.path().join("ssh");
+    write_file(&real_ssh.join("id_ed25519"), b"KEY");
+    symlink(&real_ssh, home.path().join(".ssh")).unwrap();
+
+    let result = read_image_within(
+      &real_ssh.to_string_lossy(),
+      "id_ed25519",
+      home.path(),
+      &|_| true,
+    );
+    assert!(result.unwrap_err().contains("credential store"));
+  }
+
+  #[test]
+  fn is_credential_store_matches_dirs_and_files_only() {
+    let home = tempdir().unwrap();
+    let h = home.path().canonicalize().unwrap();
+    assert!(is_credential_store(&h.join(".ssh/id_rsa"), home.path()));
+    assert!(is_credential_store(&h.join(".config/gh/hosts.yml"), home.path()));
+    assert!(is_credential_store(&h.join(".netrc"), home.path()));
+    assert!(!is_credential_store(&h.join(".config/other/x.png"), home.path()));
+    assert!(!is_credential_store(&h.join(".sshnotes/a.png"), home.path()));
+    assert!(!is_credential_store(&h.join("docs/a.png"), home.path()));
+  }
+
+  // ------------------------------------------------------------------
+  // check_open_path: nothing that routes back into Rendu (issue #221 review)
+  // ------------------------------------------------------------------
+
+  #[test]
+  fn check_open_path_refuses_markdown() {
+    let dir = tempdir().unwrap();
+    let md = dir.path().join("Notes.MD");
+    write_file(&md, b"# x");
+    assert!(check_open_path(&md).unwrap_err().contains("Markdown"));
+    let pdf = dir.path().join("a.pdf");
+    write_file(&pdf, b"%PDF");
+    assert!(check_open_path(&pdf).is_ok());
+  }
+
+  // `file:///x%2Emd` is decoded to x.md by the OS opener; URLs and relative
+  // paths never reach it.
+  #[test]
+  fn check_open_path_refuses_urls_and_relative_paths() {
+    let dir = tempdir().unwrap();
+    write_file(&dir.path().join("README.md"), b"# x");
+    let url = format!("file://{}/README%2Emd", dir.path().display());
+    assert!(check_open_path(std::path::Path::new(&url)).is_err());
+    assert!(check_open_path(std::path::Path::new("README.md")).is_err());
+    assert!(check_open_path(std::path::Path::new("https://example.com/a.pdf")).is_err());
+  }
+
+  // Resolving a UNC path already talks SMB, so these are refused by name,
+  // before canonicalize, whether or not they exist.
+  #[test]
+  fn check_open_path_refuses_network_paths() {
+    for p in [
+      r"\\attacker\share\doc.pdf",
+      r"\\?\UNC\attacker\share\doc.pdf",
+      r"\\.\UNC\attacker\share\doc.pdf",
+      "//attacker/share/doc.pdf",
+      r"/\attacker\share\doc.pdf",
+      r"\/attacker\share\doc.pdf",
+    ] {
+      assert!(check_open_path(std::path::Path::new(p)).unwrap_err().contains("network"), "{p}");
+    }
+  }
+
+  #[test]
+  fn check_open_path_refuses_shortcuts() {
+    let dir = tempdir().unwrap();
+    for name in ["jump.url", "jump.webloc", "jump.fileloc", "app.desktop"] {
+      let p = dir.path().join(name);
+      write_file(&p, b"[InternetShortcut]\nURL=file:///tmp/notes.md\n");
+      assert!(check_open_path(&p).unwrap_err().contains("shortcut"), "{name}");
+    }
+  }
+
+  // Links to a folder ("see ./assets/") still open in the file manager.
+  #[test]
+  fn check_open_path_allows_folders() {
+    let dir = tempdir().unwrap();
+    assert!(check_open_path(dir.path()).is_ok());
+  }
+
+  #[test]
+  fn check_open_path_refuses_missing_file() {
+    let dir = tempdir().unwrap();
+    assert!(check_open_path(&dir.path().join("gone.pdf")).is_err());
+  }
+
+  // A non-.md name that resolves to a .md file (symlink here; on Windows also
+  // `x.md.` and 8.3 names) is caught via the resolved path, as is an alias to
+  // an executable.
+  #[cfg(unix)]
+  #[test]
+  fn check_open_path_checks_resolved_path() {
+    use std::os::unix::fs::symlink;
+    let dir = tempdir().unwrap();
+    let md = dir.path().join("secret.md");
+    write_file(&md, b"# x");
+    let alias = dir.path().join("alias.txt");
+    symlink(&md, &alias).unwrap();
+    assert!(check_open_path(&alias).unwrap_err().contains("Markdown"));
+
+    let exe = dir.path().join("run.command");
+    write_file(&exe, b"#!/bin/sh");
+    let exe_alias = dir.path().join("photo.png");
+    symlink(&exe, &exe_alias).unwrap();
+    assert!(check_open_path(&exe_alias).unwrap_err().contains("executable"));
+  }
+
+  // ------------------------------------------------------------------
+  // folder_to_grant (issue #221)
+  // ------------------------------------------------------------------
+
+  #[test]
+  fn folder_to_grant_returns_parent_of_markdown_file() {
+    let dir = tempdir().unwrap();
+    let md = dir.path().join("README.md");
+    write_file(&md, b"# x");
+    assert_eq!(folder_to_grant(&md), Some(dir.path()));
+  }
+
+  #[test]
+  fn folder_to_grant_ignores_non_markdown_and_directories() {
+    let dir = tempdir().unwrap();
+    // PDF save dialog grants the target file; that must not widen the scope.
+    let pdf = dir.path().join("out.pdf");
+    write_file(&pdf, b"%PDF");
+    assert_eq!(folder_to_grant(&pdf), None);
+    // Folder grants (open-folder dialog, drop) and the parent grant this
+    // function itself triggers must not recurse upward.
+    let folder = dir.path().join("notes.md");
+    fs::create_dir_all(&folder).unwrap();
+    assert_eq!(folder_to_grant(&folder), None);
+    assert_eq!(folder_to_grant(dir.path()), None);
+  }
+
+  #[test]
+  fn folder_to_grant_ignores_missing_file() {
+    let dir = tempdir().unwrap();
+    assert_eq!(folder_to_grant(&dir.path().join("gone.md")), None);
   }
 
   // ------------------------------------------------------------------
   // atomic_write_inner
   // ------------------------------------------------------------------
+
+  #[test]
+  fn config_file_target_allows_only_known_files() {
+    let dir = std::path::Path::new("/cfg");
+    assert_eq!(config_file_target(dir, "settings.json").unwrap(), dir.join("settings.json"));
+    assert_eq!(config_file_target(dir, "recent.json").unwrap(), dir.join("recent.json"));
+    // The persisted fs scope lives in the same dir on macOS/Windows.
+    assert!(config_file_target(dir, ".persisted-scope").is_err());
+    assert!(config_file_target(dir, "../settings.json").is_err());
+    assert!(config_file_target(dir, "/etc/passwd").is_err());
+    assert!(config_file_target(dir, "sub/settings.json").is_err());
+  }
 
   #[test]
   fn atomic_write_creates_new_file() {
@@ -1121,7 +1519,7 @@ mod tests {
     let link = base.path().join("link.png");
     symlink(&target, &link).unwrap();
 
-    let result = read_image_within(&base.path().to_string_lossy(), "link.png", base.path());
+    let result = read_image_within(&base.path().to_string_lossy(), "link.png", base.path(), &DENY_ALL);
     // canonicalize() resolves symlinks, so the canonical path will be outside base_dir
     // and the starts_with() check should reject it.
     assert!(result.is_err(), "symlink to outside should be rejected, got {:?}", result);
@@ -1287,6 +1685,21 @@ mod tests {
     let deny = paths("deny");
 
     assert!(allow.iter().any(|p| p == "$HOME/**"));
+    // `$HOME/**` does not match `$HOME` itself, so a file opened from the
+    // home root left the sidebar at `forbidden path` (issue #221).
+    assert!(allow.iter().any(|p| p == "$HOME"), "allow missing $HOME (issue #221)");
+
+    // read_safe_image enforces the same list itself; keep the two in sync.
+    // `X/**` does not match `X` itself in the glob crate, so dirs need both.
+    let mut expected_deny: Vec<String> = CREDENTIAL_DIRS
+      .iter()
+      .flat_map(|d| [format!("$HOME/{d}"), format!("$HOME/{d}/**")])
+      .chain(CREDENTIAL_FILES.iter().map(|f| format!("$HOME/{f}")))
+      .collect();
+    let mut actual_deny = deny.clone();
+    actual_deny.sort();
+    expected_deny.sort();
+    assert_eq!(actual_deny, expected_deny, "fs:scope deny must match CREDENTIAL_DIRS/FILES");
 
     for dir in [
       ".ssh",
