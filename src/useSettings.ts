@@ -4,6 +4,7 @@ import { readTextFile, exists } from "@tauri-apps/plugin-fs";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { Locale } from "./i18n";
+import { applyCodeTheme } from "./codeTheme";
 
 export interface ThemeSettings {
   locale: Locale;
@@ -21,6 +22,7 @@ export interface ThemeSettings {
   mdHeadingColor: string;
   mdLinkColor: string;
   mdCodeBg: string;
+  mdCodeText: string;
   mdBorderColor: string;
   mermaidTheme: "default" | "dark" | "forest" | "neutral" | "base";
   mermaidBg: string;
@@ -51,6 +53,7 @@ export const darkPreset: ThemeSettings = {
   mdHeadingColor: "#f4f4f5",
   mdLinkColor: "#60a5fa",
   mdCodeBg: "#27272a",
+  mdCodeText: "#c9d1d9",
   mdBorderColor: "#3f3f46",
   mermaidTheme: "base",
   mermaidBg: "#1e1e2e",
@@ -81,6 +84,7 @@ export const lightPreset: ThemeSettings = {
   mdHeadingColor: "#18181b",
   mdLinkColor: "#2563eb",
   mdCodeBg: "#f4f4f5",
+  mdCodeText: "#24292e",
   mdBorderColor: "#d4d4d8",
   mermaidTheme: "base",
   mermaidBg: "#ffffff",
@@ -227,6 +231,8 @@ function applyThemeToDOM(s: ThemeSettings) {
   root.style.setProperty("--md-heading", s.mdHeadingColor);
   root.style.setProperty("--md-link", s.mdLinkColor);
   root.style.setProperty("--md-code-bg", s.mdCodeBg);
+  root.style.setProperty("--md-code-text", s.mdCodeText);
+  applyCodeTheme(isDark);
   root.style.setProperty("--md-border", s.mdBorderColor);
 }
 
