@@ -211,6 +211,7 @@ export function Settings({ settings, onChange, onApplyPreset, onResetPreset, onC
                 <ColorRow label={t("settings.color.heading")} value={settings.mdHeadingColor} settingKey="mdHeadingColor" onChange={onChange} />
                 <ColorRow label={t("settings.color.link")} value={settings.mdLinkColor} settingKey="mdLinkColor" onChange={onChange} />
                 <ColorRow label={t("settings.color.codeBg")} value={settings.mdCodeBg} settingKey="mdCodeBg" onChange={onChange} />
+                <ColorRow label={t("settings.color.codeText")} value={settings.mdCodeText} settingKey="mdCodeText" onChange={onChange} />
                 <ColorRow label={t("settings.color.mdBorder")} value={settings.mdBorderColor} settingKey="mdBorderColor" onChange={onChange} />
               </Section>
 

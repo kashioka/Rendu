@@ -90,6 +90,7 @@ export interface Translations {
   "settings.color.heading": string;
   "settings.color.link": string;
   "settings.color.codeBg": string;
+  "settings.color.codeText": string;
   "settings.color.mdBorder": string;
 
   // Update banner
@@ -222,6 +223,7 @@ const en: Translations = {
   "settings.color.heading": "Heading",
   "settings.color.link": "Link",
   "settings.color.codeBg": "Code Background",
+  "settings.color.codeText": "Code Block Text",
   "settings.color.mdBorder": "Border",
 
   "settings.color.mermaidBg": "Background",
@@ -346,6 +348,7 @@ const ja: Translations = {
   "settings.color.heading": "見出し",
   "settings.color.link": "リンク",
   "settings.color.codeBg": "コード背景",
+  "settings.color.codeText": "コードブロック文字",
   "settings.color.mdBorder": "ボーダー",
 
   "settings.color.mermaidBg": "背景",
@@ -470,6 +473,7 @@ const zhCN: Translations = {
   "settings.color.heading": "标题",
   "settings.color.link": "链接",
   "settings.color.codeBg": "代码背景",
+  "settings.color.codeText": "代码块文字",
   "settings.color.mdBorder": "边框",
 
   "settings.color.mermaidBg": "背景",
