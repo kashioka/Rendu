@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { stat } from "@tauri-apps/plugin-fs";
 import type { RecentEntry } from "../useRecentFiles";
 import { useTranslation } from "../LocaleContext";
+import { isForbiddenPathError } from "../fsErrors";
 
 interface RecentListProps {
   entries: RecentEntry[];
@@ -22,7 +23,13 @@ export function RecentList({ entries, onOpenFile, onOpenFolder, onRemove }: Rece
         } else {
           onOpenFolder(entry.path);
         }
-      } catch {
+      } catch (e) {
+        // Outside the fs scope is not "gone": the entry is still valid once
+        // the user grants access again, so keep it (issue #221).
+        if (isForbiddenPathError(String(e))) {
+          alert(t("error.forbiddenPath.hint"));
+          return;
+        }
         onRemove(entry.path);
         alert(t("recent.openError"));
       }

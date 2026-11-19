@@ -12,22 +12,16 @@
     "dialog:allow-open",
     "dialog:allow-save",
     "fs:default",
+    "fs:deny-mkdir",
     "fs:allow-read-text-file",
     "fs:allow-read-file",
     "fs:allow-read-dir",
     "fs:allow-exists",
     "fs:allow-stat",
     {
-      "identifier": "fs:allow-write-text-file",
-      "allow": [{ "path": "$APPCONFIG/**" }]
-    },
-    {
-      "identifier": "fs:allow-mkdir",
-      "allow": [{ "path": "$APPCONFIG" }, { "path": "$APPCONFIG/**" }]
-    },
-    {
       "identifier": "fs:scope",
       "allow": [
+        { "path": "$HOME" },
         { "path": "$HOME/**" },
         { "path": "$APPCONFIG/**" }
       ],

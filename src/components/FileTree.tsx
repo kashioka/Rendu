@@ -1,6 +1,8 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
 import { readDir, type DirEntry } from "@tauri-apps/plugin-fs";
 import { isMarkdownFile } from "../dropUtils";
+import { isForbiddenPathError } from "../fsErrors";
+import { useTranslation } from "../LocaleContext";
 
 interface FileTreeProps {
   rootDir: string;
@@ -118,6 +120,7 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(function FileT
 ) {
   const [nodes, setNodes] = useState<TreeNode[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const load = useCallback(() => {
     // Clear the error together with the result (not synchronously up front) so
@@ -134,7 +137,16 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(function FileT
 
   useImperativeHandle(ref, () => ({ rescan: load }), [load]);
 
-  if (error) return <div className="p-4 text-sm" style={{ color: "#f87171" }}>{error}</div>;
+  if (error) {
+    return (
+      <div className="p-4 text-sm">
+        <div style={{ color: "#f87171" }}>{error}</div>
+        {isForbiddenPathError(error) && (
+          <div className="text-muted" style={{ marginTop: 8 }}>{t("error.forbiddenPath.hint")}</div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="py-1" role="tree">

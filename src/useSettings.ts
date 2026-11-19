@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { appConfigDir } from "@tauri-apps/api/path";
-import { readTextFile, mkdir, exists } from "@tauri-apps/plugin-fs";
+import { readTextFile, exists } from "@tauri-apps/plugin-fs";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { Locale } from "./i18n";
@@ -187,12 +187,8 @@ async function loadFromFile(): Promise<StoredSettings | null> {
 
 async function saveToFile(settings: StoredSettings): Promise<void> {
   try {
-    const dir = await appConfigDir();
-    if (!(await exists(dir))) {
-      await mkdir(dir, { recursive: true });
-    }
-    const path = `${dir.replace(/\/+$/, "")}/${CONFIG_FILE}`;
-    await invoke("atomic_write", { path, contents: JSON.stringify(settings, null, 2) });
+    // Rust resolves the path and creates the config dir (atomic_write).
+    await invoke("atomic_write", { name: CONFIG_FILE, contents: JSON.stringify(settings, null, 2) });
   } catch (e) {
     console.error("Failed to save settings:", e);
   }

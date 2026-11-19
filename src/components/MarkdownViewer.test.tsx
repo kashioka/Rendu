@@ -72,6 +72,29 @@ describe('MarkdownViewer', () => {
     });
   });
 
+  // Issue #221: the raw plugin-fs message doesn't explain itself, so a
+  // forbidden-path failure gets a hint on how to grant access.
+  it('explains how to regain access when the path is outside the fs scope', async () => {
+    (readTextFile as Mock).mockRejectedValue('forbidden path: R:\\TEMP\\README.md');
+    renderWithLocale(
+      <MarkdownViewer filePath="R:\\TEMP\\README.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(screen.getByText(/Open this one again with Open File \/ Open Folder/)).toBeInTheDocument();
+    });
+  });
+
+  it('does not show the access hint for other read failures', async () => {
+    (readTextFile as Mock).mockRejectedValue(new Error('File not found'));
+    renderWithLocale(
+      <MarkdownViewer filePath="/missing.md" settings={darkPreset} />
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Failed to load file')).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/Open this one again/)).toBeNull();
+  });
+
   it('renders markdown content', async () => {
     (readTextFile as Mock).mockResolvedValue('# Hello World\n\nSome text here.');
     renderWithLocale(

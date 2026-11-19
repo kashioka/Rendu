@@ -7,14 +7,15 @@ vi.mock("@tauri-apps/api/path", () => ({
 
 const mockExists = vi.fn().mockResolvedValue(false);
 const mockReadTextFile = vi.fn().mockResolvedValue("[]");
-const mockWriteTextFile = vi.fn().mockResolvedValue(undefined);
-const mockMkdir = vi.fn().mockResolvedValue(undefined);
+const mockInvoke = vi.fn().mockResolvedValue(undefined);
+
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: (...args: unknown[]) => mockInvoke(...args),
+}));
 
 vi.mock("@tauri-apps/plugin-fs", () => ({
   exists: (...args: unknown[]) => mockExists(...args),
   readTextFile: (...args: unknown[]) => mockReadTextFile(...args),
-  writeTextFile: (...args: unknown[]) => mockWriteTextFile(...args),
-  mkdir: (...args: unknown[]) => mockMkdir(...args),
 }));
 
 import { useRecentFiles } from "./useRecentFiles";
@@ -42,6 +43,34 @@ describe("useRecentFiles", () => {
     await act(async () => {});
 
     expect(result.current.entries).toEqual(saved);
+  });
+
+  it("keeps entries added before the saved list finishes loading", async () => {
+    const saved = [
+      { path: "/foo/old.md", type: "file", timestamp: 1000 },
+      { path: "/foo/startup.md", type: "file", timestamp: 900 },
+    ];
+    mockExists.mockResolvedValue(true);
+    let resolveRead: (text: string) => void = () => {};
+    mockReadTextFile.mockReturnValue(new Promise<string>((r) => { resolveRead = r; }));
+
+    const { result } = renderHook(() => useRecentFiles());
+    // Startup file opened via file association before recent.json is read.
+    act(() => result.current.addRecent("/foo/startup.md", "file"));
+    await act(async () => { resolveRead(JSON.stringify(saved)); });
+
+    expect(result.current.entries.map((e) => e.path)).toEqual(["/foo/startup.md", "/foo/old.md"]);
+  });
+
+  // The webview has no fs write permission; Rust picks the path from the name.
+  it("saves through atomic_write by file name", async () => {
+    const { result } = renderHook(() => useRecentFiles());
+    await act(async () => {});
+    await act(async () => { result.current.addRecent("/foo/a.md", "file"); });
+
+    const call = mockInvoke.mock.calls.filter(([cmd]) => cmd === "atomic_write").at(-1);
+    expect(call?.[1]).toMatchObject({ name: "recent.json" });
+    expect(JSON.parse((call?.[1] as { contents: string }).contents)[0].path).toBe("/foo/a.md");
   });
 
   it("addRecent prepends and deduplicates", async () => {

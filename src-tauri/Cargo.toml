@@ -21,10 +21,10 @@ tauri-build = { version = "2.5.6", features = [] }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
-tauri = { version = "2.10.3", features = [] }
+tauri = { version = "2.12.7", features = [] }
 tauri-plugin-log = "2"
-tauri-plugin-fs = "2.4.5"
-tauri-plugin-dialog = "2.6.0"
+tauri-plugin-fs = "2.7.1"
+tauri-plugin-dialog = "2.8.4"
 open = "5"
 base64 = "0.23"
 libc = "0.2"
@@ -33,6 +33,7 @@ parking_lot = "0.13"
 notify = "8"
 notify-debouncer-mini = "0.7"
 tauri-plugin-playwright = { version = "0.2", optional = true }
+tauri-plugin-persisted-scope = "2.4.3"
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-single-instance = "2"

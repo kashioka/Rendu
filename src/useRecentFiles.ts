@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { appConfigDir } from "@tauri-apps/api/path";
-import { readTextFile, writeTextFile, mkdir, exists } from "@tauri-apps/plugin-fs";
+import { invoke } from "@tauri-apps/api/core";
+import { readTextFile, exists } from "@tauri-apps/plugin-fs";
 
 export interface RecentEntry {
   path: string;
@@ -40,12 +41,8 @@ async function loadRecent(): Promise<RecentEntry[]> {
 
 async function saveRecent(entries: RecentEntry[]): Promise<void> {
   try {
-    const dir = await appConfigDir();
-    if (!(await exists(dir))) {
-      await mkdir(dir, { recursive: true });
-    }
-    const path = await getConfigPath();
-    await writeTextFile(path, JSON.stringify(entries, null, 2));
+    // Rust resolves the path and creates the config dir (atomic_write).
+    await invoke("atomic_write", { name: CONFIG_FILE, contents: JSON.stringify(entries, null, 2) });
   } catch (e) {
     console.error("Failed to save recent files:", e);
   }
@@ -57,7 +54,14 @@ export function useRecentFiles() {
 
   useEffect(() => {
     loadRecent().then((saved) => {
-      setEntries(saved);
+      // A file opened at startup (file association / CLI) is added before
+      // this read resolves; replacing the list would drop it, so keep those
+      // in front of the saved entries (issue #221: double-clicked files never
+      // reached Recent).
+      setEntries((addedBeforeLoad) => {
+        const rest = saved.filter((s) => !addedBeforeLoad.some((a) => a.path === s.path));
+        return [...addedBeforeLoad, ...rest].slice(0, MAX_ENTRIES);
+      });
       setLoaded(true);
     });
   }, []);
