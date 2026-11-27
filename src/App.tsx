@@ -7,6 +7,7 @@ import { stat } from "@tauri-apps/plugin-fs";
 import { FileTree, type FileTreeHandle } from "./components/FileTree";
 import { MarkdownViewer, type MarkdownViewerHandle } from "./components/MarkdownViewer";
 import { OutlinePanel, type HeadingItem } from "./components/OutlinePanel";
+import { splitRatioFromPointer } from "./splitRatio";
 import { Settings } from "./components/Settings";
 import { useSettings } from "./useSettings";
 import { LocaleProvider } from "./LocaleContext";
@@ -136,7 +137,8 @@ function AppInner({
     };
   }, [goBack, goForward]);
 
-  const sidebarRef = useRef<HTMLDivElement>(null);
+  // Holds the file tree, divider and outline; the drag ratio is measured against it.
+  const splitRef = useRef<HTMLDivElement>(null);
   const pathRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
   // Container of the sidebar + main horizontal flex row; used as the origin
@@ -153,15 +155,11 @@ function AppInner({
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     dragging.current = true;
+    const dividerHeight = e.currentTarget.getBoundingClientRect().height;
     const onMouseMove = (ev: MouseEvent) => {
-      if (!dragging.current || !sidebarRef.current) return;
-      const rect = sidebarRef.current.getBoundingClientRect();
-      // Subtract the header height (~49px) from calculation
-      const headerHeight = 49;
-      const availableHeight = rect.height - headerHeight;
-      const y = ev.clientY - rect.top - headerHeight;
-      const ratio = Math.max(0.15, Math.min(0.85, y / availableHeight));
-      setSplitRatio(ratio);
+      if (!dragging.current || !splitRef.current) return;
+      const rect = splitRef.current.getBoundingClientRect();
+      setSplitRatio(splitRatioFromPointer(ev.clientY, rect.top, rect.height, dividerHeight));
     };
     const onMouseUp = () => {
       dragging.current = false;
@@ -501,7 +499,7 @@ function AppInner({
         style={{ width: sidebarVisible ? sidebarWidth : 0 }}
         inert={!sidebarVisible}
       >
-      <div ref={sidebarRef} className="sidebar flex flex-col" style={{ width: sidebarWidth }}>
+      <div className="sidebar flex flex-col" style={{ width: sidebarWidth }}>
         <div className="sidebar-header p-3 flex gap-1.5">
           <button onClick={handleOpenFolder} className="btn flex-1 px-2 py-1.5 rounded text-xs" title={t("sidebar.folder.title")}>
             {t("sidebar.folder")}
@@ -533,8 +531,13 @@ function AppInner({
           </div>
         )}
 
+        {/* File tree + outline share the height left under the header and
+            folder path. flex-grow ratios (not % bases) keep the divider inside
+            that space; % bases summed to the whole sidebar and pushed the end
+            of the outline out of view (#229). */}
+        <div ref={splitRef} className="flex flex-col flex-1 min-h-0">
         {/* File tree pane */}
-        <div className="overflow-y-auto" style={{ flex: `0 0 ${splitRatio * 100}%` }}>
+        <div className="sidebar-tree-pane overflow-y-auto min-h-0" style={{ flex: `${splitRatio} 1 0px` }}>
           {rootDir ? (
             <FileTree
               ref={fileTreeRef}
@@ -555,8 +558,9 @@ function AppInner({
         </div>
 
         {/* Outline pane */}
-        <div className="overflow-y-auto" style={{ flex: `0 0 ${(1 - splitRatio) * 100}%` }}>
+        <div className="sidebar-outline-pane overflow-y-auto min-h-0" style={{ flex: `${1 - splitRatio} 1 0px` }}>
           <OutlinePanel headings={headings} onJump={(id) => viewerRef.current?.scrollToHeading(id)} />
+        </div>
         </div>
       </div>
       </div>
